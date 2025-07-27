@@ -1,0 +1,48 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id                String             @id @default(uuid())
+  name              String
+  description       String?
+  initialPrompt     String
+  status            ProjectStatus      @default(ACTIVE)
+  uploadedFileIds   String[]
+  generatedFileIds  String[]
+  ownerId           String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  statistics        ProjectStatistics?
+  
+  @@map("projects")
+}
+
+model ProjectStatistics {
+  id               String   @id @default(uuid())
+  projectId        String   @unique
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  costs            Json     @default("{}")
+  performance      Json     @default("{}")
+  usage            Json     @default("{}")
+  lastUpdated      DateTime @updatedAt
+  
+  @@map("project_statistics")
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}

@@ -38,6 +38,8 @@
     "test:enum:coverage": "./scripts/test-enum.sh --all --coverage",
     "test:enum:watch": "./scripts/test-enum.sh --unit --watch",
 
+    "test:user-interface": "./scripts/test-user-interface.sh --all",
+
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

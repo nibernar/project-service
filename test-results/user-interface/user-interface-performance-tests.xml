@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="24" failures="0" errors="0" time="2.705">
+  <testsuite name="User Interface - Tests de Performance" errors="0" failures="0" skipped="0" timestamp="2025-07-28T12:23:02" time="2.563" tests="24">
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions de rôles hasRole() - Performance avec nombreux rôles devrait être rapide avec beaucoup de rôles (premier élément)" name="User Interface - Tests de Performance Performance des fonctions de rôles hasRole() - Performance avec nombreux rôles devrait être rapide avec beaucoup de rôles (premier élément)" time="0.01">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions de rôles hasRole() - Performance avec nombreux rôles devrait être rapide avec beaucoup de rôles (dernier élément)" name="User Interface - Tests de Performance Performance des fonctions de rôles hasRole() - Performance avec nombreux rôles devrait être rapide avec beaucoup de rôles (dernier élément)" time="0.009">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions de rôles hasRole() - Performance avec nombreux rôles devrait être rapide avec beaucoup de rôles (élément inexistant)" name="User Interface - Tests de Performance Performance des fonctions de rôles hasRole() - Performance avec nombreux rôles devrait être rapide avec beaucoup de rôles (élément inexistant)" time="0.008">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions de rôles hasAnyRole() - Performance avec nombreux rôles devrait être rapide avec recherche de nombreux rôles" name="User Interface - Tests de Performance Performance des fonctions de rôles hasAnyRole() - Performance avec nombreux rôles devrait être rapide avec recherche de nombreux rôles" time="0.796">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions de rôles hasAnyRole() - Performance avec nombreux rôles devrait optimiser l&apos;arrêt précoce" name="User Interface - Tests de Performance Performance des fonctions de rôles hasAnyRole() - Performance avec nombreux rôles devrait optimiser l&apos;arrêt précoce" time="0.008">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions de rôles hasAllRoles() - Performance avec nombreux rôles devrait être rapide avec vérification de tous les rôles" name="User Interface - Tests de Performance Performance des fonctions de rôles hasAllRoles() - Performance avec nombreux rôles devrait être rapide avec vérification de tous les rôles" time="0.025">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions de rôles hasAllRoles() - Performance avec nombreux rôles devrait optimiser l&apos;arrêt précoce sur échec" name="User Interface - Tests de Performance Performance des fonctions de rôles hasAllRoles() - Performance avec nombreux rôles devrait optimiser l&apos;arrêt précoce sur échec" time="0.008">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance de création d&apos;utilisateurs createUser() - Performance en masse devrait créer rapidement de nombreux utilisateurs" name="User Interface - Tests de Performance Performance de création d&apos;utilisateurs createUser() - Performance en masse devrait créer rapidement de nombreux utilisateurs" time="0.003">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance de création d&apos;utilisateurs createUser() - Performance en masse devrait gérer efficacement la déduplication des rôles" name="User Interface - Tests de Performance Performance de création d&apos;utilisateurs createUser() - Performance en masse devrait gérer efficacement la déduplication des rôles" time="0.015">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance de création d&apos;utilisateurs createExtendedUser() - Performance avec propriétés étendues devrait créer rapidement des utilisateurs étendus" name="User Interface - Tests de Performance Performance de création d&apos;utilisateurs createExtendedUser() - Performance avec propriétés étendues devrait créer rapidement des utilisateurs étendus" time="0.002">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance de validation isValidUser() - Performance avec objets complexes devrait valider rapidement de nombreux utilisateurs valides" name="User Interface - Tests de Performance Performance de validation isValidUser() - Performance avec objets complexes devrait valider rapidement de nombreux utilisateurs valides" time="0.003">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance de validation isValidUser() - Performance avec objets complexes devrait rejeter rapidement de nombreux utilisateurs invalides" name="User Interface - Tests de Performance Performance de validation isValidUser() - Performance avec objets complexes devrait rejeter rapidement de nombreux utilisateurs invalides" time="0.001">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance de validation isValidUser() - Performance avec objets complexes devrait gérer efficacement les objets avec de nombreuses propriétés" name="User Interface - Tests de Performance Performance de validation isValidUser() - Performance avec objets complexes devrait gérer efficacement les objets avec de nombreuses propriétés" time="0.014">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance de validation isExtendedUser() - Performance avec détection d&apos;extensions devrait détecter rapidement les utilisateurs étendus" name="User Interface - Tests de Performance Performance de validation isExtendedUser() - Performance avec détection d&apos;extensions devrait détecter rapidement les utilisateurs étendus" time="0.002">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions utilitaires getUserPreferences() - Performance avec préférences complexes devrait récupérer rapidement les préférences" name="User Interface - Tests de Performance Performance des fonctions utilitaires getUserPreferences() - Performance avec préférences complexes devrait récupérer rapidement les préférences" time="0.001">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions utilitaires getUserPreferences() - Performance avec préférences complexes devrait fusionner efficacement avec les défauts" name="User Interface - Tests de Performance Performance des fonctions utilitaires getUserPreferences() - Performance avec préférences complexes devrait fusionner efficacement avec les défauts" time="0.046">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions utilitaires getDisplayName() - Performance avec noms complexes devrait extraire rapidement les noms d&apos;affichage" name="User Interface - Tests de Performance Performance des fonctions utilitaires getDisplayName() - Performance avec noms complexes devrait extraire rapidement les noms d&apos;affichage" time="0.003">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance des fonctions utilitaires getDisplayName() - Performance avec noms complexes devrait gérer efficacement les noms avec caractères spéciaux" name="User Interface - Tests de Performance Performance des fonctions utilitaires getDisplayName() - Performance avec noms complexes devrait gérer efficacement les noms avec caractères spéciaux" time="0.023">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance mémoire Gestion de la mémoire avec objets volumineux devrait gérer efficacement de nombreux utilisateurs en mémoire" name="User Interface - Tests de Performance Performance mémoire Gestion de la mémoire avec objets volumineux devrait gérer efficacement de nombreux utilisateurs en mémoire" time="0.017">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance mémoire Gestion de la mémoire avec objets volumineux devrait éviter les fuites mémoire avec utilisateurs étendus" name="User Interface - Tests de Performance Performance mémoire Gestion de la mémoire avec objets volumineux devrait éviter les fuites mémoire avec utilisateurs étendus" time="0.009">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance mémoire Performance avec sérialisation JSON devrait sérialiser rapidement de nombreux utilisateurs" name="User Interface - Tests de Performance Performance mémoire Performance avec sérialisation JSON devrait sérialiser rapidement de nombreux utilisateurs" time="0.004">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Performance mémoire Performance avec sérialisation JSON devrait désérialiser rapidement de nombreux utilisateurs" name="User Interface - Tests de Performance Performance mémoire Performance avec sérialisation JSON devrait désérialiser rapidement de nombreux utilisateurs" time="0.002">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Benchmarks comparatifs Comparaison des algorithmes de recherche devrait comparer les performances de hasRole vs includes direct" name="User Interface - Tests de Performance Benchmarks comparatifs Comparaison des algorithmes de recherche devrait comparer les performances de hasRole vs includes direct" time="0.195">
+    </testcase>
+    <testcase classname="User Interface - Tests de Performance Benchmarks comparatifs Performance baseline devrait établir des benchmarks de référence" name="User Interface - Tests de Performance Benchmarks comparatifs Performance baseline devrait établir des benchmarks de référence" time="0.014">
+    </testcase>
+  </testsuite>
+</testsuites>

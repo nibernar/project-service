@@ -212,7 +212,7 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
     options: TransactionOptions = {},
   ): Promise<T> {
     const transactionOptions = {
-      // ✅ CORRECTION : Forcer la conversion en number
+      // ✅ CORRECTION: Forcer la conversion en number
       timeout: options.timeout || parseInt(this.configService.get('DB_TRANSACTION_TIMEOUT', '10000'), 10),
       isolationLevel: options.isolationLevel || Prisma.TransactionIsolationLevel.ReadCommitted,
     };
@@ -242,8 +242,8 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
     this.logger.warn('Resetting database - TEST ENVIRONMENT ONLY');
     
     try {
-      // ✅ CORRECTION : Utiliser la syntaxe callback correcte
-      await this.$transaction(async (tx) => {
+      // ✅ CORRECTION: Typage explicite du paramètre tx
+      await this.$transaction(async (tx: Prisma.TransactionClient) => {
         // Suppression de toutes les données dans l'ordre inverse des dépendances
         await tx.projectStatistics.deleteMany();
         await tx.project.deleteMany();
@@ -262,7 +262,7 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
   async seedDatabase(): Promise<void> {
     const nodeEnv = this.configService.get('NODE_ENV');
     
-    // ✅ CORRECTION : Validation stricte
+    // ✅ CORRECTION: Validation stricte
     if (nodeEnv !== 'development' && nodeEnv !== 'test') {
       throw new Error('Database seeding is only allowed in development and test environments');
     }
@@ -334,7 +334,7 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
       }
     }
     
-    // ✅ CORRECTION : Log l'erreur complète mais ne l'expose pas
+    // ✅ CORRECTION: Log l'erreur complète mais ne l'expose pas
     if (lastError) {
       this.logger.error('Final connection error details', lastError);
     }
@@ -353,21 +353,6 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
       // Re-throw pour permettre une gestion d'erreur appropriée
       throw error;
     }
-  }
-
-  /**
-   * Attente de la connexion
-   */
-  private async waitForConnection(maxAttempts: number): Promise<boolean> {
-    for (let i = 0; i < maxAttempts; i++) {
-      try {
-        await this.$queryRaw`SELECT 1`;
-        return true;
-      } catch {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-    return false;
   }
 
   /**

@@ -91,7 +91,7 @@ async function cleanupTestDatabase(config: DatabaseConfig): Promise<void> {
     }
     
   } catch (error) {
-    console.warn(`⚠️  Failed to cleanup database ${config.database}: ${error.message}`);
+    console.warn(`⚠️  Failed to cleanup database ${config.database}: ${(error as Error).message}`);
     // Ne pas faire échouer le teardown pour ça
   } finally {
     await adminClient.end();
@@ -118,7 +118,7 @@ async function cleanupRedisConnections(): Promise<void> {
     
     console.log('🧹 Redis test database cleaned');
   } catch (error) {
-    console.warn(`⚠️  Failed to cleanup Redis: ${error.message}`);
+    console.warn(`⚠️  Failed to cleanup Redis: ${(error as Error).message}`);
     // Ne pas faire échouer le teardown pour ça
   }
 }
@@ -138,7 +138,7 @@ async function generateCoverageReport(): Promise<void> {
       
       console.log('✅ Coverage report generated');
     } catch (error) {
-      console.warn('⚠️  Failed to generate coverage report:', error.message);
+      console.warn('⚠️  Failed to generate coverage report:', (error as Error).message);
     }
   }
 }
@@ -181,7 +181,7 @@ async function generateTestReport(): Promise<void> {
     console.log(`📋 Test summary saved to: ${reportPath}`);
     
   } catch (error) {
-    console.warn('⚠️  Failed to generate test report:', error.message);
+    console.warn('⚠️  Failed to generate test report:', (error as Error).message);
   }
 }
 
@@ -220,7 +220,7 @@ async function cleanupTemporaryFiles(): Promise<void> {
     }
     
   } catch (error) {
-    console.warn('⚠️  Failed to cleanup temporary files:', error.message);
+    console.warn('⚠️  Failed to cleanup temporary files:', (error as Error).message);
   }
 }
 
@@ -239,7 +239,7 @@ async function closeOpenConnections(): Promise<void> {
     
     console.log('🔌 Closed open connections');
   } catch (error) {
-    console.warn('⚠️  Failed to close connections:', error.message);
+    console.warn('⚠️  Failed to close connections:', (error as Error).message);
   }
 }
 

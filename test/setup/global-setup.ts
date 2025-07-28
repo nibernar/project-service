@@ -11,6 +11,12 @@ import * as path from 'path';
  */
 
 // IMPORTANT: Charger les variables d'environnement AVANT tout le reste
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return String(error);
+}
+
 function loadEnvironmentVariables(): void {
   // Charger le fichier .env.test
   const envTestPath = path.join(__dirname, '../../.env.test');
@@ -104,7 +110,7 @@ async function createTestDatabase(config: DatabaseConfig): Promise<void> {
       console.log(`✅ Test database already exists: ${config.database}`);
     }
   } catch (error) {
-    console.error(`❌ Failed to create test database: ${error.message}`);
+    console.error(`❌ Failed to create test database: ${getErrorMessage(error)}`);
     throw error;
   } finally {
     await adminClient.end();
@@ -132,7 +138,7 @@ async function runMigrations(databaseUrl: string): Promise<void> {
     
     console.log('✅ Database migrations completed');
   } catch (error) {
-    console.error(`❌ Migration failed: ${error.message}`);
+    console.error(`❌ Migration failed: ${getErrorMessage(error)}`);
     throw error;
   }
 }
@@ -151,7 +157,7 @@ async function checkRequiredServices(): Promise<void> {
       await service.check();
       console.log(`✅ ${service.name} is available`);
     } catch (error) {
-      console.warn(`⚠️  ${service.name} is not available: ${error.message}`);
+      console.warn(`⚠️  ${service.name} is not available: ${getErrorMessage(error)}`);
       // Ne pas faire échouer le setup pour Redis (optionnel pour certains tests)
       if (service.name === 'PostgreSQL') {
         throw error;
@@ -196,7 +202,7 @@ async function checkPostgreSQL(): Promise<void> {
     await client.query('SELECT 1');
     console.log('✅ PostgreSQL connection successful');
   } catch (error) {
-    console.error(`❌ PostgreSQL connection failed: ${error.message}`);
+    console.error(`❌ PostgreSQL connection failed: ${getErrorMessage(error)}`);
     throw error;
   } finally {
     await client.end();
@@ -222,7 +228,7 @@ async function checkRedis(): Promise<void> {
     await redis.ping();
     redis.disconnect();
   } catch (error) {
-    throw new Error(`Redis connection failed: ${error.message}`);
+    throw new Error(`Redis connection failed: ${getErrorMessage(error)}`);
   }
 }
 

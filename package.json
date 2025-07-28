@@ -27,6 +27,17 @@
     "test:database-cov": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:cov",
     "test:cov:report": "npm run test:cov && npx ts-node scripts/validate-coverage.ts",
     "test:database": "./scripts/test-database.sh",
+
+    "test:enum": "./scripts/test-enum.sh --all",
+    "test:enum:unit": "./scripts/test-enum.sh --unit",
+    "test:enum:performance": "./scripts/test-enum.sh --performance", 
+    "test:enum:security": "./scripts/test-enum.sh --security",
+    "test:enum:integration": "./scripts/test-enum.sh --integration",
+    "test:enum:edge-cases": "./scripts/test-enum.sh --edge-cases",
+    "test:enum:regression": "./scripts/test-enum.sh --regression",
+    "test:enum:coverage": "./scripts/test-enum.sh --all --coverage",
+    "test:enum:watch": "./scripts/test-enum.sh --unit --watch",
+
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
@@ -88,22 +99,5 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }

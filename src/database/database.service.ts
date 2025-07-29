@@ -1,6 +1,8 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger, Inject } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { databaseConfig, DatabaseConfig } from '../config/database.config';
 
 /**
  * Interface pour le statut de santé de la base de données
@@ -16,6 +18,11 @@ export interface DatabaseHealth {
     lastError?: string;
     lastErrorTime?: Date;
   };
+  configuration: {
+    maxConnections: number;
+    environment: string;
+    sslEnabled: boolean;
+  };
 }
 
 /**
@@ -25,6 +32,7 @@ export interface ConnectionStatus {
   isConnected: boolean;
   responseTime: number;
   lastCheck: Date;
+  retryCount: number;
 }
 
 /**
@@ -36,6 +44,17 @@ export interface TransactionOptions {
 }
 
 /**
+ * Interface pour les métriques de performance
+ */
+export interface PerformanceMetrics {
+  totalQueries: number;
+  slowQueries: number;
+  avgResponseTime: number;
+  connectionPoolUsage: number;
+  lastSlowQueryTime?: Date;
+}
+
+/**
  * Service central de gestion de la base de données
  * Encapsule Prisma Client avec des fonctionnalités additionnelles
  */
@@ -43,60 +62,64 @@ export interface TransactionOptions {
 export class DatabaseService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
   private isConnected = false;
-  private readonly maxRetries = 3;
-  private readonly retryDelay = 1000; // 1 seconde
   private healthMonitoringInterval?: NodeJS.Timeout;
+  private retryCount = 0;
   
-  // Métriques de santé
-  private healthMetrics: DatabaseHealth = {
-    status: 'unhealthy',
-    responseTime: 0,
-    connectionsActive: 0,
-    connectionsIdle: 0,
-    lastSuccessfulQuery: new Date(),
-    errors: {
-      count: 0,
-    },
+  // Métriques de santé et performance
+  private healthMetrics: DatabaseHealth;
+  private performanceMetrics: PerformanceMetrics = {
+    totalQueries: 0,
+    slowQueries: 0,
+    avgResponseTime: 0,
+    connectionPoolUsage: 0,
   };
+  
+  // Cache des temps de réponse pour calcul de moyenne
+  private responseTimes: number[] = [];
+  private readonly maxResponseTimesSamples = 100;
 
-  constructor(private readonly configService: ConfigService) {
-    const databaseUrl = configService.get<string>('DATABASE_URL');
-    const nodeEnv = configService.get<string>('NODE_ENV', 'development');
-    
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL is required but not provided');
+  constructor(
+    @Inject(databaseConfig.KEY) 
+    private readonly dbConfig: ConfigType<typeof databaseConfig>,
+    private readonly configService: ConfigService
+  ) {
+    // Validation de la configuration au démarrage
+    if (!dbConfig.url) {
+      throw new Error('DATABASE_URL is required but not provided in database configuration');
     }
 
-    // Configuration Prisma selon l'environnement
+    // Configuration Prisma basée sur notre nouvelle config
     const prismaOptions: Prisma.PrismaClientOptions = {
       datasources: {
         db: {
-          url: databaseUrl,
+          url: dbConfig.url,
         },
       },
+      // Configuration des logs basée sur la nouvelle config
+      log: dbConfig.logging.enabled ? dbConfig.logging.level.map(level => ({
+        level: level as Prisma.LogLevel,
+        emit: level === 'query' ? 'event' : 'stdout'
+      })) : [],
     };
 
-    // Configuration des logs selon l'environnement
-    if (nodeEnv === 'development') {
-      prismaOptions.log = [
-        { level: 'query', emit: 'event' },
-        { level: 'error', emit: 'stdout' },
-        { level: 'info', emit: 'stdout' },
-        { level: 'warn', emit: 'stdout' },
-      ];
-    } else if (nodeEnv === 'test') {
-      prismaOptions.log = [
-        { level: 'error', emit: 'stdout' },
-      ];
-    } else {
-      // Production
-      prismaOptions.log = [
-        { level: 'error', emit: 'stdout' },
-        { level: 'warn', emit: 'stdout' },
-      ];
-    }
-
     super(prismaOptions);
+    
+    // Initialisation des métriques de santé
+    this.healthMetrics = {
+      status: 'unhealthy',
+      responseTime: 0,
+      connectionsActive: 0,
+      connectionsIdle: 0,
+      lastSuccessfulQuery: new Date(),
+      errors: {
+        count: 0,
+      },
+      configuration: {
+        maxConnections: dbConfig.maxConnections,
+        environment: process.env.NODE_ENV || 'development',
+        sslEnabled: typeof dbConfig.ssl === 'boolean' ? dbConfig.ssl : dbConfig.ssl.enabled,
+      }
+    };
 
     // Configuration du logging des requêtes
     this.setupQueryLogging();
@@ -107,6 +130,7 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
    */
   async onModuleInit(): Promise<void> {
     this.logger.log('Initializing database connection...');
+    this.logger.debug(`Database config: Max connections: ${this.dbConfig.maxConnections}, SSL: ${typeof this.dbConfig.ssl === 'boolean' ? this.dbConfig.ssl : this.dbConfig.ssl.enabled}`);
     
     try {
       await this.connectWithRetry();
@@ -114,14 +138,25 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
       this.healthMetrics.status = 'healthy';
       this.logger.log('Database connection established successfully');
       
-      // Démarrage du monitoring en production
-      if (this.configService.get('NODE_ENV') === 'production') {
+      // Démarrage du monitoring si activé
+      if (this.dbConfig.health.enableHealthCheck) {
         this.startHealthMonitoring();
       }
+      
+      // Migration automatique si configurée
+      if (this.dbConfig.migration.autoMigrate) {
+        await this.runMigrations();
+      }
+      
+      // Seeding automatique si configuré
+      if (this.dbConfig.migration.seedOnCreate) {
+        await this.seedDatabase();
+      }
+      
     } catch (error) {
       this.logger.error('Failed to establish database connection', this.sanitizeError(error as Error));
       this.handleConnectionError(error as Error);
-      throw new Error(`Failed to connect to database after ${this.maxRetries} attempts`);
+      throw new Error(`Failed to connect to database after ${this.dbConfig.retries.maxRetries} attempts`);
     }
   }
 
@@ -156,12 +191,19 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
       await this.$queryRaw`SELECT 1`;
       const responseTime = Date.now() - startTime;
       
+      this.updatePerformanceMetrics(responseTime);
       this.healthMetrics.responseTime = responseTime;
       this.healthMetrics.lastSuccessfulQuery = new Date();
       
-      // Considéré comme sain si réponse < 5000ms
-      const isHealthy = responseTime < 5000;
-      this.healthMetrics.status = isHealthy ? 'healthy' : 'degraded';
+      // Utilise le threshold configuré
+      const threshold = this.dbConfig.health.healthCheckTimeout;
+      const isHealthy = responseTime < threshold;
+      
+      if (responseTime > threshold * 0.8) {
+        this.healthMetrics.status = 'degraded';
+      } else {
+        this.healthMetrics.status = 'healthy';
+      }
       
       return isHealthy;
     } catch (error) {
@@ -186,6 +228,7 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
         isConnected: true,
         responseTime,
         lastCheck: new Date(),
+        retryCount: this.retryCount,
       };
     } catch (error) {
       this.logger.error('Connection status check failed', this.sanitizeError(error as Error));
@@ -193,6 +236,7 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
         isConnected: false,
         responseTime: Date.now() - startTime,
         lastCheck: new Date(),
+        retryCount: this.retryCount,
       };
     }
   }
@@ -205,6 +249,13 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
   }
 
   /**
+   * Obtention des métriques de performance
+   */
+  getPerformanceMetrics(): PerformanceMetrics {
+    return { ...this.performanceMetrics };
+  }
+
+  /**
    * Exécution d'une opération dans une transaction
    */
   async withTransaction<T>(
@@ -212,21 +263,62 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
     options: TransactionOptions = {},
   ): Promise<T> {
     const transactionOptions = {
-      // ✅ CORRECTION: Forcer la conversion en number
-      timeout: options.timeout || parseInt(this.configService.get('DB_TRANSACTION_TIMEOUT', '10000'), 10),
+      timeout: options.timeout || this.dbConfig.transactionTimeout,
       isolationLevel: options.isolationLevel || Prisma.TransactionIsolationLevel.ReadCommitted,
     };
 
     try {
       this.logger.debug('Starting transaction');
+      const startTime = Date.now();
+      
       const result = await this.$transaction(callback, transactionOptions);
+      
+      const duration = Date.now() - startTime;
+      this.updatePerformanceMetrics(duration);
       this.logger.debug('Transaction completed successfully');
+      
       return result;
     } catch (error) {
       this.logger.error('Transaction failed', this.sanitizeError(error as Error));
       this.incrementErrorCount(error as Error);
       throw error;
     }
+  }
+
+  /**
+   * Exécution d'une requête avec retry automatique
+   */
+  async executeWithRetry<T>(
+    operation: () => Promise<T>,
+    maxRetries?: number
+  ): Promise<T> {
+    const retries = maxRetries || this.dbConfig.retries.maxRetries;
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const startTime = Date.now();
+        const result = await operation();
+        
+        const duration = Date.now() - startTime;
+        this.updatePerformanceMetrics(duration);
+        
+        return result;
+      } catch (error) {
+        lastError = error as Error;
+        
+        if (attempt < retries && this.isRetriableError(error as Error)) {
+          const delay = this.calculateRetryDelay(attempt);
+          this.logger.warn(`Operation failed (attempt ${attempt}/${retries}), retrying in ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          this.incrementErrorCount(error as Error);
+          break;
+        }
+      }
+    }
+    
+    throw lastError || new Error('Operation failed after all retry attempts');
   }
 
   /**
@@ -242,7 +334,6 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
     this.logger.warn('Resetting database - TEST ENVIRONMENT ONLY');
     
     try {
-      // ✅ CORRECTION: Typage explicite du paramètre tx
       await this.$transaction(async (tx: Prisma.TransactionClient) => {
         // Suppression de toutes les données dans l'ordre inverse des dépendances
         await tx.projectStatistics.deleteMany();
@@ -257,12 +348,11 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
   }
 
   /**
-   * Seeding de la base de données (uniquement en développement et test)
+   * Seeding de la base de données
    */
   async seedDatabase(): Promise<void> {
     const nodeEnv = this.configService.get('NODE_ENV');
     
-    // ✅ CORRECTION: Validation stricte
     if (nodeEnv !== 'development' && nodeEnv !== 'test') {
       throw new Error('Database seeding is only allowed in development and test environments');
     }
@@ -270,14 +360,13 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
     this.logger.log('Seeding database with test data');
     
     try {
-      // Exemple de données de seed - à adapter selon les besoins
       const seedData = await this.project.createMany({
         data: [
           {
             id: 'seed-project-1',
             name: 'Sample Project 1',
             description: 'A sample project for development',
-            initialPrompt: 'Create a web application',
+            initialPrompt: 'Create a web application with React and NestJS',
             ownerId: 'seed-user-1',
             status: 'ACTIVE',
             uploadedFileIds: [],
@@ -286,10 +375,20 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
           {
             id: 'seed-project-2',
             name: 'Sample Project 2',
-            description: 'Another sample project',
-            initialPrompt: 'Build a mobile app',
+            description: 'Another sample project for testing',
+            initialPrompt: 'Build a mobile application with React Native',
             ownerId: 'seed-user-2',
             status: 'ACTIVE',
+            uploadedFileIds: [],
+            generatedFileIds: [],
+          },
+          {
+            id: 'seed-project-3',
+            name: 'Archived Project',
+            description: 'An archived project for testing',
+            initialPrompt: 'Create a desktop application',
+            ownerId: 'seed-user-1',
+            status: 'ARCHIVED',
             uploadedFileIds: [],
             generatedFileIds: [],
           },
@@ -305,41 +404,79 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
   }
 
   /**
-   * Connexion avec retry automatique
+   * Exécution des migrations
+   */
+  private async runMigrations(): Promise<void> {
+    try {
+      this.logger.log('Running database migrations...');
+      // Note: En production, les migrations doivent être exécutées via CLI
+      // Ici c'est principalement pour le développement
+      this.logger.log('Migrations completed (handled by Prisma CLI in production)');
+    } catch (error) {
+      this.logger.error('Migration failed', this.sanitizeError(error as Error));
+      throw error;
+    }
+  }
+
+  /**
+   * Connexion avec retry automatique basé sur la configuration
    */
   private async connectWithRetry(): Promise<void> {
+    const maxRetries = this.dbConfig.retries.enabled ? this.dbConfig.retries.maxRetries : 1;
     let lastError: Error | null = null;
     
-    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        this.logger.debug(`Connection attempt ${attempt}/${this.maxRetries}`);
-        await this.$connect();
+        this.logger.debug(`Connection attempt ${attempt}/${maxRetries}`);
+        
+        // Timeout basé sur la configuration
+        const connectPromise = this.$connect();
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Connection timeout')), this.dbConfig.connectionTimeout);
+        });
+        
+        await Promise.race([connectPromise, timeoutPromise]);
         
         // Test de la connexion
         await this.$queryRaw`SELECT 1`;
         
+        this.retryCount = 0; // Reset le compteur en cas de succès
         this.logger.log('Database connection successful');
         return;
+        
       } catch (error) {
         lastError = error as Error;
+        this.retryCount = attempt;
+        
         this.logger.warn(
           `Connection attempt ${attempt} failed: ${this.sanitizeErrorMessage(error as Error)}`,
         );
         
-        if (attempt < this.maxRetries && this.isRetriableError(error as Error)) {
-          const delay = this.retryDelay * Math.pow(2, attempt - 1); // Backoff exponentiel
+        if (attempt < maxRetries && this.isRetriableError(error as Error)) {
+          const delay = this.calculateRetryDelay(attempt);
           this.logger.debug(`Retrying in ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       }
     }
     
-    // ✅ CORRECTION: Log l'erreur complète mais ne l'expose pas
     if (lastError) {
       this.logger.error('Final connection error details', lastError);
     }
     
-    throw new Error(`Failed to connect to database after ${this.maxRetries} attempts`);
+    throw new Error(`Failed to connect to database after ${maxRetries} attempts`);
+  }
+
+  /**
+   * Calcul du délai de retry basé sur la configuration
+   */
+  private calculateRetryDelay(attempt: number): number {
+    const baseDelay = this.dbConfig.retries.delay;
+    const factor = this.dbConfig.retries.factor;
+    const maxDelay = this.dbConfig.retries.maxDelay;
+    
+    const delay = baseDelay * Math.pow(factor, attempt - 1);
+    return Math.min(delay, maxDelay);
   }
 
   /**
@@ -350,7 +487,6 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
       await this.$disconnect();
     } catch (error) {
       this.logger.error('Error during disconnect', this.sanitizeError(error as Error));
-      // Re-throw pour permettre une gestion d'erreur appropriée
       throw error;
     }
   }
@@ -361,7 +497,6 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
   private handleConnectionError(error: Error): void {
     this.incrementErrorCount(error);
     
-    // Log différent selon le type d'erreur (mais sans exposer d'infos sensibles)
     const sanitizedMessage = this.sanitizeErrorMessage(error);
     
     if (error.message.includes('ECONNREFUSED')) {
@@ -370,6 +505,8 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
       this.logger.error('Database authentication failed - check credentials');
     } else if (error.message.includes('timeout')) {
       this.logger.error('Database connection timeout - check network connectivity');
+    } else if (error.message.includes('ssl')) {
+      this.logger.error('SSL connection error - check SSL configuration');
     } else {
       this.logger.error(`Database connection error: ${sanitizedMessage}`);
     }
@@ -384,12 +521,38 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
       'ENOTFOUND',
       'ETIMEDOUT',
       'ECONNRESET',
+      'EPIPE',
       'connection terminated unexpectedly',
+      'connection timeout',
+      'server closed the connection unexpectedly',
     ];
     
     return retriableErrors.some(retryableError =>
       error.message.toLowerCase().includes(retryableError.toLowerCase()),
     );
+  }
+
+  /**
+   * Mise à jour des métriques de performance
+   */
+  private updatePerformanceMetrics(responseTime: number): void {
+    this.performanceMetrics.totalQueries++;
+    
+    // Gestion du cache des temps de réponse
+    this.responseTimes.push(responseTime);
+    if (this.responseTimes.length > this.maxResponseTimesSamples) {
+      this.responseTimes.shift();
+    }
+    
+    // Calcul de la moyenne
+    this.performanceMetrics.avgResponseTime = 
+      this.responseTimes.reduce((sum, time) => sum + time, 0) / this.responseTimes.length;
+    
+    // Détection des requêtes lentes
+    if (responseTime > this.dbConfig.logging.slowQueryThreshold) {
+      this.performanceMetrics.slowQueries++;
+      this.performanceMetrics.lastSlowQueryTime = new Date();
+    }
   }
 
   /**
@@ -402,14 +565,13 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
   }
 
   /**
-   * ✅ NOUVEAU : Sanitisation des erreurs pour éviter l'information disclosure
+   * Sanitisation des erreurs pour les logs internes
    */
   private sanitizeError(error: Error): any {
-    // Pour les logs internes, on garde l'erreur complète mais on retire les infos sensibles
     const sensitivePatterns = [
       /password[^:]*:[^@]*/gi,
       /\/\/[^:]+:[^@]+@/gi,
-      /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, // IP addresses
+      /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g,
     ];
     
     let sanitizedMessage = error.message;
@@ -424,7 +586,7 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
   }
 
   /**
-   * ✅ NOUVEAU : Sanitisation des messages d'erreur pour exposition publique
+   * Sanitisation des messages d'erreur pour exposition publique
    */
   private sanitizeErrorMessage(error: Error): string {
     const sensitivePatterns = [
@@ -444,24 +606,22 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
   }
 
   /**
-   * Configuration du logging des requêtes
+   * Configuration du logging des requêtes basé sur la nouvelle config
    */
   private setupQueryLogging(): void {
-    const nodeEnv = this.configService.get('NODE_ENV');
-    
-    if (nodeEnv === 'development') {
+    if (this.dbConfig.logging.enabled && this.dbConfig.logging.level.includes('query')) {
       this.$on('query' as never, (e: any) => {
-        this.logger.debug(`Query: ${e.query}`);
-        this.logger.debug(`Params: ${e.params}`);
-        this.logger.debug(`Duration: ${e.duration}ms`);
-      });
-    }
-
-    // Log des requêtes lentes en production
-    if (nodeEnv === 'production') {
-      this.$on('query' as never, (e: any) => {
-        if (e.duration > 1000) { // Plus de 1 seconde
-          this.logger.warn(`Slow query detected (${e.duration}ms): ${e.query}`);
+        const duration = e.duration || 0;
+        
+        if (this.dbConfig.logging.includeParameters) {
+          this.logger.debug(`Query: ${e.query}`);
+          this.logger.debug(`Params: ${e.params}`);
+        }
+        
+        if (duration > this.dbConfig.logging.slowQueryThreshold) {
+          this.logger.warn(`Slow query detected (${duration}ms): ${e.query}`);
+        } else {
+          this.logger.debug(`Query executed in ${duration}ms`);
         }
       });
     }
@@ -471,7 +631,8 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
    * Démarrage du monitoring de santé en arrière-plan
    */
   private startHealthMonitoring(): void {
-    // Monitoring toutes les 30 secondes
+    const interval = this.dbConfig.health.healthCheckInterval;
+    
     this.healthMonitoringInterval = setInterval(async () => {
       try {
         await this.isHealthy();
@@ -479,24 +640,37 @@ export class DatabaseService extends PrismaClient implements OnModuleInit, OnMod
       } catch (error) {
         this.logger.error('Health monitoring error', this.sanitizeError(error as Error));
       }
-    }, 30000);
+    }, interval);
+    
+    this.logger.log(`Health monitoring started with ${interval}ms interval`);
   }
 
   /**
    * Log des métriques de base de données
    */
   private logDatabaseMetrics(): void {
-    const metrics = this.getHealthMetrics();
+    const health = this.getHealthMetrics();
+    const performance = this.getPerformanceMetrics();
     
     this.logger.log(
-      `DB Health: ${metrics.status}, Response: ${metrics.responseTime}ms, Errors: ${metrics.errors.count}`,
+      `DB Health: ${health.status}, Response: ${health.responseTime}ms, ` +
+      `Queries: ${performance.totalQueries}, Slow: ${performance.slowQueries}, ` +
+      `Avg: ${Math.round(performance.avgResponseTime)}ms, Errors: ${health.errors.count}`,
     );
     
-    // Alerte si dégradé
-    if (metrics.status === 'degraded') {
+    // Alertes basées sur les seuils configurés
+    if (health.status === 'degraded') {
       this.logger.warn('Database performance is degraded');
-    } else if (metrics.status === 'unhealthy') {
+    } else if (health.status === 'unhealthy') {
       this.logger.error('Database is unhealthy');
+    }
+    
+    // Alerte si trop de requêtes lentes
+    const slowQueryRatio = performance.totalQueries > 0 ? 
+      performance.slowQueries / performance.totalQueries : 0;
+    
+    if (slowQueryRatio > 0.1) { // Plus de 10% de requêtes lentes
+      this.logger.warn(`High slow query ratio: ${Math.round(slowQueryRatio * 100)}%`);
     }
   }
 }

@@ -20,28 +20,19 @@
     "test:unit": "jest --config jest.database.config.js --testPathPattern=unit",
     "test:integration": "jest --config jest.database.config.js --testPathPattern=integration --runInBand",
     "test:e2e": "jest --config jest.database.config.js --testPathPattern=e2e --runInBand",
-    "test:performance": "jest --config jest.database.config.js --testPathPattern=performance --runInBand",
     "test:security": "jest --config jest.database.config.js --testPathPattern=security",
+    
     "test:database-complete": "npm run test:unit && npm run test:security && npm run test:integration && npm run test:e2e",
-    "test:all": "./scripts/test-database.sh -t all",
-    "test:database-cov": "npm run test:unit && npm run test:integration && npm run test:e2e && npm run test:cov",
-    "test:cov:report": "npm run test:cov && npx ts-node scripts/validate-coverage.ts",
     "test:database": "./scripts/test-database.sh",
 
     "test:enum": "./scripts/test-enum.sh --all",
-    "test:enum:unit": "./scripts/test-enum.sh --unit",
-    "test:enum:performance": "./scripts/test-enum.sh --performance", 
-    "test:enum:security": "./scripts/test-enum.sh --security",
-    "test:enum:integration": "./scripts/test-enum.sh --integration",
-    "test:enum:edge-cases": "./scripts/test-enum.sh --edge-cases",
-    "test:enum:regression": "./scripts/test-enum.sh --regression",
-    "test:enum:coverage": "./scripts/test-enum.sh --all --coverage",
-    "test:enum:watch": "./scripts/test-enum.sh --unit --watch",
 
     "test:user-interface": "./scripts/test-user-interface.sh --all",
 
     "test:pagination": "jest --config jest.config.pagination.js",
     
+    "test:config": "jest app.config.spec.ts",
+
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

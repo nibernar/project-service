@@ -6,8 +6,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 // Import des configurations
-import { appConfig } from '../config/app.config';
-import { databaseConfig } from '../config/database.config';
+import { appConfig } from './config/app.config';
+import { databaseConfig } from './config/database.config';
 
 // Import du DatabaseModule
 import { DatabaseModule } from './database/database.module';

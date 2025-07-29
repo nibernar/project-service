@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="63" failures="0" errors="0" time="1.73">
-  <testsuite name="User Interface - Tests Principaux" errors="0" failures="0" skipped="0" timestamp="2025-07-28T12:22:58" time="1.545" tests="63">
+<testsuites name="jest tests" tests="63" failures="0" errors="0" time="1.137">
+  <testsuite name="User Interface - Tests Principaux" errors="0" failures="0" skipped="0" timestamp="2025-07-29T23:16:19" time="0.964" tests="63">
     <testcase classname="User Interface - Tests Principaux Interface User devrait créer un utilisateur valide avec toutes les propriétés" name="User Interface - Tests Principaux Interface User devrait créer un utilisateur valide avec toutes les propriétés" time="0.001">
     </testcase>
     <testcase classname="User Interface - Tests Principaux Interface User devrait accepter un utilisateur avec des rôles multiples" name="User Interface - Tests Principaux Interface User devrait accepter un utilisateur avec des rôles multiples" time="0.001">
     </testcase>
     <testcase classname="User Interface - Tests Principaux Interface User devrait accepter un utilisateur avec roles vide" name="User Interface - Tests Principaux Interface User devrait accepter un utilisateur avec roles vide" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux UserRole Enum devrait définir toutes les valeurs de rôles" name="User Interface - Tests Principaux UserRole Enum devrait définir toutes les valeurs de rôles" time="0">
+    <testcase classname="User Interface - Tests Principaux UserRole Enum devrait définir toutes les valeurs de rôles" name="User Interface - Tests Principaux UserRole Enum devrait définir toutes les valeurs de rôles" time="0.001">
     </testcase>
     <testcase classname="User Interface - Tests Principaux UserRole Enum devrait permettre la comparaison avec des strings" name="User Interface - Tests Principaux UserRole Enum devrait permettre la comparaison avec des strings" time="0">
     </testcase>
@@ -15,17 +15,17 @@
     </testcase>
     <testcase classname="User Interface - Tests Principaux hasRole() devrait retourner true si l&apos;utilisateur a le rôle" name="User Interface - Tests Principaux hasRole() devrait retourner true si l&apos;utilisateur a le rôle" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux hasRole() devrait retourner false si l&apos;utilisateur n&apos;a pas le rôle" name="User Interface - Tests Principaux hasRole() devrait retourner false si l&apos;utilisateur n&apos;a pas le rôle" time="0.001">
+    <testcase classname="User Interface - Tests Principaux hasRole() devrait retourner false si l&apos;utilisateur n&apos;a pas le rôle" name="User Interface - Tests Principaux hasRole() devrait retourner false si l&apos;utilisateur n&apos;a pas le rôle" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux hasRole() devrait être case-sensitive" name="User Interface - Tests Principaux hasRole() devrait être case-sensitive" time="0">
+    <testcase classname="User Interface - Tests Principaux hasRole() devrait être case-sensitive" name="User Interface - Tests Principaux hasRole() devrait être case-sensitive" time="0.002">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux hasAnyRole() devrait retourner true si l&apos;utilisateur a au moins un des rôles" name="User Interface - Tests Principaux hasAnyRole() devrait retourner true si l&apos;utilisateur a au moins un des rôles" time="0">
+    <testcase classname="User Interface - Tests Principaux hasAnyRole() devrait retourner true si l&apos;utilisateur a au moins un des rôles" name="User Interface - Tests Principaux hasAnyRole() devrait retourner true si l&apos;utilisateur a au moins un des rôles" time="0.001">
     </testcase>
     <testcase classname="User Interface - Tests Principaux hasAnyRole() devrait retourner false si l&apos;utilisateur n&apos;a aucun des rôles" name="User Interface - Tests Principaux hasAnyRole() devrait retourner false si l&apos;utilisateur n&apos;a aucun des rôles" time="0">
     </testcase>
     <testcase classname="User Interface - Tests Principaux hasAnyRole() devrait retourner false pour un tableau de rôles vide" name="User Interface - Tests Principaux hasAnyRole() devrait retourner false pour un tableau de rôles vide" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux hasAnyRole() devrait fonctionner avec un seul rôle dans le tableau" name="User Interface - Tests Principaux hasAnyRole() devrait fonctionner avec un seul rôle dans le tableau" time="0.001">
+    <testcase classname="User Interface - Tests Principaux hasAnyRole() devrait fonctionner avec un seul rôle dans le tableau" name="User Interface - Tests Principaux hasAnyRole() devrait fonctionner avec un seul rôle dans le tableau" time="0">
     </testcase>
     <testcase classname="User Interface - Tests Principaux hasAllRoles() devrait retourner true si l&apos;utilisateur a tous les rôles requis" name="User Interface - Tests Principaux hasAllRoles() devrait retourner true si l&apos;utilisateur a tous les rôles requis" time="0">
     </testcase>
@@ -49,9 +49,9 @@
     </testcase>
     <testcase classname="User Interface - Tests Principaux createUser() devrait créer un utilisateur avec des rôles additionnels" name="User Interface - Tests Principaux createUser() devrait créer un utilisateur avec des rôles additionnels" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux createUser() devrait dédupliquer les rôles" name="User Interface - Tests Principaux createUser() devrait dédupliquer les rôles" time="0">
+    <testcase classname="User Interface - Tests Principaux createUser() devrait dédupliquer les rôles" name="User Interface - Tests Principaux createUser() devrait dédupliquer les rôles" time="0.001">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux createUser() devrait ajouter le rôle user même s&apos;il est déjà présent" name="User Interface - Tests Principaux createUser() devrait ajouter le rôle user même s&apos;il est déjà présent" time="0.001">
+    <testcase classname="User Interface - Tests Principaux createUser() devrait ajouter le rôle user même s&apos;il est déjà présent" name="User Interface - Tests Principaux createUser() devrait ajouter le rôle user même s&apos;il est déjà présent" time="0">
     </testcase>
     <testcase classname="User Interface - Tests Principaux createUser() devrait gérer un tableau de rôles vide" name="User Interface - Tests Principaux createUser() devrait gérer un tableau de rôles vide" time="0">
     </testcase>
@@ -59,11 +59,11 @@
     </testcase>
     <testcase classname="User Interface - Tests Principaux createExtendedUser() devrait créer une copie sans extensions" name="User Interface - Tests Principaux createExtendedUser() devrait créer une copie sans extensions" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux createExtendedUser() devrait préserver les propriétés originales" name="User Interface - Tests Principaux createExtendedUser() devrait préserver les propriétés originales" time="0">
+    <testcase classname="User Interface - Tests Principaux createExtendedUser() devrait préserver les propriétés originales" name="User Interface - Tests Principaux createExtendedUser() devrait préserver les propriétés originales" time="0.001">
     </testcase>
     <testcase classname="User Interface - Tests Principaux isValidUser() devrait valider un utilisateur correct" name="User Interface - Tests Principaux isValidUser() devrait valider un utilisateur correct" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux isValidUser() devrait rejeter un objet avec id manquant" name="User Interface - Tests Principaux isValidUser() devrait rejeter un objet avec id manquant" time="0.001">
+    <testcase classname="User Interface - Tests Principaux isValidUser() devrait rejeter un objet avec id manquant" name="User Interface - Tests Principaux isValidUser() devrait rejeter un objet avec id manquant" time="0">
     </testcase>
     <testcase classname="User Interface - Tests Principaux isValidUser() devrait rejeter un objet avec email manquant" name="User Interface - Tests Principaux isValidUser() devrait rejeter un objet avec email manquant" time="0">
     </testcase>
@@ -91,11 +91,11 @@
     </testcase>
     <testcase classname="User Interface - Tests Principaux createDefaultPreferences() devrait gérer des overrides vides" name="User Interface - Tests Principaux createDefaultPreferences() devrait gérer des overrides vides" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux createDefaultPreferences() devrait gérer des overrides partiels" name="User Interface - Tests Principaux createDefaultPreferences() devrait gérer des overrides partiels" time="0.001">
+    <testcase classname="User Interface - Tests Principaux createDefaultPreferences() devrait gérer des overrides partiels" name="User Interface - Tests Principaux createDefaultPreferences() devrait gérer des overrides partiels" time="0">
     </testcase>
     <testcase classname="User Interface - Tests Principaux getUserPreferences() devrait retourner les préférences par défaut pour un utilisateur de base" name="User Interface - Tests Principaux getUserPreferences() devrait retourner les préférences par défaut pour un utilisateur de base" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux getUserPreferences() devrait fusionner les préférences utilisateur avec les défauts" name="User Interface - Tests Principaux getUserPreferences() devrait fusionner les préférences utilisateur avec les défauts" time="0.001">
+    <testcase classname="User Interface - Tests Principaux getUserPreferences() devrait fusionner les préférences utilisateur avec les défauts" name="User Interface - Tests Principaux getUserPreferences() devrait fusionner les préférences utilisateur avec les défauts" time="0">
     </testcase>
     <testcase classname="User Interface - Tests Principaux getUserPreferences() devrait retourner les défauts pour un ExtendedUser sans préférences" name="User Interface - Tests Principaux getUserPreferences() devrait retourner les défauts pour un ExtendedUser sans préférences" time="0">
     </testcase>
@@ -107,7 +107,7 @@
     </testcase>
     <testcase classname="User Interface - Tests Principaux hasVerifiedEmail() devrait retourner false pour un ExtendedUser sans propriété emailVerified" name="User Interface - Tests Principaux hasVerifiedEmail() devrait retourner false pour un ExtendedUser sans propriété emailVerified" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux isActiveUser() devrait retourner true pour un utilisateur avec statut active" name="User Interface - Tests Principaux isActiveUser() devrait retourner true pour un utilisateur avec statut active" time="0.001">
+    <testcase classname="User Interface - Tests Principaux isActiveUser() devrait retourner true pour un utilisateur avec statut active" name="User Interface - Tests Principaux isActiveUser() devrait retourner true pour un utilisateur avec statut active" time="0">
     </testcase>
     <testcase classname="User Interface - Tests Principaux isActiveUser() devrait retourner false pour un utilisateur suspendu" name="User Interface - Tests Principaux isActiveUser() devrait retourner false pour un utilisateur suspendu" time="0">
     </testcase>
@@ -121,7 +121,7 @@
     </testcase>
     <testcase classname="User Interface - Tests Principaux getDisplayName() devrait retourner l&apos;email pour un ExtendedUser sans nom" name="User Interface - Tests Principaux getDisplayName() devrait retourner l&apos;email pour un ExtendedUser sans nom" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests Principaux getDisplayName() devrait retourner l&apos;email pour un utilisateur de base" name="User Interface - Tests Principaux getDisplayName() devrait retourner l&apos;email pour un utilisateur de base" time="0">
+    <testcase classname="User Interface - Tests Principaux getDisplayName() devrait retourner l&apos;email pour un utilisateur de base" name="User Interface - Tests Principaux getDisplayName() devrait retourner l&apos;email pour un utilisateur de base" time="0.001">
     </testcase>
     <testcase classname="User Interface - Tests Principaux getDisplayName() devrait gérer un nom vide" name="User Interface - Tests Principaux getDisplayName() devrait gérer un nom vide" time="0">
     </testcase>

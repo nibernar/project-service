@@ -258,24 +258,45 @@ describe('DatabaseService - Security Tests', () => {
       await prodModule.close();
     });
 
-    it('should validate user permissions for operations', async () => {
-      // Simuler différents niveaux d'accès
-      const operationTests = [
-        { operation: 'read', allowed: true },
-        { operation: 'write', allowed: true },
-        { operation: 'admin', allowed: false }, // Admin ops should be restricted
-      ];
+    it('should enforce environment-based operation restrictions in production', async () => {
+      // Sauvegarder l'environnement actuel
+      const originalNodeEnv = process.env.NODE_ENV;
+      
+      try {
+        // Test en production - resetDatabase devrait être interdit
+        process.env.NODE_ENV = 'production';
+        const prodModule = await createDatabaseTestingModule({
+          'NODE_ENV': 'production',
+        });
+        const prodService = prodModule.get<DatabaseService>(DatabaseService);
 
-      for (const test of operationTests) {
-        if (test.operation === 'admin' && !test.allowed) {
-          // Tester que les opérations admin sont restreintes
-          await expect(service.resetDatabase()).rejects.toThrow();
-        } else {
-          // Les opérations normales devraient fonctionner
-          const health = await service.isHealthy();
-          expect(typeof health).toBe('boolean');
-        }
+        await expect(prodService.resetDatabase()).rejects.toThrow(
+          'Database reset is only allowed in test environment'
+        );
+
+        await expect(prodService.seedDatabase()).rejects.toThrow(
+          'Database seeding is only allowed in development and test environments'
+        );
+
+        await prodModule.close();
+      } finally {
+        // Restaurer l'environnement original
+        process.env.NODE_ENV = originalNodeEnv;
       }
+    });
+
+    it('should allow normal operations for regular users', async () => {
+      // Les opérations normales devraient fonctionner en test
+      const health = await service.isHealthy();
+      expect(typeof health).toBe('boolean');
+      
+      const connectionStatus = await service.getConnectionStatus();
+      expect(connectionStatus).toHaveProperty('isConnected');
+      expect(connectionStatus).toHaveProperty('responseTime');
+      
+      const healthMetrics = service.getHealthMetrics();
+      expect(healthMetrics).toHaveProperty('status');
+      expect(healthMetrics).toHaveProperty('responseTime');
     });
 
     it('should prevent unauthorized database schema access', async () => {

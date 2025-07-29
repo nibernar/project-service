@@ -1,9 +1,11 @@
-// test/integration/database/database.integration.spec.ts
+// test/integration/project.integration.spec.ts
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../../src/database/database.service';
 import { Logger } from '@nestjs/common';
+// ✅ AJOUT: Importer la fonction helper
+import { createDatabaseTestingModule } from '../setup/database-test-setup';
 
 /**
  * Tests d'intégration avec vraie base de données PostgreSQL
@@ -24,7 +26,6 @@ describe('DatabaseService - Integration Tests', () => {
   };
 
   beforeAll(async () => {
-    // Vérifier que la base de test est disponible
     if (!process.env.TEST_DATABASE_URL && !process.env.CI) {
       console.log('⏭️  Integration tests skipped - No test database configured');
       return;
@@ -35,17 +36,7 @@ describe('DatabaseService - Integration Tests', () => {
     jest.spyOn(Logger.prototype, 'debug').mockImplementation();
     jest.spyOn(Logger.prototype, 'warn').mockImplementation();
 
-    module = await Test.createTestingModule({
-      providers: [
-        DatabaseService,
-        {
-          provide: ConfigService,
-          useValue: {
-            get: (key: string, defaultValue?: any) => (testConfig as any)[key] ?? defaultValue,
-          },
-        },
-      ],
-    }).compile();
+    module = await createDatabaseTestingModule(testConfig, false); // false = pas de mock Prisma pour l'intégration
 
     service = module.get<DatabaseService>(DatabaseService);
     configService = module.get<ConfigService>(ConfigService);
@@ -61,11 +52,9 @@ describe('DatabaseService - Integration Tests', () => {
   beforeEach(async () => {
     if (!service) return; // Skip si pas de base de test
 
-    // Nettoyer la base avant chaque test
     try {
       await service.resetDatabase();
     } catch (error) {
-      // Ignorer si la méthode n'est pas disponible ou échoue
     }
   });
 

@@ -13,6 +13,10 @@ module.exports = {
 
   // Patterns de test spécifiques à la pagination
   testMatch: [
+    // ✅ NOUVEAU - Tests du DTO pagination
+    '<rootDir>/test/unit/common/dto/pagination.dto.spec.ts',
+    
+    // Tests existants des interfaces
     '<rootDir>/test/unit/common/interfaces/paginated-result.interface.spec.ts',
     '<rootDir>/test/unit/common/interfaces/pagination-performance.spec.ts',
     '<rootDir>/test/unit/common/interfaces/pagination-integration.spec.ts', 
@@ -23,7 +27,13 @@ module.exports = {
 
   // Couverture spécifique au module pagination
   collectCoverageFrom: [
+    // ✅ NOUVEAU - DTO pagination
+    'src/common/dto/pagination.dto.ts',
+    
+    // Interface existante
     'src/common/interfaces/paginated-result.interface.ts',
+    
+    // Exclusions
     '!src/**/*.d.ts',
     '!src/**/*.spec.ts',
     '!src/**/*.test.ts',
@@ -83,14 +93,6 @@ module.exports = {
 
   // Transform TypeScript avec ts-jest
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
-  },
-
-  // Extensions de fichiers reconnues
-  moduleFileExtensions: ['js', 'json', 'ts'],
-
-  // Configuration ts-jest spécifique
-  transform: {
     '^.+\\.(t|j)s$': ['ts-jest', {
       useESM: false,
       isolatedModules: false,
@@ -109,6 +111,9 @@ module.exports = {
       },
     }],
   },
+
+  // Extensions de fichiers reconnues
+  moduleFileExtensions: ['js', 'json', 'ts'],
 
   // Configuration des seuils de performance
   slowTestThreshold: 5,

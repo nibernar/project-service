@@ -368,8 +368,20 @@ export class AppConfigFactory {
    * Crée la configuration de logging
    */
   private static createLoggingConfig(nodeEnv: string): LoggingConfig {
-    const defaultLevel = nodeEnv === 'production' ? 'info' : 
-                        nodeEnv === 'test' ? 'error' : 'debug';
+    let defaultLevel: LoggingConfig['level'];
+    
+    switch (nodeEnv) {
+      case 'production':
+        defaultLevel = 'info';
+        break;
+      case 'test':
+        defaultLevel = 'error';
+        break;
+      case 'development':
+      default:
+        defaultLevel = 'debug';
+        break;
+    }
     
     const level = process.env.LOG_LEVEL as LoggingConfig['level'] || defaultLevel;
     

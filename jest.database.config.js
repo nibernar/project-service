@@ -7,6 +7,7 @@ module.exports = {
   
   testMatch: [
     '**/common/database/**/*.spec.ts',
+    '**/config/**/*.spec.ts',
     '**/integration/*.integration.spec.ts',
     '**/e2e/*.e2e-spec.ts'
   ],

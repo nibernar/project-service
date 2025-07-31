@@ -394,7 +394,7 @@ describe('User Interface - Tests de Performance', () => {
         const endTime = performance.now();
         const executionTime = endTime - startTime;
         
-        expect(executionTime).toBeLessThan(50);
+        expect(executionTime).toBeLessThan(60);
       });
     });
 

@@ -26,3 +26,8 @@ npm run test:database-complete
 npm run test:database-cov
 ./scripts/test-database.sh -t all --coverage  
 ```
+
+```bash
+# Démarrer Redis en daemon (arrière-plan)
+redis-server --daemonize yes
+```

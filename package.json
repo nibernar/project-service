@@ -33,6 +33,8 @@
     
     "test:config": "jest app.config.spec.ts",
 
+    "test:cache": "./scripts/test-cache.sh all",
+
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

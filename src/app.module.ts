@@ -4,6 +4,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { cacheConfig } from './config/cache.config';
+import { CacheModule } from './cache/cache.module';
 
 // Import des configurations
 import { appConfig } from './config/app.config';
@@ -17,12 +19,12 @@ import { DatabaseModule } from './database/database.module';
     // Configuration globale
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig],
+      load: [appConfig, databaseConfig, cacheConfig],
       envFilePath: ['.env.development', '.env'],
     }),
-    
-    // Database module (global)
+
     DatabaseModule,
+    CacheModule,
   ],
   controllers: [AppController],
   providers: [AppService],

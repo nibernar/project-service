@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="33" failures="0" errors="0" time="1.069">
-  <testsuite name="User Interface - Tests de Sécurité" errors="0" failures="0" skipped="0" timestamp="2025-07-30T19:16:48" time="0.912" tests="33">
+<testsuites name="jest tests" tests="33" failures="0" errors="0" time="1.633">
+  <testsuite name="User Interface - Tests de Sécurité" errors="0" failures="0" skipped="0" timestamp="2025-08-02T13:21:53" time="1.493" tests="33">
     <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter null et undefined" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter null et undefined" time="0.001">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les types primitifs" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les types primitifs" time="0">
+    <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les types primitifs" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les types primitifs" time="0.001">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les tableaux" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les tableaux" time="0">
     </testcase>
@@ -15,11 +15,11 @@
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les emails invalides" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les emails invalides" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les roles invalides" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les roles invalides" time="0.001">
+    <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les roles invalides" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes isValidUser() - Validation robuste devrait rejeter les roles invalides" time="0">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes Protection contre l&apos;injection de code devrait traiter les caractères d&apos;injection dans l&apos;email" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes Protection contre l&apos;injection de code devrait traiter les caractères d&apos;injection dans l&apos;email" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes Protection contre l&apos;injection de code devrait traiter les caractères d&apos;injection dans l&apos;ID" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes Protection contre l&apos;injection de code devrait traiter les caractères d&apos;injection dans l&apos;ID" time="0.001">
+    <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes Protection contre l&apos;injection de code devrait traiter les caractères d&apos;injection dans l&apos;ID" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes Protection contre l&apos;injection de code devrait traiter les caractères d&apos;injection dans l&apos;ID" time="0">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Protection contre les entrées malveillantes Protection contre l&apos;injection de code devrait traiter les caractères d&apos;injection dans les rôles" name="User Interface - Tests de Sécurité Protection contre les entrées malveillantes Protection contre l&apos;injection de code devrait traiter les caractères d&apos;injection dans les rôles" time="0">
     </testcase>
@@ -29,41 +29,41 @@
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Sécurité des rôles Validation stricte des rôles devrait être case-sensitive pour les rôles" name="User Interface - Tests de Sécurité Sécurité des rôles Validation stricte des rôles devrait être case-sensitive pour les rôles" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Sécurité des rôles Validation stricte des rôles devrait rejeter les rôles avec espaces" name="User Interface - Tests de Sécurité Sécurité des rôles Validation stricte des rôles devrait rejeter les rôles avec espaces" time="0.001">
+    <testcase classname="User Interface - Tests de Sécurité Sécurité des rôles Validation stricte des rôles devrait rejeter les rôles avec espaces" name="User Interface - Tests de Sécurité Sécurité des rôles Validation stricte des rôles devrait rejeter les rôles avec espaces" time="0">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Sécurité des rôles Validation stricte des rôles devrait gérer les rôles vides dans le tableau" name="User Interface - Tests de Sécurité Sécurité des rôles Validation stricte des rôles devrait gérer les rôles vides dans le tableau" time="0">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Sécurité des rôles Protection contre l&apos;escalade de privilèges ne devrait pas permettre l&apos;ajout de rôles non autorisés" name="User Interface - Tests de Sécurité Sécurité des rôles Protection contre l&apos;escalade de privilèges ne devrait pas permettre l&apos;ajout de rôles non autorisés" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Sécurité des rôles Protection contre l&apos;escalade de privilèges devrait préserver l&apos;immutabilité des rôles" name="User Interface - Tests de Sécurité Sécurité des rôles Protection contre l&apos;escalade de privilèges devrait préserver l&apos;immutabilité des rôles" time="0.001">
+    <testcase classname="User Interface - Tests de Sécurité Sécurité des rôles Protection contre l&apos;escalade de privilèges devrait préserver l&apos;immutabilité des rôles" name="User Interface - Tests de Sécurité Sécurité des rôles Protection contre l&apos;escalade de privilèges devrait préserver l&apos;immutabilité des rôles" time="0">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Sécurité des données étendues Protection des informations sensibles devrait gérer les URLs d&apos;avatar malveillantes" name="User Interface - Tests de Sécurité Sécurité des données étendues Protection des informations sensibles devrait gérer les URLs d&apos;avatar malveillantes" time="0">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Sécurité des données étendues Protection des informations sensibles devrait gérer les noms avec contenu malveillant" name="User Interface - Tests de Sécurité Sécurité des données étendues Protection des informations sensibles devrait gérer les noms avec contenu malveillant" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Sécurité des données étendues Protection des informations sensibles devrait gérer les préférences avec valeurs extrêmes" name="User Interface - Tests de Sécurité Sécurité des données étendues Protection des informations sensibles devrait gérer les préférences avec valeurs extrêmes" time="0">
+    <testcase classname="User Interface - Tests de Sécurité Sécurité des données étendues Protection des informations sensibles devrait gérer les préférences avec valeurs extrêmes" name="User Interface - Tests de Sécurité Sécurité des données étendues Protection des informations sensibles devrait gérer les préférences avec valeurs extrêmes" time="0.001">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Sécurité des données étendues Protection contre les fuites de données ne devrait pas exposer de propriétés internes" name="User Interface - Tests de Sécurité Sécurité des données étendues Protection contre les fuites de données ne devrait pas exposer de propriétés internes" time="0">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Sécurité des données étendues Protection contre les fuites de données devrait préserver la confidentialité de l&apos;email dans les logs" name="User Interface - Tests de Sécurité Sécurité des données étendues Protection contre les fuites de données devrait préserver la confidentialité de l&apos;email dans les logs" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les paramètres undefined dans hasRole" name="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les paramètres undefined dans hasRole" time="0.001">
+    <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les paramètres undefined dans hasRole" name="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les paramètres undefined dans hasRole" time="0">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les utilisateurs avec propriétés corrompues" name="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les utilisateurs avec propriétés corrompues" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les objets circulaires" name="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les objets circulaires" time="0.008">
+    <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les objets circulaires" name="User Interface - Tests de Sécurité Robustesse et stabilité Gestion des erreurs de type devrait gérer les objets circulaires" time="0.007">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Gestion de la mémoire devrait gérer les très gros objets utilisateur" name="User Interface - Tests de Sécurité Robustesse et stabilité Gestion de la mémoire devrait gérer les très gros objets utilisateur" time="0.001">
+    <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Gestion de la mémoire devrait gérer les très gros objets utilisateur" name="User Interface - Tests de Sécurité Robustesse et stabilité Gestion de la mémoire devrait gérer les très gros objets utilisateur" time="0">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Gestion de la mémoire devrait gérer les tableaux de rôles très volumineux" name="User Interface - Tests de Sécurité Robustesse et stabilité Gestion de la mémoire devrait gérer les tableaux de rôles très volumineux" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Concurrence et thread safety devrait gérer les modifications concurrentes des rôles" name="User Interface - Tests de Sécurité Robustesse et stabilité Concurrence et thread safety devrait gérer les modifications concurrentes des rôles" time="0.01">
+    <testcase classname="User Interface - Tests de Sécurité Robustesse et stabilité Concurrence et thread safety devrait gérer les modifications concurrentes des rôles" name="User Interface - Tests de Sécurité Robustesse et stabilité Concurrence et thread safety devrait gérer les modifications concurrentes des rôles" time="0.009">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Conformité sécuritaire Protection des données personnelles ne devrait pas logger d&apos;informations sensibles" name="User Interface - Tests de Sécurité Conformité sécuritaire Protection des données personnelles ne devrait pas logger d&apos;informations sensibles" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Conformité sécuritaire Protection des données personnelles devrait permettre l&apos;anonymisation des données" name="User Interface - Tests de Sécurité Conformité sécuritaire Protection des données personnelles devrait permettre l&apos;anonymisation des données" time="0.001">
+    <testcase classname="User Interface - Tests de Sécurité Conformité sécuritaire Protection des données personnelles devrait permettre l&apos;anonymisation des données" name="User Interface - Tests de Sécurité Conformité sécuritaire Protection des données personnelles devrait permettre l&apos;anonymisation des données" time="0">
     </testcase>
-    <testcase classname="User Interface - Tests de Sécurité Conformité sécuritaire Audit et traçabilité devrait maintenir l&apos;intégrité des données d&apos;audit" name="User Interface - Tests de Sécurité Conformité sécuritaire Audit et traçabilité devrait maintenir l&apos;intégrité des données d&apos;audit" time="0">
+    <testcase classname="User Interface - Tests de Sécurité Conformité sécuritaire Audit et traçabilité devrait maintenir l&apos;intégrité des données d&apos;audit" name="User Interface - Tests de Sécurité Conformité sécuritaire Audit et traçabilité devrait maintenir l&apos;intégrité des données d&apos;audit" time="0.001">
     </testcase>
     <testcase classname="User Interface - Tests de Sécurité Conformité sécuritaire Audit et traçabilité devrait préserver l&apos;historique des modifications" name="User Interface - Tests de Sécurité Conformité sécuritaire Audit et traçabilité devrait préserver l&apos;historique des modifications" time="0">
     </testcase>

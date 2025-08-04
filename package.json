@@ -21,19 +21,26 @@
     "test:integration": "jest --config jest.database.config.js --testPathPattern=integration --runInBand",
     "test:e2e": "jest --config jest.database.config.js --testPathPattern=e2e --runInBand",
     "test:security": "jest --config jest.database.config.js --testPathPattern=security",
-    
     "test:database-complete": "npm run test:unit && npm run test:security && npm run test:integration && npm run test:e2e",
     "test:database": "./scripts/test-database.sh",
-
     "test:enum": "./scripts/test-enum.sh --all",
-
     "test:user-interface": "./scripts/test-user-interface.sh --all",
-
     "test:pagination": "jest --config jest.config.pagination.js",
-    
     "test:config": "jest app.config.spec.ts",
-
     "test:cache": "./scripts/test-cache.sh all",
+    "test:decorators": "./scripts/test-current-user.sh full",
+
+    "test:guard": "./scripts/test-auth-guard.sh",
+
+    "test:guard1": "./scripts/test-auth-guard.sh --unit-only",
+
+    "test:guard2": "./scripts/test-auth-guard.sh --performance-only",
+
+    "test:guard3": "./scripts/test-auth-guard.sh --security-only",
+
+    "test:guard4": "./scripts/test-auth-guard.sh --integration-only",
+
+    "test:guard5": "./scripts/test-auth-guard.sh --coverage-only",
 
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -44,6 +51,7 @@
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^2.0.2",
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.5",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.5",
@@ -51,6 +59,7 @@
     "@nestjs/platform-fastify": "^11.1.5",
     "@nestjs/swagger": "^11.2.0",
     "@prisma/client": "^6.12.0",
+    "axios": "^1.11.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "fastify": "^5.4.0",
@@ -59,7 +68,7 @@
     "prisma": "^6.12.0",
     "redis": "^5.6.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -81,6 +90,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "globals": "^16.0.0",
+    "ioredis-mock": "^8.9.0",
     "jest": "^29.7.0",
     "jest-html-reporters": "^3.1.7",
     "jest-junit": "^16.0.0",

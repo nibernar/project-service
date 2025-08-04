@@ -287,7 +287,7 @@ try {
     console.log(`   Database: ${process.env.DATABASE_URL?.replace(/\/\/.*@/, '//***@')}`);
   }
 } catch (error) {
-  console.error('❌ Failed to setup test environment:', error.message);
+  console.error('❌ Failed to setup test environment:', error instanceof Error ? error.message : String(error));
   
   // Afficher les variables actuellement chargées pour debug
   console.log('\n🔍 Current environment variables:');

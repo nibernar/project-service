@@ -14,6 +14,9 @@ import { databaseConfig } from './config/database.config';
 // Import du DatabaseModule
 import { DatabaseModule } from './database/database.module';
 
+// Import du CommonModule (AuthGuard, decorators, etc.)
+import { CommonModule } from './common/common.module';
+
 @Module({
   imports: [
     // Configuration globale
@@ -25,6 +28,7 @@ import { DatabaseModule } from './database/database.module';
 
     DatabaseModule,
     CacheModule,
+    CommonModule, // ← Ajout du CommonModule pour AuthGuard et utilitaires communs
   ],
   controllers: [AppController],
   providers: [AppService],

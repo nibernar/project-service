@@ -29,18 +29,21 @@
     "test:config": "jest app.config.spec.ts",
     "test:cache": "./scripts/test-cache.sh all",
     "test:decorators": "./scripts/test-current-user.sh full",
-
     "test:guard": "./scripts/test-auth-guard.sh",
-
     "test:guard1": "./scripts/test-auth-guard.sh --unit-only",
-
     "test:guard2": "./scripts/test-auth-guard.sh --performance-only",
-
     "test:guard3": "./scripts/test-auth-guard.sh --security-only",
-
     "test:guard4": "./scripts/test-auth-guard.sh --integration-only",
-
     "test:guard5": "./scripts/test-auth-guard.sh --coverage-only",
+
+    "test:project-owner": "./scripts/test-project-owner-guard.sh",
+    "test:project-owner-unit": "npm test test/unit/common/guards/project-owner.guard.spec.ts",
+    "test:project-owner-security": "npm test test/unit/common/guards/project-owner.guard.security.spec.ts",
+    "test:project-owner-integration": "REDIS_MIN_CONNECTIONS=1 REDIS_MAX_CONNECTIONS=10 npm test test/integration/common/guards/project-owner.guard.integration.spec.ts",
+    "test:project-owner-performance": "REDIS_MIN_CONNECTIONS=1 REDIS_MAX_CONNECTIONS=10 npm test test/performance/common/guards/project-owner.guard.performance.spec.ts",
+    "test:project-owner-e2e": "jest --config jest.project-owner-guard.e2e.config.js",
+    "test:project-owner-config": "npm run test -- --config=jest.project-owner-guard.config.js --verbose",
+    "test:project-owner-all": "npm run test:project-owner-unit && npm run test:project-owner-security && npm run test:project-owner-integration && npm run test:project-owner-performance && npm run test:project-owner-e2e",
 
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -73,6 +76,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@golevelup/ts-jest": "^0.7.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.1.5",

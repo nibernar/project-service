@@ -45,6 +45,16 @@
     "test:project-owner-config": "npm run test -- --config=jest.project-owner-guard.config.js --verbose",
     "test:project-owner-all": "npm run test:project-owner-unit && npm run test:project-owner-security && npm run test:project-owner-integration && npm run test:project-owner-performance && npm run test:project-owner-e2e",
 
+    "test:exception-utils": "./scripts/test-exceptions-utils.sh",
+
+    "test:dto": "jest --config jest.create-project-dto.config.js",
+    "test:dto:unit": "jest --config jest.create-project-dto.config.js --testPathPattern=unit",
+    "test:dto:integration": "jest --config jest.create-project-dto.config.js --testPathPattern=integration",
+    "test:dto:e2e": "jest --config jest.create-project-dto.config.js --testPathPattern=e2e",
+    "test:dto:security": "jest --config jest.create-project-dto.config.js --testPathPattern=security",
+    "test:dto:performance": "jest --config jest.create-project-dto.config.js --testPathPattern=performance",
+    "test:dto:edge": "jest --config jest.create-project-dto.config.js --testPathPattern=edge-cases",
+
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

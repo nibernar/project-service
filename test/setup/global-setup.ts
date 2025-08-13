@@ -138,8 +138,25 @@ async function runMigrations(databaseUrl: string): Promise<void> {
     
     console.log('✅ Database migrations completed');
   } catch (error) {
-    console.error(`❌ Migration failed: ${getErrorMessage(error)}`);
-    throw error;
+    const errorMsg = getErrorMessage(error);
+    
+    // Gestion spécifique de l'erreur P3005 (base non vide) pour les bases de test
+    if (errorMsg.includes('P3005') && databaseUrl.includes('test')) {
+      console.log('ℹ️  Database not empty, attempting reset for test database...');
+      try {
+        execSync('npx prisma migrate reset --force', {
+          stdio: 'pipe',
+          env: { ...process.env, DATABASE_URL: databaseUrl },
+        });
+        console.log('✅ Database reset and migrations completed');
+      } catch (resetError) {
+        console.error(`❌ Migration failed: ${getErrorMessage(error)}`);
+        throw error;
+      }
+    } else {
+      console.error(`❌ Migration failed: ${errorMsg}`);
+      throw error;
+    }
   }
 }
 

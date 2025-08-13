@@ -55,6 +55,10 @@
     "test:dto:performance": "jest --config jest.create-project-dto.config.js --testPathPattern=performance",
     "test:dto:edge": "jest --config jest.create-project-dto.config.js --testPathPattern=edge-cases",
 
+    "test:project-response-dto": "jest --config=jest.project-response-dto.config.js",
+
+    "test:update-project-dto": "./scripts/test-update-project-dto.sh",
+
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

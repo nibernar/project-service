@@ -273,9 +273,14 @@ export class ProjectListItemDto {
    * @returns Nombre de jours depuis la création
    */
   getAgeInDays(): number {
+    if (!this.createdAt || isNaN(this.createdAt.getTime())) {
+      return 0; // Ligne 168 - pour les dates invalides
+    }
+    
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - this.createdAt.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
     return diffDays;
   }
 
@@ -358,7 +363,7 @@ export class ProjectListItemDto {
       case ProjectStatus.DELETED:
         return '#EF4444'; // Red-500 - supprimé
       default:
-        return '#6B7280'; // Gray-500 - statut inconnu
+        return '#6B7280'; // Gray-500 - statut inconnu (ligne 361)
     }
   }
 
@@ -376,7 +381,7 @@ export class ProjectListItemDto {
       case ProjectStatus.DELETED:
         return 'Supprimé';
       default:
-        return 'Inconnu';
+        return 'Inconnu'; // Ligne 379 - statut inconnu
     }
   }
 
@@ -406,8 +411,10 @@ export class ProjectListItemDto {
     // 25% si des statistiques sont disponibles
     if (this.hasStatistics) score += 25;
     
-    // 10% si le projet a une description
-    if (this.description && this.description.trim().length > 0) score += 10;
+    // 10% si le projet a une description non-vide
+    if (this.description && typeof this.description === 'string' && this.description.trim().length > 0) {
+      score += 10;
+    }
     
     return Math.min(100, score);
   }

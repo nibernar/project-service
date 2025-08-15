@@ -1,5 +1,5 @@
 // test/setup/global-setup.ts
-
+import 'reflect-metadata';
 import { execSync } from 'child_process';
 import { Client } from 'pg';
 import * as dotenv from 'dotenv';
@@ -317,6 +317,16 @@ async function cleanupOldTestProcesses(): Promise<void> {
  */
 export default async function globalSetup(): Promise<void> {
   console.log('🚀 Starting global test setup...');
+  const isDTOTestsOnly = process.argv.some(arg => arg.includes('project-list-dto'));
+  
+  if (isDTOTestsOnly) {
+    console.log('📝 Detected DTO-only tests, skipping database setup...');
+    // Juste configurer l'environnement sans base de données
+    loadEnvironmentVariables();
+    setupTestEnvironment();
+    console.log('✅ DTO tests setup completed (no database required)');
+    return;
+  }
   
   try {
     // 1. CHARGER LES VARIABLES D'ENVIRONNEMENT EN PREMIER

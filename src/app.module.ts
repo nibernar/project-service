@@ -17,6 +17,12 @@ import { DatabaseModule } from './database/database.module';
 // Import du CommonModule (AuthGuard, decorators, etc.)
 import { CommonModule } from './common/common.module';
 
+// Import du EventsModule (stub temporaire)
+import { EventsModule } from './events/events.module';
+
+// Import du ProjectModule (module principal)
+import { ProjectModule } from './project/project.module';
+
 @Module({
   imports: [
     // Configuration globale
@@ -26,9 +32,16 @@ import { CommonModule } from './common/common.module';
       envFilePath: ['.env.development', '.env'],
     }),
 
+    // Modules d'infrastructure
     DatabaseModule,
     CacheModule,
-    CommonModule, // ← Ajout du CommonModule pour AuthGuard et utilitaires communs
+    
+    // Modules de support
+    CommonModule,  // AuthGuard, decorators, utilitaires communs
+    EventsModule,  // Publication d'événements métier (stub temporaire)
+    
+    // Modules métier
+    ProjectModule, // Gestion des projets (CRUD + logique métier)
   ],
   controllers: [AppController],
   providers: [AppService],

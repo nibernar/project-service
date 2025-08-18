@@ -3,8 +3,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { CacheService } from '../../../src/cache/cache.service';
-import { 
-  CacheConfigFactory, 
+import {
+  CacheConfigFactory,
   CacheConfigValidator,
   CacheValidationError,
   CACHE_LIMITS,
@@ -27,14 +27,18 @@ describe('Cache Edge Cases', () => {
     // Utiliser les helpers du projet
     mockRedis = CacheMockHelper.createRedisMock();
     CacheMockHelper.setupDefaultRedisMock(mockRedis);
-    
-    mockConfigService = CacheMockHelper.createConfigServiceMock(mockCacheConfig);
+
+    mockConfigService =
+      CacheMockHelper.createConfigServiceMock(mockCacheConfig);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CacheService,
         // Essayer différentes approches pour le token Redis
-        { provide: 'default_IORedisModuleConnectionToken', useValue: mockRedis },
+        {
+          provide: 'default_IORedisModuleConnectionToken',
+          useValue: mockRedis,
+        },
         { provide: 'IORedisModuleConnectionToken', useValue: mockRedis },
         { provide: 'default', useValue: mockRedis },
         { provide: ConfigService, useValue: mockConfigService },
@@ -69,12 +73,12 @@ describe('Cache Edge Cases', () => {
         // Nettoyer les variables avant le test
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         process.env.NODE_ENV = 'development';
         process.env.CACHE_TTL = '2147483647'; // Max 32-bit signed integer
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.performance.defaultTtl).toBe(2147483647);
       });
 
@@ -82,55 +86,69 @@ describe('Cache Edge Cases', () => {
         process.env.NODE_ENV = 'development';
         process.env.REDIS_MAX_CONNECTIONS = '10000';
         process.env.REDIS_MIN_CONNECTIONS = '1000';
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.performance.maxConnections).toBe(10000);
         expect(config.performance.minConnections).toBe(1000);
       });
 
       it('should handle negative values gracefully', () => {
         process.env.NODE_ENV = 'development';
-        
+
         const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-        
+
         process.env.REDIS_PORT = '-6379';
         process.env.CACHE_TTL = '-300';
         process.env.REDIS_MAX_CONNECTIONS = '-10';
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         // Should use defaults for negative values
         expect(config.connection.port).toBe(6379);
-        expect(config.performance.defaultTtl).toBe(CACHE_LIMITS.development.defaultTtl);
-        expect(config.performance.maxConnections).toBe(CACHE_LIMITS.development.recommendedConnections);
-        
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid number value "-6379"'));
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid number value "-300"'));
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid number value "-10"'));
-        
+        expect(config.performance.defaultTtl).toBe(
+          CACHE_LIMITS.development.defaultTtl,
+        );
+        expect(config.performance.maxConnections).toBe(
+          CACHE_LIMITS.development.recommendedConnections,
+        );
+
+        expect(consoleSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Invalid number value "-6379"'),
+        );
+        expect(consoleSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Invalid number value "-300"'),
+        );
+        expect(consoleSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Invalid number value "-10"'),
+        );
+
         consoleSpy.mockRestore();
       });
 
       it('should handle non-numeric strings in numeric fields', () => {
         process.env.NODE_ENV = 'development';
-        
+
         const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-        
+
         process.env.REDIS_PORT = 'not-a-number';
         process.env.CACHE_TTL = 'invalid-ttl';
         process.env.REDIS_MAX_CONNECTIONS = 'many';
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.connection.port).toBe(6379);
-        expect(config.performance.defaultTtl).toBe(CACHE_LIMITS.development.defaultTtl);
-        expect(config.performance.maxConnections).toBe(CACHE_LIMITS.development.recommendedConnections);
-        
+        expect(config.performance.defaultTtl).toBe(
+          CACHE_LIMITS.development.defaultTtl,
+        );
+        expect(config.performance.maxConnections).toBe(
+          CACHE_LIMITS.development.recommendedConnections,
+        );
+
         consoleSpy.mockRestore();
       });
 
@@ -141,9 +159,9 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.connection.password).toBe('password123');
       });
 
@@ -153,9 +171,9 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.connection.host).toBe('::1');
       });
 
@@ -165,9 +183,9 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.connection.host).toBe('[::1]'); // URL parser behavior
         expect(config.connection.port).toBe(6379);
       });
@@ -177,7 +195,7 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         // Test localhost
         process.env.REDIS_HOST = 'localhost';
         let config = CacheConfigFactory.create();
@@ -199,22 +217,27 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-        
+
         const malformedBooleans = [
-          'maybe', 'sometimes', 'kinda', '2', '-1', 'TRUE_BUT_NOT_REALLY'
+          'maybe',
+          'sometimes',
+          'kinda',
+          '2',
+          '-1',
+          'TRUE_BUT_NOT_REALLY',
         ];
-        
-        malformedBooleans.forEach(value => {
+
+        malformedBooleans.forEach((value) => {
           process.env.REDIS_ENABLE_METRICS = value;
-          
+
           const config = CacheConfigFactory.create();
-          
+
           // Should use default value and warn
           expect(config.monitoring.enabled).toBe(true); // Default for development
         });
-        
+
         // Le nombre d'appels peut être plus élevé car chaque création de config peut générer plusieurs warnings
         expect(consoleSpy).toHaveBeenCalled();
         consoleSpy.mockRestore();
@@ -229,13 +252,15 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         // Should use defaults for empty values
         expect(config.connection.host).toBe('localhost');
         expect(config.connection.port).toBe(6379);
-        expect(config.performance.defaultTtl).toBe(CACHE_LIMITS.development.defaultTtl);
+        expect(config.performance.defaultTtl).toBe(
+          CACHE_LIMITS.development.defaultTtl,
+        );
         expect(config.monitoring.enabled).toBe(true);
       });
 
@@ -247,9 +272,9 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         // Node.js ne trim pas automatiquement REDIS_HOST, donc on garde les espaces
         expect(config.connection.host).toBe('   '); // Garde les espaces
         // Le password contient toujours les caractères d'espacement, même après parsing
@@ -266,12 +291,15 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.cluster.enabled).toBe(true);
         expect(config.cluster.nodes).toHaveLength(1);
-        expect(config.cluster.nodes[0]).toEqual({ host: 'localhost', port: 6379 });
+        expect(config.cluster.nodes[0]).toEqual({
+          host: 'localhost',
+          port: 6379,
+        });
       });
 
       it('should handle TLS enabled without certificates', () => {
@@ -281,9 +309,9 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.security.enableTLS).toBe(true);
         expect(config.security.tlsCa).toBeUndefined();
         expect(config.security.tlsCert).toBeUndefined();
@@ -294,7 +322,7 @@ describe('Cache Edge Cases', () => {
         process.env.NODE_ENV = 'production';
         process.env.REDIS_COMPRESSION = 'true';
         process.env.REDIS_COMPRESSION_THRESHOLD = '0';
-        
+
         expect(() => CacheConfigFactory.create()).toThrow(CacheValidationError);
       });
 
@@ -304,15 +332,17 @@ describe('Cache Edge Cases', () => {
         // No REDIS_PASSWORD set
         // Mais on doit s'assurer que REDIS_HOST est défini pour éviter ce warning
         process.env.REDIS_HOST = 'localhost';
-        
+
         const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-        
+
         CacheConfigValidator.validateEnvironmentVariables();
-        
+
         expect(consoleSpy).toHaveBeenCalledWith(
-          expect.stringContaining('Production environment variable not set: REDIS_PASSWORD')
+          expect.stringContaining(
+            'Production environment variable not set: REDIS_PASSWORD',
+          ),
         );
-        
+
         consoleSpy.mockRestore();
       });
     });
@@ -324,9 +354,9 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.connection.host).toBe('localhost');
         expect(config.connection.port).toBe(6379);
         expect(config.connection.db).toBe(1);
@@ -338,9 +368,9 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         // Node.js URL parser ne décode PAS automatiquement les caractères encodés
         expect(config.connection.password).toBe('p%40ssw%23rd'); // Reste encodé
       });
@@ -351,9 +381,9 @@ describe('Cache Edge Cases', () => {
         // S'assurer que les valeurs par défaut ne créent pas de conflit
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
+
         const config = CacheConfigFactory.create();
-        
+
         expect(config.connection.host).toBe('localhost');
         expect(config.connection.port).toBe(6379); // Default port
       });
@@ -371,7 +401,7 @@ describe('Cache Edge Cases', () => {
           // S'assurer que les valeurs par défaut ne créent pas de conflit
           delete process.env.REDIS_MAX_CONNECTIONS;
           delete process.env.REDIS_MIN_CONNECTIONS;
-          
+
           const config = CacheConfigFactory.create();
           expect(config.connection.db).toBe(expectedDb);
         });
@@ -381,8 +411,10 @@ describe('Cache Edge Cases', () => {
         process.env.REDIS_URL = 'redis://localhost/99';
         delete process.env.REDIS_MAX_CONNECTIONS;
         delete process.env.REDIS_MIN_CONNECTIONS;
-        
-        expect(() => CacheConfigFactory.create()).toThrow('Redis database number must be between 0 and 15');
+
+        expect(() => CacheConfigFactory.create()).toThrow(
+          'Redis database number must be between 0 and 15',
+        );
       });
 
       it('should handle malformed Redis URLs', () => {
@@ -392,10 +424,10 @@ describe('Cache Edge Cases', () => {
           'redis://localhost:invalidport', // Port non numérique
         ];
 
-        definitilyMalformedUrls.forEach(url => {
+        definitilyMalformedUrls.forEach((url) => {
           process.env.NODE_ENV = 'development';
           process.env.REDIS_URL = url;
-          
+
           expect(() => CacheConfigFactory.create()).toThrow();
         });
 
@@ -406,12 +438,12 @@ describe('Cache Edge Cases', () => {
           'redis://localhost:6379:6380', // Multiple ports
         ];
 
-        edgeCaseUrls.forEach(url => {
+        edgeCaseUrls.forEach((url) => {
           process.env.NODE_ENV = 'development';
           process.env.REDIS_URL = url;
           delete process.env.REDIS_MAX_CONNECTIONS;
           delete process.env.REDIS_MIN_CONNECTIONS;
-          
+
           // Ces URLs peuvent soit échouer soit être parsées - les deux sont acceptables
           try {
             const config = CacheConfigFactory.create();
@@ -430,13 +462,15 @@ describe('Cache Edge Cases', () => {
     describe('Size Limits', () => {
       it('should handle very large JSON objects', async () => {
         const largeObject = {
-          data: Array(1000).fill(0).map((_, i) => ({
-            id: i,
-            name: `item-${i}`,
-            description: 'x'.repeat(50), // Réduit pour les tests
-          })),
+          data: Array(1000)
+            .fill(0)
+            .map((_, i) => ({
+              id: i,
+              name: `item-${i}`,
+              description: 'x'.repeat(50), // Réduit pour les tests
+            })),
         };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         mockRedis.get.mockResolvedValue(JSON.stringify(largeObject));
 
@@ -454,7 +488,7 @@ describe('Cache Edge Cases', () => {
           emptyString: '',
           nullValue: null,
         };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         mockRedis.get.mockResolvedValue(JSON.stringify(emptyData));
 
@@ -470,7 +504,7 @@ describe('Cache Edge Cases', () => {
         for (let i = 0; i < 50; i++) {
           deepObject = { level: i, nested: deepObject };
         }
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         mockRedis.get.mockResolvedValue(JSON.stringify(deepObject));
 
@@ -482,10 +516,11 @@ describe('Cache Edge Cases', () => {
 
       it('should handle objects with many properties', async () => {
         const wideObject: any = {};
-        for (let i = 0; i < 1000; i++) { // Réduit pour les tests
+        for (let i = 0; i < 1000; i++) {
+          // Réduit pour les tests
           wideObject[`prop_${i}`] = `value_${i}`;
         }
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         mockRedis.get.mockResolvedValue(JSON.stringify(wideObject));
 
@@ -549,7 +584,7 @@ describe('Cache Edge Cases', () => {
       it('should handle very long keys', async () => {
         const longKey = 'test:' + 'a'.repeat(1000); // Réduit pour les tests
         const value = { test: 'long key' };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         mockRedis.get.mockResolvedValue(JSON.stringify(value));
 
@@ -560,14 +595,14 @@ describe('Cache Edge Cases', () => {
         expect(mockRedis.setex).toHaveBeenCalledWith(
           longKey,
           mockCacheConfig.performance.defaultTtl,
-          JSON.stringify(value)
+          JSON.stringify(value),
         );
       });
 
       it('should handle empty string keys', async () => {
         const emptyKey = '';
         const value = { test: 'empty key' };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         mockRedis.get.mockResolvedValue(JSON.stringify(value));
 
@@ -608,7 +643,7 @@ describe('Cache Edge Cases', () => {
           null: null,
           undefined: undefined, // Will be removed by JSON.stringify
         };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         const expected = JSON.parse(JSON.stringify(primitives)); // undefined is removed
         mockRedis.get.mockResolvedValue(JSON.stringify(expected));
@@ -617,7 +652,7 @@ describe('Cache Edge Cases', () => {
         const result = await service.get('primitives');
 
         expect(result).toEqual(expected);
-        expect(result).not.toHaveProperty('undefined'); 
+        expect(result).not.toHaveProperty('undefined');
       });
 
       it('should handle Date objects (serialized as strings)', async () => {
@@ -626,7 +661,7 @@ describe('Cache Edge Cases', () => {
           past: new Date('2020-01-01T00:00:00Z'),
           future: new Date('2030-12-31T23:59:59Z'),
         };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         const serialized = JSON.parse(JSON.stringify(dateData)); // Dates become strings
         mockRedis.get.mockResolvedValue(JSON.stringify(serialized));
@@ -645,7 +680,7 @@ describe('Cache Edge Cases', () => {
           pattern: /test/gi,
           simplePattern: /abc/,
         };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         const serialized = JSON.parse(JSON.stringify(regexData)); // RegExp becomes {}
         mockRedis.get.mockResolvedValue(JSON.stringify(serialized));
@@ -663,9 +698,11 @@ describe('Cache Edge Cases', () => {
           name: 'test',
           getValue: () => 'value',
           arrow: (x: number) => x * 2,
-          method: function() { return 'method'; },
+          method: function () {
+            return 'method';
+          },
         };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         const serialized = JSON.parse(JSON.stringify(objectWithFunction)); // Functions removed
         mockRedis.get.mockResolvedValue(JSON.stringify(serialized));
@@ -689,7 +726,7 @@ describe('Cache Edge Cases', () => {
           yield 1;
           yield 2;
         };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         const serialized = JSON.parse(JSON.stringify(objectWithSymbol)); // Symbols ignored
         mockRedis.get.mockResolvedValue(JSON.stringify(serialized));
@@ -709,15 +746,15 @@ describe('Cache Edge Cases', () => {
         circularObj.child = { parent: circularObj };
 
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-        
+
         await service.set('circular', circularObj);
 
         expect(consoleSpy).toHaveBeenCalledWith(
           expect.stringContaining('Cache set error for key circular:'),
-          expect.any(Error)
+          expect.any(Error),
         );
         expect(mockRedis.setex).not.toHaveBeenCalled();
-        
+
         consoleSpy.mockRestore();
       });
 
@@ -728,15 +765,15 @@ describe('Cache Edge Cases', () => {
         };
 
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-        
+
         await service.set('bigint', bigIntData);
 
         expect(consoleSpy).toHaveBeenCalledWith(
           expect.stringContaining('Cache set error for key bigint:'),
-          expect.any(Error)
+          expect.any(Error),
         );
         expect(mockRedis.setex).not.toHaveBeenCalled();
-        
+
         consoleSpy.mockRestore();
       });
     });
@@ -747,9 +784,9 @@ describe('Cache Edge Cases', () => {
         sparseArray[0] = 'first';
         sparseArray[5] = 'middle';
         sparseArray[9] = 'last';
-        
+
         const data = { sparseArray };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         const serialized = JSON.parse(JSON.stringify(data)); // Sparse becomes dense with nulls
         mockRedis.get.mockResolvedValue(JSON.stringify(serialized));
@@ -775,9 +812,9 @@ describe('Cache Edge Cases', () => {
           new Date('2025-01-01T00:00:00Z'),
           undefined, // Will be converted to null
         ];
-        
+
         const data = { mixedArray };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         const serialized = JSON.parse(JSON.stringify(data));
         mockRedis.get.mockResolvedValue(JSON.stringify(serialized));
@@ -797,9 +834,11 @@ describe('Cache Edge Cases', () => {
       });
 
       it('should handle extremely large arrays', async () => {
-        const largeArray = Array(1000).fill(0).map((_, i) => ({ id: i, value: `item-${i}` }));
+        const largeArray = Array(1000)
+          .fill(0)
+          .map((_, i) => ({ id: i, value: `item-${i}` }));
         const data = { largeArray };
-        
+
         mockRedis.setex.mockResolvedValue('OK');
         mockRedis.get.mockResolvedValue(JSON.stringify(data));
 
@@ -816,42 +855,46 @@ describe('Cache Edge Cases', () => {
   describe('Concurrent Operation Edge Cases', () => {
     it('should handle rapid successive operations on same key', async () => {
       const key = 'rapid:key';
-      const values = Array(50).fill(0).map((_, i) => ({ iteration: i, timestamp: Date.now() }));
-      
+      const values = Array(50)
+        .fill(0)
+        .map((_, i) => ({ iteration: i, timestamp: Date.now() }));
+
       mockRedis.setex.mockResolvedValue('OK');
-      
+
       // Simulate rapid SET operations
-      const setPromises = values.map(value => service.set(key, value));
+      const setPromises = values.map((value) => service.set(key, value));
       await Promise.all(setPromises);
-      
+
       expect(mockRedis.setex).toHaveBeenCalledTimes(50);
     });
 
     it('should handle simultaneous get/set operations', async () => {
       const key = 'concurrent:key';
       const setValue = { test: 'concurrent' };
-      
+
       mockRedis.setex.mockResolvedValue('OK');
       mockRedis.get.mockResolvedValue(JSON.stringify(setValue));
-      
+
       const operations = [];
-      
+
       // Mix of GET and SET operations
       for (let i = 0; i < 25; i++) {
         operations.push(service.set(`${key}:${i}`, setValue));
         operations.push(service.get(`${key}:${i}`));
       }
-      
+
       await Promise.all(operations);
-      
+
       expect(mockRedis.setex).toHaveBeenCalledTimes(25);
       expect(mockRedis.get).toHaveBeenCalledTimes(25);
     });
 
     it('should handle pattern operations with many keys', async () => {
       const userId = 'edge-case-user';
-      
-      jest.spyOn(CACHE_KEYS, 'USER_PROJECTS_COUNT').mockReturnValue(`test:count:projects:${userId}`);
+
+      jest
+        .spyOn(CACHE_KEYS, 'USER_PROJECTS_COUNT')
+        .mockReturnValue(`test:count:projects:${userId}`);
       const listKeys = [];
       // Les clés retournées par redis.keys() ont le préfixe
       const listKeysWithPrefix = [];
@@ -863,15 +906,15 @@ describe('Cache Edge Cases', () => {
           listKeysWithPrefix.push(keyWithPrefix);
         }
       }
-      
+
       // redis.keys() retourne les clés avec préfixe
       mockRedis.keys.mockResolvedValue(listKeysWithPrefix);
       mockRedis.del.mockResolvedValue(listKeys.length);
-      
+
       await service.invalidateUserProjectsCache(userId);
-      
+
       expect(mockRedis.keys).toHaveBeenCalledWith(`test:projects:${userId}:*`);
-      
+
       // Le service appelle del() avec les clés SANS préfixe maintenant
       // car le module Redis NestJS ajoute automatiquement le préfixe
       expect(mockRedis.del).toHaveBeenCalledWith(
@@ -884,64 +927,64 @@ describe('Cache Edge Cases', () => {
     it('should handle JSON parse errors with malformed data', async () => {
       const key = 'malformed:json';
       const malformedJson = '{"incomplete": true, "missing":}';
-      
+
       mockRedis.get.mockResolvedValue(malformedJson);
-      
+
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       const result = await service.get(key);
-      
+
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining(`Cache get error for key ${key}:`),
-        expect.any(Error)
+        expect.any(Error),
       );
-      
+
       consoleSpy.mockRestore();
     });
 
     it('should handle JSON stringify errors gracefully', async () => {
       const key = 'stringify:error';
-      
+
       // Create object that will cause JSON.stringify to throw
       const problematicObject = {};
       Object.defineProperty(problematicObject, 'toJSON', {
         value: () => {
           throw new Error('Custom toJSON error');
-        }
+        },
       });
-      
+
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       await service.set(key, problematicObject);
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining(`Cache set error for key ${key}:`),
-        expect.any(Error)
+        expect.any(Error),
       );
       expect(mockRedis.setex).not.toHaveBeenCalled();
-      
+
       consoleSpy.mockRestore();
     });
 
     it('should handle Redis command errors with proper fallback', async () => {
       const key = 'redis:error:key';
       const value = { test: 'error handling' };
-      
+
       mockRedis.setex.mockRejectedValue(new Error('Redis server went away'));
       mockRedis.get.mockRejectedValue(new Error('Connection lost'));
       mockRedis.del.mockRejectedValue(new Error('Command timeout'));
-      
+
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       // All operations should handle errors gracefully
       await service.set(key, value);
       const result = await service.get(key);
       await service.del(key);
-      
+
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalledTimes(3);
-      
+
       consoleSpy.mockRestore();
     });
   });

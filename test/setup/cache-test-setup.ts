@@ -24,7 +24,7 @@ process.env.REDIS_ENABLE_METRICS = 'false';
 export class RedisTestHelper {
   private static redis: Redis | null = null;
   private static connectionCount = 0;
-  
+
   /**
    * Obtenir une connexion Redis pour les tests
    */
@@ -40,10 +40,10 @@ export class RedisTestHelper {
       });
       this.connectionCount++;
     }
-    
+
     return this.redis;
   }
-  
+
   /**
    * Vérifier si Redis est disponible
    */
@@ -56,7 +56,7 @@ export class RedisTestHelper {
       return false;
     }
   }
-  
+
   /**
    * Nettoyer la base de données de test
    */
@@ -68,7 +68,7 @@ export class RedisTestHelper {
       console.warn('Could not flush test database:', error.message);
     }
   }
-  
+
   /**
    * Fermer la connexion Redis
    */
@@ -84,25 +84,25 @@ export class RedisTestHelper {
       }
     }
   }
-  
+
   /**
    * Créer des données de test dans Redis
    */
   static async seedTestData(): Promise<void> {
     const redis = await this.getRedis();
-    
+
     const testData = {
       'test:project:1': { id: '1', name: 'Test Project 1' },
       'test:project:2': { id: '2', name: 'Test Project 2' },
       'test:user:123:projects:count': 2,
-      'test:statistics:1': { costs: { total: 10.50 } },
+      'test:statistics:1': { costs: { total: 10.5 } },
     };
-    
+
     for (const [key, value] of Object.entries(testData)) {
       await redis.setex(key, 300, JSON.stringify(value));
     }
   }
-  
+
   /**
    * Vérifier l'existence d'une clé
    */
@@ -111,7 +111,7 @@ export class RedisTestHelper {
     const exists = await redis.exists(key);
     return exists === 1;
   }
-  
+
   /**
    * Obtenir la valeur d'une clé
    */
@@ -120,11 +120,15 @@ export class RedisTestHelper {
     const value = await redis.get(key);
     return value ? JSON.parse(value) : null;
   }
-  
+
   /**
    * Définir une valeur avec TTL
    */
-  static async setValue(key: string, value: any, ttl: number = 300): Promise<void> {
+  static async setValue(
+    key: string,
+    value: any,
+    ttl: number = 300,
+  ): Promise<void> {
     const redis = await this.getRedis();
     await redis.setex(key, ttl, JSON.stringify(value));
   }
@@ -159,7 +163,7 @@ export class CacheMockHelper {
       quit: jest.fn(),
     } as any;
   }
-  
+
   /**
    * Configurer un mock Redis avec des réponses par défaut
    */
@@ -175,7 +179,7 @@ export class CacheMockHelper {
     mockRedis.flushdb.mockResolvedValue('OK');
     mockRedis.quit.mockResolvedValue('OK');
   }
-  
+
   /**
    * Créer un mock de ConfigService pour les tests cache
    */
@@ -200,7 +204,7 @@ export class CacheMockHelper {
       },
       ...overrides,
     };
-    
+
     return {
       get: jest.fn().mockReturnValue(defaultConfig),
     } as any;
@@ -218,11 +222,11 @@ let isE2ETest = false;
 beforeAll(async () => {
   const testPath = expect.getState().testPath || '';
   isE2ETest = testPath.includes('e2e') || testPath.includes('E2E');
-  
+
   // Ne setup Redis que si ce n'est pas un test E2E
   if (!isE2ETest) {
     const isAvailable = await RedisTestHelper.isRedisAvailable();
-    
+
     if (!isAvailable) {
       console.warn(`
       ⚠️  Redis server is not available for testing!
@@ -295,7 +299,7 @@ process.on('unhandledRejection', (reason, promise) => {
       return;
     }
   }
-  
+
   if (process.env.TEST_VERBOSE === 'true') {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   }

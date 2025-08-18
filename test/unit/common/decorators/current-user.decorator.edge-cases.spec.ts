@@ -9,34 +9,37 @@ import { User } from '../../../../src/common/interfaces/user.interface';
 describe('CurrentUser Decorator - Edge Cases', () => {
   // Récupération de la fonction de transformation du décorateur
   const decoratorFactory = CurrentUser as any;
-  
+
   // Fonction helper qui reproduit la logique du décorateur pour les tests
   const extractUserFunction = (data: unknown, ctx: ExecutionContext): User => {
     const request = ctx.switchToHttp().getRequest<FastifyRequest>();
     const user = (request as any).user;
-    
+
     if (!user) {
-      throw new Error('User not found in request context. Make sure AuthGuard is applied.');
+      throw new Error(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     }
-    
+
     return user;
   };
 
   // Helper pour créer un mock d'ExecutionContext
-  const createMockExecutionContext = (request: any): ExecutionContext => ({
-    switchToHttp: () => ({
-      getRequest: () => request,
-      getResponse: jest.fn(),
-      getNext: jest.fn(),
-    }),
-    switchToRpc: jest.fn(),
-    switchToWs: jest.fn(),
-    getType: () => 'http',
-    getClass: jest.fn(),
-    getHandler: jest.fn(),
-    getArgs: jest.fn(),
-    getArgByIndex: jest.fn(),
-  } as ExecutionContext);
+  const createMockExecutionContext = (request: any): ExecutionContext =>
+    ({
+      switchToHttp: () => ({
+        getRequest: () => request,
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      }),
+      switchToRpc: jest.fn(),
+      switchToWs: jest.fn(),
+      getType: () => 'http',
+      getClass: jest.fn(),
+      getHandler: jest.fn(),
+      getArgs: jest.fn(),
+      getArgByIndex: jest.fn(),
+    }) as ExecutionContext;
 
   // Helper pour créer un utilisateur de test
   const createTestUser = (overrides: Partial<User> = {}): User => ({
@@ -59,7 +62,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
 
     it('should throw error when user property is null', () => {
@@ -70,7 +75,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
 
     it('should throw error when user property is undefined', () => {
@@ -81,7 +88,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
 
     it('should throw error when user property is empty string', () => {
@@ -92,7 +101,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
 
     it('should throw error when user property is false', () => {
@@ -103,7 +114,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
 
     it('should throw error when user property is 0', () => {
@@ -114,7 +127,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
 
     it('should throw error when user property is NaN', () => {
@@ -125,7 +140,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
   });
 
@@ -228,9 +245,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
   describe('Utilisateurs avec données incomplètes', () => {
     it('should handle user with missing id property', () => {
       // Arrange
-      const incompleteUser = { 
+      const incompleteUser = {
         email: 'incomplete@example.com',
-        roles: ['user'] 
+        roles: ['user'],
       } as any; // Force type pour test
       const mockRequest = { user: incompleteUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -247,9 +264,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
 
     it('should handle user with missing email property', () => {
       // Arrange
-      const incompleteUser = { 
+      const incompleteUser = {
         id: 'user-no-email',
-        roles: ['user'] 
+        roles: ['user'],
       } as any;
       const mockRequest = { user: incompleteUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -266,9 +283,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
 
     it('should handle user with missing roles property', () => {
       // Arrange
-      const incompleteUser = { 
+      const incompleteUser = {
         id: 'user-no-roles',
-        email: 'noroles@example.com'
+        email: 'noroles@example.com',
       } as any;
       const mockRequest = { user: incompleteUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -285,10 +302,10 @@ describe('CurrentUser Decorator - Edge Cases', () => {
 
     it('should handle user with all properties null', () => {
       // Arrange
-      const nullUser = { 
+      const nullUser = {
         id: null,
         email: null,
-        roles: null 
+        roles: null,
       } as any;
       const mockRequest = { user: nullUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -305,10 +322,10 @@ describe('CurrentUser Decorator - Edge Cases', () => {
 
     it('should handle user with all properties undefined', () => {
       // Arrange
-      const undefinedUser = { 
+      const undefinedUser = {
         id: undefined,
         email: undefined,
-        roles: undefined 
+        roles: undefined,
       } as any;
       const mockRequest = { user: undefinedUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -378,7 +395,7 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       const specialUser = createTestUser({
         id: '!@#$%^&*()_+-=[]{}|;:,.<>?`~',
         email: 'special!@#$%^&*()_+-=[]{}|;:,.<>?`~@example.com',
-        roles: ['role!@#$%^&*()', 'another_role-with.special:chars']
+        roles: ['role!@#$%^&*()', 'another_role-with.special:chars'],
       });
       const mockRequest = { user: specialUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -396,7 +413,7 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       const unicodeUser = createTestUser({
         id: 'user-🚀🎉🔥💯',
         email: '用户@例子.中国',
-        roles: ['rôle-français', 'роль-русский', 'ロール-日本語']
+        roles: ['rôle-français', 'роль-русский', 'ロール-日本語'],
       });
       const mockRequest = { user: unicodeUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -421,7 +438,7 @@ describe('CurrentUser Decorator - Edge Cases', () => {
 
       const nestedUser = {
         ...createTestUser(),
-        deepProperty: deepObject
+        deepProperty: deepObject,
       };
       const mockRequest = { user: nestedUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -445,7 +462,9 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       const userWithFunction = {
         ...createTestUser(),
         someMethod: () => 'test',
-        getData: function() { return this.id; }
+        getData: function () {
+          return this.id;
+        },
       };
       const mockRequest = { user: userWithFunction };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -464,7 +483,7 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       const symbolKey = Symbol('userSymbol');
       const userWithSymbol = {
         ...createTestUser(),
-        [symbolKey]: 'symbol-value'
+        [symbolKey]: 'symbol-value',
       };
       const mockRequest = { user: userWithSymbol };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -483,7 +502,7 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       const userWithDates = {
         ...createTestUser(),
         createdAt: now,
-        lastLogin: new Date('2025-01-01')
+        lastLogin: new Date('2025-01-01'),
       };
       const mockRequest = { user: userWithDates };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -502,7 +521,7 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       const userWithRegex = {
         ...createTestUser(),
         emailPattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        idPattern: new RegExp('^[a-zA-Z0-9-]+$')
+        idPattern: new RegExp('^[a-zA-Z0-9-]+$'),
       };
       const mockRequest = { user: userWithRegex };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -521,7 +540,7 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       const userWithBigInt = {
         ...createTestUser(),
         bigNumber: BigInt('9007199254740991'),
-        anotherBigInt: 123n
+        anotherBigInt: 123n,
       };
       const mockRequest = { user: userWithBigInt };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -560,7 +579,7 @@ describe('CurrentUser Decorator - Edge Cases', () => {
       const testUser = createTestUser();
       const mockRequest = {
         user: testUser,
-        toString: () => 'corrupted-request'
+        toString: () => 'corrupted-request',
       };
       const mockContext = createMockExecutionContext(mockRequest);
 
@@ -579,7 +598,7 @@ describe('CurrentUser Decorator - Edge Cases', () => {
         get: (target, prop) => {
           if (prop === 'user') return target.user;
           return target[prop as keyof typeof target];
-        }
+        },
       });
       const mockContext = createMockExecutionContext(proxyRequest);
 

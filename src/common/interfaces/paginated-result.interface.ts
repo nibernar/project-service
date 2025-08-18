@@ -1,9 +1,9 @@
 /**
  * Interfaces et utilitaires pour la gestion de la pagination dans le Service de Gestion des Projets.
- * 
+ *
  * Ce fichier définit les interfaces standardisées pour les réponses paginées,
  * garantissant la cohérence entre tous les modules et contrôleurs.
- * 
+ *
  * @fileoverview Interfaces de pagination standardisées
  * @author Service de Gestion des Projets (C04)
  * @version 1.0.0
@@ -31,7 +31,7 @@ export interface SortField {
 
 /**
  * Métadonnées de pagination pour la navigation offset-based.
- * 
+ *
  * Contient toutes les informations nécessaires pour implémenter
  * une navigation de pagination côté client.
  */
@@ -52,7 +52,7 @@ export interface PaginationMeta {
 
 /**
  * Métadonnées spécialisées pour la pagination cursor-based.
- * 
+ *
  * Utilisée pour la pagination haute performance sur de gros volumes
  * où la pagination offset devient inefficace.
  */
@@ -71,22 +71,22 @@ export interface CursorPaginationMeta {
 
 /**
  * Options de configuration pour la génération de résultats paginés.
- * 
+ *
  * Permet de contrôler finement les performances et le comportement
  * de la pagination selon le contexte d'usage.
  */
 export interface PaginatedOptions {
-  /** 
+  /**
    * Inclure ou non le compte total (coûteux sur de gros volumes).
    * @default true
    */
   includeTotalCount?: boolean;
-  /** 
+  /**
    * Limite par défaut si non spécifiée.
    * @default 10
    */
   defaultLimit?: number;
-  /** 
+  /**
    * Limite maximale autorisée (protection contre les abus).
    * @default 100
    */
@@ -95,12 +95,12 @@ export interface PaginatedOptions {
 
 /**
  * Interface générique principale pour tous les résultats paginés.
- * 
+ *
  * Standardise le format des réponses paginées dans toute l'application
  * avec type safety complète.
- * 
+ *
  * @template T Type des éléments contenus dans la page
- * 
+ *
  * @example
  * ```typescript
  * const result: PaginatedResult<ProjectEntity> = {
@@ -128,9 +128,9 @@ export interface PaginatedResult<T> {
 
 /**
  * Interface pour les résultats paginés avec curseur.
- * 
+ *
  * Alternative haute performance à PaginatedResult pour les gros volumes.
- * 
+ *
  * @template T Type des éléments contenus dans la page
  */
 export interface CursorPaginatedResult<T> {
@@ -142,15 +142,15 @@ export interface CursorPaginatedResult<T> {
 
 /**
  * Calcule toutes les métadonnées de pagination offset-based.
- * 
+ *
  * Centralise la logique de calcul pour éviter les erreurs et
  * garantir la cohérence des calculs dans toute l'application.
- * 
+ *
  * @param page Numéro de page (1-based)
  * @param limit Nombre d'éléments par page
  * @param total Nombre total d'éléments
  * @returns Métadonnées complètes de pagination
- * 
+ *
  * @example
  * ```typescript
  * const meta = calculatePaginationMeta(2, 10, 42);
@@ -164,7 +164,7 @@ export function calculatePaginationMeta(
 ): PaginationMeta {
   // Gestion spéciale pour les cas limites
   let totalPages: number;
-  
+
   if (total < 0) {
     // Pour un total négatif, on considère 0 pages
     totalPages = 0;
@@ -180,11 +180,11 @@ export function calculatePaginationMeta(
     // Calcul normal
     totalPages = Math.ceil(total / limit);
   }
-  
+
   const offset = limit < 0 ? page * Math.abs(limit) : (page - 1) * limit;
   // Corriger le -0 qui peut apparaître avec (0-1)*0 = -0
   const normalizedOffset = offset === 0 ? 0 : offset;
-  
+
   return {
     page,
     limit,
@@ -197,15 +197,15 @@ export function calculatePaginationMeta(
 
 /**
  * Valide et normalise les paramètres de pagination.
- * 
+ *
  * Protège contre les valeurs invalides et applique les limites
  * de sécurité pour éviter les abus.
- * 
+ *
  * @param page Numéro de page demandé
  * @param limit Limite demandée
  * @param maxLimit Limite maximale autorisée
  * @returns Paramètres normalisés et validés
- * 
+ *
  * @example
  * ```typescript
  * const { page, limit } = validatePaginationParams(0, 1000, 100);
@@ -220,15 +220,20 @@ export function validatePaginationParams(
   // Conversion sécurisée pour éviter les erreurs avec les objets
   let normalizedPage: number;
   let normalizedLimit: number;
-  
+
   try {
     // Gestion spéciale des valeurs non-numériques
-    if (typeof page !== 'number' || isNaN(page) || !isFinite(page) || page < 1) {
+    if (
+      typeof page !== 'number' ||
+      isNaN(page) ||
+      !isFinite(page) ||
+      page < 1
+    ) {
       normalizedPage = 1;
     } else {
       normalizedPage = Math.floor(page);
     }
-    
+
     if (typeof limit !== 'number' || isNaN(limit) || limit < 1) {
       normalizedLimit = isNaN(limit) ? 10 : 1; // NaN devient 10, autres cas invalides deviennent 1
     } else if (!isFinite(limit)) {
@@ -242,17 +247,17 @@ export function validatePaginationParams(
     normalizedPage = 1;
     normalizedLimit = 10; // Valeur par défaut pour les erreurs
   }
-  
+
   // Application des limites
   normalizedPage = Math.max(1, normalizedPage);
-  
+
   // Gestion spéciale pour maxLimit = 0
   if (maxLimit <= 0) {
     normalizedLimit = 1;
   } else {
     normalizedLimit = Math.max(1, Math.min(maxLimit, normalizedLimit));
   }
-  
+
   return {
     page: normalizedPage,
     limit: normalizedLimit,
@@ -261,10 +266,10 @@ export function validatePaginationParams(
 
 /**
  * Factory function pour créer facilement des résultats paginés.
- * 
+ *
  * Simplifie la création de résultats paginés en gérant automatiquement
  * tous les calculs et validations nécessaires.
- * 
+ *
  * @template T Type des éléments contenus dans la page
  * @param data Les données de la page courante
  * @param page Numéro de page (1-based)
@@ -272,18 +277,18 @@ export function validatePaginationParams(
  * @param total Nombre total d'éléments (-1 si non calculé)
  * @param options Options de configuration optionnelles
  * @returns Instance complète de PaginatedResult avec tous les calculs effectués
- * 
+ *
  * @example
  * ```typescript
  * // Usage simple
  * const result = createPaginatedResult(projects, 1, 10, 42);
- * 
+ *
  * // Usage avec options (sans count total pour performance)
  * const resultWithoutTotal = createPaginatedResult(
- *   projects, 
- *   1, 
- *   10, 
- *   -1, 
+ *   projects,
+ *   1,
+ *   10,
+ *   -1,
  *   { includeTotalCount: false }
  * );
  * ```
@@ -301,20 +306,24 @@ export function createPaginatedResult<T>(
     maxLimit: 100,
     ...options,
   };
-  
+
   // Validation des paramètres
   const { page: validPage, limit: validLimit } = validatePaginationParams(
     page,
     limit,
     opts.maxLimit,
   );
-  
+
   // Gestion du total conditionnel
   const effectiveTotal = opts.includeTotalCount ? total : -1;
-  
+
   // Calcul des métadonnées
-  const pagination = calculatePaginationMeta(validPage, validLimit, Math.max(0, effectiveTotal));
-  
+  const pagination = calculatePaginationMeta(
+    validPage,
+    validLimit,
+    Math.max(0, effectiveTotal),
+  );
+
   return {
     data,
     pagination,
@@ -324,15 +333,15 @@ export function createPaginatedResult<T>(
 
 /**
  * Crée un résultat paginé vide.
- * 
+ *
  * Utile pour les cas où aucun résultat n'est trouvé
  * mais où une structure de pagination cohérente est nécessaire.
- * 
+ *
  * @template T Type des éléments qui auraient été contenus
  * @param page Numéro de page demandé
  * @param limit Limite demandée
  * @returns Résultat paginé vide avec métadonnées correctes
- * 
+ *
  * @example
  * ```typescript
  * const emptyResult = createEmptyPaginatedResult<ProjectEntity>(1, 10);
@@ -362,10 +371,10 @@ export const PAGINATION_DEFAULTS = {
 
 /**
  * Type guard pour vérifier si un objet est un résultat paginé valide.
- * 
+ *
  * @param obj Objet à vérifier
  * @returns true si l'objet est un PaginatedResult valide
- * 
+ *
  * @example
  * ```typescript
  * if (isPaginatedResult(response)) {
@@ -377,9 +386,9 @@ export function isPaginatedResult<T>(obj: unknown): obj is PaginatedResult<T> {
   if (typeof obj !== 'object' || obj === null) {
     return false;
   }
-  
+
   const candidate = obj as any;
-  
+
   // Vérifications strictes
   return (
     'data' in candidate &&
@@ -400,16 +409,16 @@ export function isPaginatedResult<T>(obj: unknown): obj is PaginatedResult<T> {
 
 /**
  * Transforme un résultat paginé en appliquant une fonction de mapping sur les données.
- * 
+ *
  * Preserve toutes les métadonnées de pagination tout en transformant
  * le type et le contenu des données.
- * 
+ *
  * @template T Type source des éléments
  * @template U Type cible des éléments
  * @param result Résultat paginé source
  * @param mapper Fonction de transformation des éléments
  * @returns Nouveau résultat paginé avec les données transformées
- * 
+ *
  * @example
  * ```typescript
  * const entityResult: PaginatedResult<ProjectEntity> = // ... from database
@@ -423,10 +432,10 @@ export function mapPaginatedResult<T, U>(
   // Capturer les valeurs AVANT le mapping pour se protéger des mappers malveillants
   const originalPagination = { ...result.pagination };
   const originalTotal = result.total;
-  
+
   // Appliquer le mapping
   const mappedData = result.data.map(mapper);
-  
+
   // Retourner un nouvel objet avec les métadonnées originales préservées
   return {
     data: mappedData,

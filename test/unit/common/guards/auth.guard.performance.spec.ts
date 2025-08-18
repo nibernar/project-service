@@ -13,7 +13,9 @@ import { User } from '../../../../src/common/interfaces/user.interface';
 
 // Déclaration de type pour les extensions globales
 declare global {
-  var recordPerformanceMetric: ((name: string, value: any, metadata?: any) => void) | undefined;
+  var recordPerformanceMetric:
+    | ((name: string, value: any, metadata?: any) => void)
+    | undefined;
 }
 
 describe('AuthGuard - Performance Tests', () => {
@@ -62,7 +64,9 @@ describe('AuthGuard - Performance Tests', () => {
     roles: ['user'],
   });
 
-  const createValidAuthResponse = (user: User = createValidUser()): AxiosResponse => ({
+  const createValidAuthResponse = (
+    user: User = createValidUser(),
+  ): AxiosResponse => ({
     data: {
       valid: true,
       user: {
@@ -82,14 +86,22 @@ describe('AuthGuard - Performance Tests', () => {
     return `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.performance-payload-${suffix}.signature-${suffix}`;
   };
 
-  const measureExecutionTime = async (fn: () => Promise<any>): Promise<number> => {
+  const measureExecutionTime = async (
+    fn: () => Promise<any>,
+  ): Promise<number> => {
     const start = process.hrtime.bigint();
     await fn();
     const end = process.hrtime.bigint();
     return Number(end - start) / 1000000; // Convert to milliseconds
   };
 
-  const measureMemoryUsage = (fn: () => void): { before: NodeJS.MemoryUsage; after: NodeJS.MemoryUsage; diff: number } => {
+  const measureMemoryUsage = (
+    fn: () => void,
+  ): {
+    before: NodeJS.MemoryUsage;
+    after: NodeJS.MemoryUsage;
+    diff: number;
+  } => {
     if (global.gc) global.gc(); // Force garbage collection
     const before = process.memoryUsage();
     fn();
@@ -102,7 +114,9 @@ describe('AuthGuard - Performance Tests', () => {
     };
   };
 
-  const createLargeUser = (size: 'small' | 'medium' | 'large' | 'huge'): User => {
+  const createLargeUser = (
+    size: 'small' | 'medium' | 'large' | 'huge',
+  ): User => {
     const baseSizes = {
       small: 10,
       medium: 100,
@@ -157,7 +171,7 @@ describe('AuthGuard - Performance Tests', () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
-    
+
     // Force garbage collection si disponible (aide avec les fuites Jest)
     if (global.gc) {
       global.gc();
@@ -193,9 +207,11 @@ describe('AuthGuard - Performance Tests', () => {
       });
 
       // Assert
-      expect(executionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.CACHE_HIT_MAX_TIME);
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.CACHE_HIT_MAX_TIME,
+      );
       expect(httpService.post).not.toHaveBeenCalled(); // Pas d'appel au service
-      
+
       // Enregistrement métrique pour monitoring
       if (global.recordPerformanceMetric) {
         global.recordPerformanceMetric('auth-guard-cache-hit', executionTime, {
@@ -221,7 +237,9 @@ describe('AuthGuard - Performance Tests', () => {
       });
 
       // Assert
-      expect(executionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.CACHE_HIT_MAX_TIME * 2); // 2x allowance pour gros objets
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.CACHE_HIT_MAX_TIME * 2,
+      ); // 2x allowance pour gros objets
       expect((request as any).user).toEqual(largeUser);
     });
 
@@ -233,7 +251,7 @@ describe('AuthGuard - Performance Tests', () => {
 
       // Act - 1000 cache hits rapidement
       const startTime = process.hrtime.bigint();
-      
+
       const promises = Array.from({ length: 1000 }, async () => {
         const request = { headers: { authorization: `Bearer ${token}` } };
         const context = createMockExecutionContext(request);
@@ -245,7 +263,7 @@ describe('AuthGuard - Performance Tests', () => {
       const totalTime = Number(endTime - startTime) / 1000000; // ms
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
       expect(totalTime).toBeLessThan(1000); // 1000 hits en moins de 1 seconde
       expect(totalTime / 1000).toBeLessThan(1); // < 1ms par hit en moyenne
     });
@@ -262,7 +280,7 @@ describe('AuthGuard - Performance Tests', () => {
       // Act - Tester différentes tailles de burst
       for (const size of testSizes) {
         const startTime = process.hrtime.bigint();
-        
+
         const promises = Array.from({ length: size }, async () => {
           const request = { headers: { authorization: `Bearer ${token}` } };
           const context = createMockExecutionContext(request);
@@ -281,7 +299,7 @@ describe('AuthGuard - Performance Tests', () => {
       }
 
       // Assert - Performance doit rester linéaire
-      const avgTimes = timings.map(t => t.avgTime);
+      const avgTimes = timings.map((t) => t.avgTime);
       const minAvgTime = Math.min(...avgTimes);
       const maxAvgTime = Math.max(...avgTimes);
       const scalingFactor = maxAvgTime / minAvgTime;
@@ -313,7 +331,9 @@ describe('AuthGuard - Performance Tests', () => {
       });
 
       // Assert
-      expect(executionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME);
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME,
+      );
       expect(httpService.post).toHaveBeenCalledTimes(1);
       expect(cacheService.set).toHaveBeenCalledTimes(1); // Mise en cache
     });
@@ -329,9 +349,7 @@ describe('AuthGuard - Performance Tests', () => {
 
       // Simuler latence réseau (50ms) avec Observable correct
       httpService.post.mockReturnValue(
-        of(createValidAuthResponse(user)).pipe(
-          delay(50)
-        ) as any
+        of(createValidAuthResponse(user)).pipe(delay(50)) as any,
       );
 
       // Act & Measure
@@ -342,20 +360,22 @@ describe('AuthGuard - Performance Tests', () => {
 
       // Assert
       expect(executionTime).toBeGreaterThan(45); // Au moins la latence simulée
-      expect(executionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME);
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME,
+      );
     });
 
     it('should batch concurrent requests to same token efficiently', async () => {
       // Arrange
       const token = createPerformanceToken('concurrent');
       const user = createValidUser();
-      
+
       cacheService.get.mockResolvedValue(null);
       httpService.post.mockReturnValue(of(createValidAuthResponse(user)));
 
       // Act - 100 requêtes concurrentes avec le même token
       const startTime = process.hrtime.bigint();
-      
+
       const promises = Array.from({ length: 100 }, async () => {
         const request = { headers: { authorization: `Bearer ${token}` } };
         const context = createMockExecutionContext(request);
@@ -367,9 +387,11 @@ describe('AuthGuard - Performance Tests', () => {
       const totalTime = Number(endTime - startTime) / 1000000;
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
-      expect(totalTime).toBeLessThan(PERFORMANCE_THRESHOLDS.CONCURRENT_REQUESTS_MAX_TIME);
-      
+      expect(results.every((result) => result === true)).toBe(true);
+      expect(totalTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.CONCURRENT_REQUESTS_MAX_TIME,
+      );
+
       // Note: Sans déduplication, chaque requête fait un appel au service
       // Dans une vraie implémentation, on pourrait optimiser cela
       expect(httpService.post).toHaveBeenCalledTimes(100);
@@ -379,7 +401,7 @@ describe('AuthGuard - Performance Tests', () => {
       // Arrange
       const cachedUser = createValidUser();
       const newUser = { ...createValidUser(), id: 'new-user-456' };
-      
+
       const cachedToken = createPerformanceToken('cached');
       const newToken = createPerformanceToken('new');
 
@@ -398,7 +420,7 @@ describe('AuthGuard - Performance Tests', () => {
 
       // Act - Mélange de 100 requêtes
       const startTime = process.hrtime.bigint();
-      
+
       const promises = Array.from({ length: 100 }, async (_, i) => {
         const token = i % 2 === 0 ? cachedToken : newToken;
         const request = { headers: { authorization: `Bearer ${token}` } };
@@ -411,9 +433,11 @@ describe('AuthGuard - Performance Tests', () => {
       const totalTime = Number(endTime - startTime) / 1000000;
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
-      expect(totalTime).toBeLessThan(PERFORMANCE_THRESHOLDS.CONCURRENT_REQUESTS_MAX_TIME);
-      
+      expect(results.every((result) => result === true)).toBe(true);
+      expect(totalTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.CONCURRENT_REQUESTS_MAX_TIME,
+      );
+
       // Vérification du nombre d'appels au service (environ 50 cache misses)
       const callCount = httpService.post.mock.calls.length;
       expect(callCount).toBeGreaterThanOrEqual(45);
@@ -425,7 +449,7 @@ describe('AuthGuard - Performance Tests', () => {
   // TESTS DE PERFORMANCE - GESTION DES ERREURS
   // ============================================================================
 
-  describe('Performance de la gestion d\'erreurs', () => {
+  describe("Performance de la gestion d'erreurs", () => {
     it('should handle authentication failures quickly', async () => {
       // Arrange
       const invalidToken = 'invalid.token.signature';
@@ -433,7 +457,9 @@ describe('AuthGuard - Performance Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '401')));
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Invalid token', '401')),
+      );
 
       // Act & Measure
       const executionTime = await measureExecutionTime(async () => {
@@ -447,7 +473,9 @@ describe('AuthGuard - Performance Tests', () => {
       });
 
       // Assert
-      expect(executionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.ERROR_HANDLING_MAX_TIME);
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.ERROR_HANDLING_MAX_TIME,
+      );
     });
 
     it('should handle missing tokens quickly', async () => {
@@ -486,7 +514,9 @@ describe('AuthGuard - Performance Tests', () => {
       });
 
       // Assert
-      expect(executionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME + 10); // +10ms tolérance
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME + 10,
+      ); // +10ms tolérance
       expect(httpService.post).toHaveBeenCalled(); // Fallback au service
     });
 
@@ -497,7 +527,9 @@ describe('AuthGuard - Performance Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new Error('timeout of 5000ms exceeded')));
+      httpService.post.mockReturnValue(
+        throwError(() => new Error('timeout of 5000ms exceeded')),
+      );
 
       // Act & Measure
       const executionTime = await measureExecutionTime(async () => {
@@ -505,12 +537,16 @@ describe('AuthGuard - Performance Tests', () => {
           await authGuard.canActivate(context);
           fail('Should have thrown');
         } catch (error) {
-          expect(error.message).toMatch(/Authentication (failed|service unavailable|service error)/);
+          expect(error.message).toMatch(
+            /Authentication (failed|service unavailable|service error)/,
+          );
         }
       });
 
       // Assert
-      expect(executionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.ERROR_HANDLING_MAX_TIME);
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.ERROR_HANDLING_MAX_TIME,
+      );
     });
   });
 
@@ -539,8 +575,12 @@ describe('AuthGuard - Performance Tests', () => {
       });
 
       // Assert
-      expect(Math.abs(memoryUsage.diff)).toBeLessThan(PERFORMANCE_THRESHOLDS.MEMORY_LEAK_THRESHOLD);
-      console.log(`📊 Memory usage: ${(memoryUsage.diff / 1024 / 1024).toFixed(2)}MB`);
+      expect(Math.abs(memoryUsage.diff)).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.MEMORY_LEAK_THRESHOLD,
+      );
+      console.log(
+        `📊 Memory usage: ${(memoryUsage.diff / 1024 / 1024).toFixed(2)}MB`,
+      );
     });
 
     it('should handle large user objects without excessive memory allocation', async () => {
@@ -563,7 +603,9 @@ describe('AuthGuard - Performance Tests', () => {
       const memoryDiff = memoryAfter - memoryBefore;
 
       // Assert
-      expect(executionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME * 2);
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME * 2,
+      );
       expect(memoryDiff).toBeLessThan(5 * 1024 * 1024); // Max 5MB pour un gros objet
       expect((request as any).user).toEqual(largeUser);
     });
@@ -581,9 +623,9 @@ describe('AuthGuard - Performance Tests', () => {
         const token = createPerformanceToken(`gc-${i}`);
         const request = { headers: { authorization: `Bearer ${token}` } };
         const context = createMockExecutionContext(request);
-        
+
         await authGuard.canActivate(context);
-        
+
         // Nettoyer la référence utilisateur pour permettre GC
         delete (request as any).user;
       }
@@ -623,8 +665,10 @@ describe('AuthGuard - Performance Tests', () => {
       });
 
       // Assert
-      expect(executionTime).toBeLessThan(PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME * 2);
-      
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME * 2,
+      );
+
       // Cleanup
       memoryHogs.length = 0;
     });
@@ -643,8 +687,10 @@ describe('AuthGuard - Performance Tests', () => {
         roles: ['user'],
       }));
 
-      const tokens = users.map((_, i) => createPerformanceToken(`cache-efficiency-${i}`));
-      
+      const tokens = users.map((_, i) =>
+        createPerformanceToken(`cache-efficiency-${i}`),
+      );
+
       let cacheHits = 0;
       let cacheMisses = 0;
 
@@ -659,8 +705,12 @@ describe('AuthGuard - Performance Tests', () => {
         }
       });
 
-      httpService.post.mockImplementation(() => 
-        of(createValidAuthResponse(users[Math.floor(Math.random() * users.length)]))
+      httpService.post.mockImplementation(() =>
+        of(
+          createValidAuthResponse(
+            users[Math.floor(Math.random() * users.length)],
+          ),
+        ),
       );
 
       // Act - Simuler trafic réaliste (mélange de tokens répétés)
@@ -674,17 +724,21 @@ describe('AuthGuard - Performance Tests', () => {
           const request = { headers: { authorization: `Bearer ${token}` } };
           const context = createMockExecutionContext(request);
           return authGuard.canActivate(context);
-        })
+        }),
       );
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
-      
+      expect(results.every((result) => result === true)).toBe(true);
+
       const totalRequests = cacheHits + cacheMisses;
       const cacheEfficiency = cacheHits / totalRequests;
-      
-      expect(cacheEfficiency).toBeGreaterThan(PERFORMANCE_THRESHOLDS.CACHE_EFFICIENCY_MIN);
-      console.log(`📊 Cache efficiency: ${(cacheEfficiency * 100).toFixed(1)}% (${cacheHits}/${totalRequests})`);
+
+      expect(cacheEfficiency).toBeGreaterThan(
+        PERFORMANCE_THRESHOLDS.CACHE_EFFICIENCY_MIN,
+      );
+      console.log(
+        `📊 Cache efficiency: ${(cacheEfficiency * 100).toFixed(1)}% (${cacheHits}/${totalRequests})`,
+      );
     });
 
     it('should maintain performance with cache eviction', async () => {
@@ -713,7 +767,7 @@ describe('AuthGuard - Performance Tests', () => {
 
       // Act - Beaucoup de tokens différents pour forcer l'éviction
       const startTime = process.hrtime.bigint();
-      
+
       const promises = Array.from({ length: 500 }, async (_, i) => {
         const token = createPerformanceToken(`eviction-${i}`);
         const request = { headers: { authorization: `Bearer ${token}` } };
@@ -726,7 +780,7 @@ describe('AuthGuard - Performance Tests', () => {
       const totalTime = Number(endTime - startTime) / 1000000;
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
       expect(totalTime).toBeLessThan(5000); // 5 secondes max pour 500 requêtes
       expect(totalTime / 500).toBeLessThan(10); // < 10ms par requête en moyenne
     });
@@ -741,7 +795,7 @@ describe('AuthGuard - Performance Tests', () => {
       // Arrange
       const token = createPerformanceToken('baseline');
       const user = createValidUser();
-      
+
       // Test cache hit performance
       cacheService.get.mockResolvedValue(user);
       const cacheHitTime = await measureExecutionTime(async () => {
@@ -760,7 +814,9 @@ describe('AuthGuard - Performance Tests', () => {
       });
 
       // Test error handling performance
-      httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid', '401')));
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Invalid', '401')),
+      );
       const errorTime = await measureExecutionTime(async () => {
         try {
           const request = { headers: { authorization: `Bearer invalid` } };
@@ -779,16 +835,26 @@ describe('AuthGuard - Performance Tests', () => {
         timestamp: new Date().toISOString(),
       };
 
-      expect(cacheHitTime).toBeLessThan(PERFORMANCE_THRESHOLDS.CACHE_HIT_MAX_TIME);
-      expect(cacheMissTime).toBeLessThan(PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME);
-      expect(errorTime).toBeLessThan(PERFORMANCE_THRESHOLDS.ERROR_HANDLING_MAX_TIME);
+      expect(cacheHitTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.CACHE_HIT_MAX_TIME,
+      );
+      expect(cacheMissTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME,
+      );
+      expect(errorTime).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.ERROR_HANDLING_MAX_TIME,
+      );
 
       console.log('📊 AuthGuard Performance Baselines:', performanceBaselines);
 
       if (global.recordPerformanceMetric) {
-        global.recordPerformanceMetric('auth-guard-baseline', performanceBaselines, {
-          type: 'regression-baseline',
-        });
+        global.recordPerformanceMetric(
+          'auth-guard-baseline',
+          performanceBaselines,
+          {
+            type: 'regression-baseline',
+          },
+        );
       }
     });
 
@@ -818,21 +884,31 @@ describe('AuthGuard - Performance Tests', () => {
       // Assert - Le guard doit être raisonnablement performant
       // Dans un environnement de test, l'overhead peut être significatif mais doit rester raisonnable
       const overhead = (guardTime - baselineTime) / baselineTime;
-      
+
       // Si baseline est très rapide, on accepte un overhead plus important
       const maxOverhead = baselineTime < 0.1 ? 50 : 5; // 5000% si baseline < 0.1ms, sinon 500%
-      
+
       expect(overhead).toBeLessThan(maxOverhead);
-      console.log(`📊 Performance overhead: ${(overhead * 100).toFixed(1)}% (${guardTime.toFixed(2)}ms vs ${baselineTime.toFixed(2)}ms)`);
+      console.log(
+        `📊 Performance overhead: ${(overhead * 100).toFixed(1)}% (${guardTime.toFixed(2)}ms vs ${baselineTime.toFixed(2)}ms)`,
+      );
     });
 
     it('should establish performance profile for monitoring', async () => {
       // Arrange
       const scenarios = [
-        { name: 'cache-hit', cacheResult: createValidUser(), expectSuccess: true },
+        {
+          name: 'cache-hit',
+          cacheResult: createValidUser(),
+          expectSuccess: true,
+        },
         { name: 'cache-miss', cacheResult: null, expectSuccess: true },
         { name: 'invalid-token', cacheResult: null, expectSuccess: false },
-        { name: 'large-user', cacheResult: createLargeUser('large'), expectSuccess: true },
+        {
+          name: 'large-user',
+          cacheResult: createLargeUser('large'),
+          expectSuccess: true,
+        },
       ];
 
       const performanceProfile: Record<string, any> = {};
@@ -840,15 +916,23 @@ describe('AuthGuard - Performance Tests', () => {
       // Act - Mesurer chaque scénario
       for (const scenario of scenarios) {
         cacheService.get.mockResolvedValue(scenario.cacheResult);
-        
+
         if (scenario.expectSuccess) {
-          httpService.post.mockReturnValue(of(createValidAuthResponse(scenario.cacheResult || createValidUser())));
+          httpService.post.mockReturnValue(
+            of(
+              createValidAuthResponse(
+                scenario.cacheResult || createValidUser(),
+              ),
+            ),
+          );
         } else {
-          httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid', '401')));
+          httpService.post.mockReturnValue(
+            throwError(() => new AxiosError('Invalid', '401')),
+          );
         }
 
         const times: number[] = [];
-        
+
         // Plusieurs mesures pour la précision
         for (let i = 0; i < 10; i++) {
           const token = createPerformanceToken(`profile-${scenario.name}-${i}`);
@@ -882,9 +966,15 @@ describe('AuthGuard - Performance Tests', () => {
       console.log('🔍 AuthGuard Performance Profile:', performanceProfile);
 
       // Vérifier que tous les scénarios respectent leurs seuils
-      expect(performanceProfile['cache-hit'].avg).toBeLessThan(PERFORMANCE_THRESHOLDS.CACHE_HIT_MAX_TIME);
-      expect(performanceProfile['cache-miss'].avg).toBeLessThan(PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME);
-      expect(performanceProfile['invalid-token'].avg).toBeLessThan(PERFORMANCE_THRESHOLDS.ERROR_HANDLING_MAX_TIME);
+      expect(performanceProfile['cache-hit'].avg).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.CACHE_HIT_MAX_TIME,
+      );
+      expect(performanceProfile['cache-miss'].avg).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.AUTH_SERVICE_CALL_MAX_TIME,
+      );
+      expect(performanceProfile['invalid-token'].avg).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.ERROR_HANDLING_MAX_TIME,
+      );
     });
   });
 });

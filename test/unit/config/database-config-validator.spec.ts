@@ -8,7 +8,9 @@ import {
 } from '../../../src/config/database.config';
 
 // Helper pour créer un DatabaseConfig complet avec overrides
-function createTestDatabaseConfig(overrides: Partial<DatabaseConfig> = {}): DatabaseConfig {
+function createTestDatabaseConfig(
+  overrides: Partial<DatabaseConfig> = {},
+): DatabaseConfig {
   return {
     url: 'postgresql://test@localhost/db',
     maxConnections: 10,
@@ -85,9 +87,11 @@ describe('DatabaseConfigValidator', () => {
         'postgresql://user:pass@127.0.0.1:5432/testdb',
         'postgresql://user:pass@example.com:5432/db?sslmode=require',
       ];
-      
-      validUrls.forEach(url => {
-        expect(() => DatabaseConfigValidator.validateConnectionUrl(url)).not.toThrow();
+
+      validUrls.forEach((url) => {
+        expect(() =>
+          DatabaseConfigValidator.validateConnectionUrl(url),
+        ).not.toThrow();
         expect(DatabaseConfigValidator.validateConnectionUrl(url)).toBe(true);
       });
     });
@@ -99,11 +103,12 @@ describe('DatabaseConfigValidator', () => {
         'ftp://user@host/db',
         'redis://localhost:6379',
       ];
-      
-      invalidUrls.forEach(url => {
-        expect(() => DatabaseConfigValidator.validateConnectionUrl(url))
-          .toThrow(DatabaseValidationError);
-        
+
+      invalidUrls.forEach((url) => {
+        expect(() =>
+          DatabaseConfigValidator.validateConnectionUrl(url),
+        ).toThrow(DatabaseValidationError);
+
         try {
           DatabaseConfigValidator.validateConnectionUrl(url);
         } catch (error) {
@@ -116,14 +121,12 @@ describe('DatabaseConfigValidator', () => {
     });
 
     it('should reject URLs without hostname', () => {
-      const urlsWithoutHost = [
-        'postgresql:///db',
-        'postgresql://:5432/db',
-      ];
+      const urlsWithoutHost = ['postgresql:///db', 'postgresql://:5432/db'];
 
-      urlsWithoutHost.forEach(url => {
-        expect(() => DatabaseConfigValidator.validateConnectionUrl(url))
-          .toThrow('Database URL must include hostname');
+      urlsWithoutHost.forEach((url) => {
+        expect(() =>
+          DatabaseConfigValidator.validateConnectionUrl(url),
+        ).toThrow('Database URL must include hostname');
       });
     });
 
@@ -134,19 +137,23 @@ describe('DatabaseConfigValidator', () => {
         'postgresql://user@localhost/',
       ];
 
-      urlsWithoutDb.forEach(url => {
-        expect(() => DatabaseConfigValidator.validateConnectionUrl(url))
-          .toThrow('Database URL must include database name');
+      urlsWithoutDb.forEach((url) => {
+        expect(() =>
+          DatabaseConfigValidator.validateConnectionUrl(url),
+        ).toThrow('Database URL must include database name');
       });
     });
 
     it('should reject empty/null URLs', () => {
-      expect(() => DatabaseConfigValidator.validateConnectionUrl(''))
-        .toThrow('Database URL is required');
-      expect(() => DatabaseConfigValidator.validateConnectionUrl(null as any))
-        .toThrow('Database URL is required');
-      expect(() => DatabaseConfigValidator.validateConnectionUrl(undefined as any))
-        .toThrow('Database URL is required');
+      expect(() => DatabaseConfigValidator.validateConnectionUrl('')).toThrow(
+        'Database URL is required',
+      );
+      expect(() =>
+        DatabaseConfigValidator.validateConnectionUrl(null as any),
+      ).toThrow('Database URL is required');
+      expect(() =>
+        DatabaseConfigValidator.validateConnectionUrl(undefined as any),
+      ).toThrow('Database URL is required');
     });
 
     it('should handle malformed URLs gracefully', () => {
@@ -156,10 +163,11 @@ describe('DatabaseConfigValidator', () => {
         'postgresql://user:pass@[::1:5432/db',
       ];
 
-      malformedUrls.forEach(url => {
-        expect(() => DatabaseConfigValidator.validateConnectionUrl(url))
-          .toThrow(DatabaseValidationError);
-        
+      malformedUrls.forEach((url) => {
+        expect(() =>
+          DatabaseConfigValidator.validateConnectionUrl(url),
+        ).toThrow(DatabaseValidationError);
+
         try {
           DatabaseConfigValidator.validateConnectionUrl(url);
         } catch (error) {
@@ -179,9 +187,10 @@ describe('DatabaseConfigValidator', () => {
         idleTimeout: 300000,
         queryTimeout: 60000,
       });
-      
-      expect(() => DatabaseConfigValidator.validatePoolConfiguration(validConfig))
-        .not.toThrow();
+
+      expect(() =>
+        DatabaseConfigValidator.validatePoolConfiguration(validConfig),
+      ).not.toThrow();
     });
 
     it('should reject minConnections >= maxConnections', () => {
@@ -196,30 +205,36 @@ describe('DatabaseConfigValidator', () => {
           maxConnections: max,
           minConnections: min,
         });
-        
-        expect(() => DatabaseConfigValidator.validatePoolConfiguration(invalidConfig))
-          .toThrow('Minimum connections must be less than maximum connections');
+
+        expect(() =>
+          DatabaseConfigValidator.validatePoolConfiguration(invalidConfig),
+        ).toThrow('Minimum connections must be less than maximum connections');
       });
     });
 
     it('should reject negative or zero maxConnections', () => {
       const invalidValues = [0, -1, -10];
 
-      invalidValues.forEach(value => {
+      invalidValues.forEach((value) => {
         const invalidConfig = createTestDatabaseConfig({
           maxConnections: value,
           minConnections: 1,
         });
-        
-        expect(() => DatabaseConfigValidator.validatePoolConfiguration(invalidConfig))
-          .toThrow('Maximum connections must be greater than 0');
+
+        expect(() =>
+          DatabaseConfigValidator.validatePoolConfiguration(invalidConfig),
+        ).toThrow('Maximum connections must be greater than 0');
       });
     });
 
     it('should reject invalid timeout values', () => {
       const timeoutTests = [
         { name: 'connection timeout', field: 'connectionTimeout', value: 0 },
-        { name: 'connection timeout', field: 'connectionTimeout', value: -1000 },
+        {
+          name: 'connection timeout',
+          field: 'connectionTimeout',
+          value: -1000,
+        },
         { name: 'query timeout', field: 'queryTimeout', value: 0 },
         { name: 'query timeout', field: 'queryTimeout', value: -5000 },
       ];
@@ -228,9 +243,12 @@ describe('DatabaseConfigValidator', () => {
         const invalidConfig = createTestDatabaseConfig({
           [field]: value,
         });
-        
-        expect(() => DatabaseConfigValidator.validatePoolConfiguration(invalidConfig))
-          .toThrow(`${name.charAt(0).toUpperCase() + name.slice(1)} must be greater than 0`);
+
+        expect(() =>
+          DatabaseConfigValidator.validatePoolConfiguration(invalidConfig),
+        ).toThrow(
+          `${name.charAt(0).toUpperCase() + name.slice(1)} must be greater than 0`,
+        );
       });
     });
 
@@ -239,30 +257,35 @@ describe('DatabaseConfigValidator', () => {
         connectionTimeout: 60000,
         idleTimeout: 30000, // Less than connection timeout
       });
-      
-      expect(() => DatabaseConfigValidator.validatePoolConfiguration(invalidConfig))
-        .toThrow('Idle timeout should be greater than connection timeout');
+
+      expect(() =>
+        DatabaseConfigValidator.validatePoolConfiguration(invalidConfig),
+      ).toThrow('Idle timeout should be greater than connection timeout');
     });
   });
 
   describe('validateEnvironmentVariables', () => {
     it('should pass when DATABASE_URL is set', () => {
       process.env.DATABASE_URL = 'postgresql://test@localhost/db';
-      
-      expect(() => DatabaseConfigValidator.validateEnvironmentVariables())
-        .not.toThrow();
+
+      expect(() =>
+        DatabaseConfigValidator.validateEnvironmentVariables(),
+      ).not.toThrow();
     });
 
     it('should throw when DATABASE_URL is missing', () => {
       delete process.env.DATABASE_URL;
-      
-      expect(() => DatabaseConfigValidator.validateEnvironmentVariables())
-        .toThrow(DatabaseConfigurationError);
-        
+
+      expect(() =>
+        DatabaseConfigValidator.validateEnvironmentVariables(),
+      ).toThrow(DatabaseConfigurationError);
+
       try {
         DatabaseConfigValidator.validateEnvironmentVariables();
       } catch (error) {
-        expect(error.message).toContain('Missing required database environment variables: DATABASE_URL');
+        expect(error.message).toContain(
+          'Missing required database environment variables: DATABASE_URL',
+        );
       }
     });
 
@@ -272,19 +295,25 @@ describe('DatabaseConfigValidator', () => {
       delete process.env.DB_MAX_CONNECTIONS;
       delete process.env.DB_CONNECTION_TIMEOUT;
       delete process.env.DB_SSL_ENABLED;
-      
+
       DatabaseConfigValidator.validateEnvironmentVariables();
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Optional database environment variable not set: DB_MAX_CONNECTIONS')
+        expect.stringContaining(
+          'Optional database environment variable not set: DB_MAX_CONNECTIONS',
+        ),
       );
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Optional database environment variable not set: DB_CONNECTION_TIMEOUT')
+        expect.stringContaining(
+          'Optional database environment variable not set: DB_CONNECTION_TIMEOUT',
+        ),
       );
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Optional database environment variable not set: DB_SSL_ENABLED')
+        expect.stringContaining(
+          'Optional database environment variable not set: DB_SSL_ENABLED',
+        ),
       );
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -294,11 +323,11 @@ describe('DatabaseConfigValidator', () => {
       process.env.DB_MAX_CONNECTIONS = '10';
       process.env.DB_CONNECTION_TIMEOUT = '30000';
       process.env.DB_SSL_ENABLED = 'true';
-      
+
       DatabaseConfigValidator.validateEnvironmentVariables();
-      
+
       expect(consoleSpy).not.toHaveBeenCalled();
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -331,7 +360,7 @@ describe('DatabaseConfigValidator', () => {
 
     it('should apply environment-based limits', () => {
       process.env.NODE_ENV = 'production';
-      
+
       const result = DatabaseConfigValidator.sanitizeConfig({});
 
       expect(result.maxConnections).toBe(25); // Production limit
@@ -340,7 +369,7 @@ describe('DatabaseConfigValidator', () => {
 
     it('should use environment variables as fallback', () => {
       process.env.DATABASE_URL = 'postgresql://env@localhost/envdb';
-      
+
       const result = DatabaseConfigValidator.sanitizeConfig({});
 
       expect(result.url).toBe('postgresql://env@localhost/envdb');

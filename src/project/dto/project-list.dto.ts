@@ -4,23 +4,23 @@ import { ProjectStatus } from '../../common/enums/project-status.enum';
 
 /**
  * DTO optimisé pour l'affichage des projets en liste
- * 
+ *
  * Version allégée du ProjectResponseDto, conçue spécifiquement pour
  * les performances des requêtes de listing paginé. Contient uniquement
  * les informations essentielles pour l'affichage en cartes ou lignes.
- * 
+ *
  * OPTIMISATIONS POUR LES PERFORMANCES :
  * - Pas de statistiques détaillées (évite les JOINs coûteux)
  * - Pas de prompt initial (évite le transfert de données volumineuses)
  * - Compteurs de fichiers au lieu des listes complètes
  * - Transformations légères et calculs simples uniquement
- * 
+ *
  * USAGE PRÉVU :
  * - Listings paginés de projets
  * - Cartes de projet dans le dashboard
  * - Résultats de recherche
  * - Aperçus de projets
- * 
+ *
  * @example
  * ```typescript
  * // Usage dans un contrôleur
@@ -33,7 +33,7 @@ import { ProjectStatus } from '../../common/enums/project-status.enum';
 export class ProjectListItemDto {
   /**
    * Identifiant unique du projet
-   * 
+   *
    * UUID généré automatiquement lors de la création.
    * Utilisé pour la navigation vers le détail du projet.
    */
@@ -47,12 +47,12 @@ export class ProjectListItemDto {
 
   /**
    * Nom du projet défini par l'utilisateur
-   * 
+   *
    * Titre principal affiché dans les cartes et listes de projets.
    * Modifiable via l'endpoint de mise à jour.
    */
   @ApiProperty({
-    description: 'Nom du projet défini par l\'utilisateur',
+    description: "Nom du projet défini par l'utilisateur",
     example: 'Application E-commerce',
     maxLength: 100,
   })
@@ -61,7 +61,7 @@ export class ProjectListItemDto {
 
   /**
    * Description courte du projet (optionnelle)
-   * 
+   *
    * Aperçu du contexte du projet pour l'affichage en liste.
    * Tronquée automatiquement si trop longue pour l'affichage.
    */
@@ -75,7 +75,7 @@ export class ProjectListItemDto {
 
   /**
    * Statut actuel du projet
-   * 
+   *
    * État du cycle de vie déterminant la couleur d'affichage
    * et les actions disponibles dans l'interface.
    */
@@ -89,7 +89,7 @@ export class ProjectListItemDto {
 
   /**
    * Date de création du projet
-   * 
+   *
    * Permet l'affichage de l'âge du projet et le tri chronologique.
    * Affichée sous forme relative ("il y a 3 jours") dans l'UI.
    */
@@ -105,7 +105,7 @@ export class ProjectListItemDto {
 
   /**
    * Date de dernière modification
-   * 
+   *
    * Indicateur d'activité récente pour le tri et l'affichage.
    * Utilisée pour identifier les projets récemment modifiés.
    */
@@ -121,12 +121,12 @@ export class ProjectListItemDto {
 
   /**
    * Nombre de fichiers uploadés par l'utilisateur
-   * 
+   *
    * Compteur optimisé évitant le transfert des listes complètes.
    * Calculé côté base de données pour les performances.
    */
   @ApiProperty({
-    description: 'Nombre de fichiers uploadés par l\'utilisateur',
+    description: "Nombre de fichiers uploadés par l'utilisateur",
     example: 2,
     minimum: 0,
   })
@@ -146,7 +146,7 @@ export class ProjectListItemDto {
 
   /**
    * Nombre de fichiers générés par les agents IA
-   * 
+   *
    * Indicateur de progression et de productivité du projet.
    * Affiché comme badge dans les cartes de projet.
    */
@@ -171,7 +171,7 @@ export class ProjectListItemDto {
 
   /**
    * Indicateur de présence de statistiques
-   * 
+   *
    * Détermine si l'icône de statistiques doit être affichée
    * dans l'interface sans charger les données complètes.
    */
@@ -192,7 +192,7 @@ export class ProjectListItemDto {
 
   /**
    * Coût total estimé du projet (optionnel)
-   * 
+   *
    * Information de coût affichée si disponible, sans charger
    * toutes les statistiques détaillées pour les performances.
    */
@@ -208,7 +208,12 @@ export class ProjectListItemDto {
       return Math.max(0, Number(value.toFixed(2))); // Valeur précalculée
     }
     // Fallback : extraire depuis l'objet statistics si présent
-    if (obj && obj.statistics && obj.statistics.costs && typeof obj.statistics.costs.total === 'number') {
+    if (
+      obj &&
+      obj.statistics &&
+      obj.statistics.costs &&
+      typeof obj.statistics.costs.total === 'number'
+    ) {
       return Math.max(0, Number(obj.statistics.costs.total.toFixed(2)));
     }
     return undefined;
@@ -221,10 +226,10 @@ export class ProjectListItemDto {
 
   /**
    * Retourne une description tronquée pour l'affichage en carte
-   * 
+   *
    * @param maxLength Longueur maximale souhaitée (défaut: 100)
    * @returns Description tronquée avec ellipse si nécessaire
-   * 
+   *
    * @example
    * ```typescript
    * const shortDesc = project.getShortDescription(80);
@@ -233,25 +238,26 @@ export class ProjectListItemDto {
    */
   getShortDescription(maxLength: number = 100): string {
     if (!this.description) return '';
-    
+
     if (this.description.length <= maxLength) {
       return this.description;
     }
-    
+
     // Trouve le dernier espace avant la limite pour éviter de couper les mots
     const truncated = this.description.substring(0, maxLength);
     const lastSpace = truncated.lastIndexOf(' ');
-    
-    if (lastSpace > maxLength * 0.8) { // Si l'espace est assez proche de la fin
+
+    if (lastSpace > maxLength * 0.8) {
+      // Si l'espace est assez proche de la fin
       return truncated.substring(0, lastSpace) + '...';
     }
-    
+
     return truncated + '...';
   }
 
   /**
    * Retourne le nombre total de fichiers (uploadés + générés)
-   * 
+   *
    * @returns Somme des fichiers uploadés et générés
    */
   getTotalFilesCount(): number {
@@ -260,7 +266,7 @@ export class ProjectListItemDto {
 
   /**
    * Vérifie si le projet a des fichiers (uploadés ou générés)
-   * 
+   *
    * @returns true si au moins un fichier est présent
    */
   hasFiles(): boolean {
@@ -269,26 +275,26 @@ export class ProjectListItemDto {
 
   /**
    * Calcule l'âge du projet en jours
-   * 
+   *
    * @returns Nombre de jours depuis la création
    */
   getAgeInDays(): number {
     if (!this.createdAt || isNaN(this.createdAt.getTime())) {
       return 0; // Ligne 168 - pour les dates invalides
     }
-    
+
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - this.createdAt.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   }
 
   /**
    * Retourne une représentation relative de l'âge du projet
-   * 
+   *
    * @returns Chaîne d'affichage de l'âge ("aujourd'hui", "il y a 3 jours", etc.)
-   * 
+   *
    * @example
    * ```typescript
    * const ageLabel = project.getRelativeAge();
@@ -297,8 +303,8 @@ export class ProjectListItemDto {
    */
   getRelativeAge(): string {
     const days = this.getAgeInDays();
-    
-    if (days === 0) return 'aujourd\'hui';
+
+    if (days === 0) return "aujourd'hui";
     if (days === 1) return 'hier';
     if (days < 7) return `il y a ${days} jours`;
     if (days < 30) {
@@ -309,14 +315,14 @@ export class ProjectListItemDto {
       const months = Math.floor(days / 30);
       return months === 1 ? 'il y a 1 mois' : `il y a ${months} mois`;
     }
-    
+
     const years = Math.floor(days / 365);
     return years === 1 ? 'il y a 1 an' : `il y a ${years} ans`;
   }
 
   /**
    * Vérifie si le projet a été modifié depuis sa création
-   * 
+   *
    * @returns true si updatedAt > createdAt (avec tolérance de 1 seconde)
    */
   hasBeenModified(): boolean {
@@ -326,7 +332,7 @@ export class ProjectListItemDto {
 
   /**
    * Retourne un indicateur de l'activité récente du projet
-   * 
+   *
    * @returns Label d'activité pour l'affichage
    */
   getActivityIndicator(): 'nouveau' | 'récent' | 'actif' | 'ancien' {
@@ -342,16 +348,19 @@ export class ProjectListItemDto {
 
   /**
    * Vérifie si le projet est accessible à l'utilisateur
-   * 
+   *
    * @returns true si le statut permet l'accès utilisateur
    */
   isAccessible(): boolean {
-    return this.status === ProjectStatus.ACTIVE || this.status === ProjectStatus.ARCHIVED;
+    return (
+      this.status === ProjectStatus.ACTIVE ||
+      this.status === ProjectStatus.ARCHIVED
+    );
   }
 
   /**
    * Retourne la couleur d'affichage basée sur le statut
-   * 
+   *
    * @returns Code couleur pour l'interface utilisateur
    */
   getStatusColor(): string {
@@ -369,7 +378,7 @@ export class ProjectListItemDto {
 
   /**
    * Retourne le label d'affichage du statut
-   * 
+   *
    * @returns Label français du statut pour l'interface
    */
   getStatusLabel(): string {
@@ -387,7 +396,7 @@ export class ProjectListItemDto {
 
   /**
    * Vérifie si le projet est considéré comme productif
-   * 
+   *
    * @returns true si le projet a généré au moins un fichier
    */
   isProductive(): boolean {
@@ -396,49 +405,53 @@ export class ProjectListItemDto {
 
   /**
    * Retourne un score de complétude du projet (0-100)
-   * 
+   *
    * @returns Pourcentage de complétude basé sur différents critères
    */
   getCompletionScore(): number {
     let score = 0;
-    
+
     // 25% si des fichiers ont été uploadés
     if (this.uploadedFilesCount > 0) score += 25;
-    
+
     // 40% si des fichiers ont été générés
     if (this.generatedFilesCount > 0) score += 40;
-    
+
     // 25% si des statistiques sont disponibles
     if (this.hasStatistics) score += 25;
-    
+
     // 10% si le projet a une description non-vide
-    if (this.description && typeof this.description === 'string' && this.description.trim().length > 0) {
+    if (
+      this.description &&
+      typeof this.description === 'string' &&
+      this.description.trim().length > 0
+    ) {
       score += 10;
     }
-    
+
     return Math.min(100, score);
   }
 
   /**
    * Retourne les informations de coût formatées pour l'affichage
-   * 
+   *
    * @returns Chaîne formatée du coût ou indication si non disponible
    */
   getFormattedCost(): string {
     if (this.totalCost === undefined || this.totalCost === null) {
       return 'Non calculé';
     }
-    
+
     if (this.totalCost === 0) {
       return 'Gratuit';
     }
-    
+
     return `${this.totalCost.toFixed(2)}€`;
   }
 
   /**
    * Retourne un résumé compact pour l'affichage en tooltip
-   * 
+   *
    * @returns Chaîne descriptive complète du projet
    */
   getTooltipSummary(): string {
@@ -446,28 +459,31 @@ export class ProjectListItemDto {
     const files = this.getTotalFilesCount();
     const cost = this.getFormattedCost();
     const completion = this.getCompletionScore();
-    
+
     return `${this.name} - Créé ${age} - ${files} fichier(s) - ${cost} - ${completion}% complet`;
   }
 
   /**
    * Génère un résumé du projet pour l'affichage en liste
-   * 
+   *
    * @returns Chaîne descriptive optimisée pour les listes
    */
   toString(): string {
-    const filesInfo = this.hasFiles() ? `, files=${this.getTotalFilesCount()}` : '';
-    const costInfo = this.totalCost !== undefined ? `, cost=${this.getFormattedCost()}` : '';
+    const filesInfo = this.hasFiles()
+      ? `, files=${this.getTotalFilesCount()}`
+      : '';
+    const costInfo =
+      this.totalCost !== undefined ? `, cost=${this.getFormattedCost()}` : '';
     const activity = this.getActivityIndicator();
-    
+
     return `ProjectListItem[${this.name}](${this.status}, ${activity}, age=${this.getAgeInDays()}d${filesInfo}${costInfo})`;
   }
 
   /**
    * Crée une version sanitisée pour les logs (sans données sensibles)
-   * 
+   *
    * SÉCURITÉ CRITIQUE : Aucune donnée utilisateur exposée
-   * 
+   *
    * @returns Version sécurisée pour les logs de monitoring
    */
   toLogSafeString(): string {
@@ -475,13 +491,13 @@ export class ProjectListItemDto {
     const files = this.getTotalFilesCount();
     const completion = this.getCompletionScore();
     const activity = this.getActivityIndicator();
-    
+
     return `ProjectListItem[id=${this.id}, status=${this.status}, age=${age}d, files=${files}, completion=${completion}%, activity=${activity}]`;
   }
 
   /**
    * Retourne les métadonnées essentielles pour l'indexation et le tri
-   * 
+   *
    * @returns Objet contenant les données clés pour les opérations de liste
    */
   getListMetadata(): {
@@ -508,7 +524,7 @@ export class ProjectListItemDto {
 
   /**
    * Crée une version allégée pour les réponses rapides
-   * 
+   *
    * @returns Objet contenant uniquement les champs essentiels
    */
   toLightweight(): {

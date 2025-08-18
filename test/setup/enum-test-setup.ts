@@ -1,9 +1,9 @@
 /**
  * Setup spécialisé pour les tests du module project-status.enum.ts
- * 
+ *
  * Ce fichier configure l'environnement de test pour garantir des conditions
  * optimales et cohérentes pour tous les tests d'enum.
- * 
+ *
  * @fileoverview Setup des tests ProjectStatus enum
  */
 
@@ -19,7 +19,7 @@ expect.extend({
    */
   toBeValidHexColor(received: string) {
     const pass = /^#[0-9A-F]{6}$/i.test(received);
-    
+
     if (pass) {
       return {
         message: () => `expected ${received} not to be a valid hex color`,
@@ -27,7 +27,8 @@ expect.extend({
       };
     } else {
       return {
-        message: () => `expected ${received} to be a valid hex color (format: #RRGGBB)`,
+        message: () =>
+          `expected ${received} to be a valid hex color (format: #RRGGBB)`,
         pass: false,
       };
     }
@@ -37,27 +38,38 @@ expect.extend({
    * Matcher pour vérifier qu'un objet est une métadonnée valide de statut
    */
   toBeValidStatusMetadata(received: any) {
-    const requiredProperties = ['status', 'label', 'description', 'color', 'allowedTransitions'];
-    const missingProperties = requiredProperties.filter(prop => !(prop in received));
-    
+    const requiredProperties = [
+      'status',
+      'label',
+      'description',
+      'color',
+      'allowedTransitions',
+    ];
+    const missingProperties = requiredProperties.filter(
+      (prop) => !(prop in received),
+    );
+
     if (missingProperties.length === 0) {
       const colorValid = /^#[0-9A-F]{6}$/i.test(received.color);
       const transitionsValid = Array.isArray(received.allowedTransitions);
-      
+
       if (colorValid && transitionsValid) {
         return {
-          message: () => `expected ${JSON.stringify(received)} not to be valid status metadata`,
+          message: () =>
+            `expected ${JSON.stringify(received)} not to be valid status metadata`,
           pass: true,
         };
       } else {
         return {
-          message: () => `expected ${JSON.stringify(received)} to have valid color and transitions array`,
+          message: () =>
+            `expected ${JSON.stringify(received)} to have valid color and transitions array`,
           pass: false,
         };
       }
     } else {
       return {
-        message: () => `expected ${JSON.stringify(received)} to have properties: ${missingProperties.join(', ')}`,
+        message: () =>
+          `expected ${JSON.stringify(received)} to have properties: ${missingProperties.join(', ')}`,
         pass: false,
       };
     }
@@ -71,17 +83,19 @@ expect.extend({
     received();
     const endTime = performance.now();
     const actualTime = endTime - startTime;
-    
+
     const pass = actualTime <= expectedTime;
-    
+
     if (pass) {
       return {
-        message: () => `expected function to take more than ${expectedTime}ms but took ${actualTime.toFixed(2)}ms`,
+        message: () =>
+          `expected function to take more than ${expectedTime}ms but took ${actualTime.toFixed(2)}ms`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected function to complete within ${expectedTime}ms but took ${actualTime.toFixed(2)}ms`,
+        message: () =>
+          `expected function to complete within ${expectedTime}ms but took ${actualTime.toFixed(2)}ms`,
         pass: false,
       };
     }
@@ -103,13 +117,17 @@ declare global {
 jest.setTimeout(10000); // 10 secondes pour les tests normaux
 
 // Mock des dépendances externes si nécessaire
-jest.mock('@prisma/client', () => ({
-  ProjectStatus: {
-    ACTIVE: 'ACTIVE',
-    ARCHIVED: 'ARCHIVED',
-    DELETED: 'DELETED',
-  },
-}), { virtual: true });
+jest.mock(
+  '@prisma/client',
+  () => ({
+    ProjectStatus: {
+      ACTIVE: 'ACTIVE',
+      ARCHIVED: 'ARCHIVED',
+      DELETED: 'DELETED',
+    },
+  }),
+  { virtual: true },
+);
 
 // Configuration des variables d'environnement pour les tests
 process.env.NODE_ENV = 'test';
@@ -119,8 +137,14 @@ declare global {
   var testHelpers: {
     createMockStatus: () => string;
     generateRandomString: (length: number) => string;
-    createPerformanceTest: (fn: Function, iterations: number) => Promise<number>;
-    createMemoryTest: (fn: Function, iterations: number) => Promise<{ initial: number; final: number; diff: number }>;
+    createPerformanceTest: (
+      fn: Function,
+      iterations: number,
+    ) => Promise<number>;
+    createMemoryTest: (
+      fn: Function,
+      iterations: number,
+    ) => Promise<{ initial: number; final: number; diff: number }>;
   };
 }
 
@@ -137,7 +161,8 @@ global.testHelpers = {
    * Génère une chaîne aléatoire de la longueur spécifiée
    */
   generateRandomString(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -148,7 +173,10 @@ global.testHelpers = {
   /**
    * Teste les performances d'une fonction
    */
-  async createPerformanceTest(fn: Function, iterations: number): Promise<number> {
+  async createPerformanceTest(
+    fn: Function,
+    iterations: number,
+  ): Promise<number> {
     // Warm-up
     for (let i = 0; i < 100; i++) {
       fn();
@@ -167,7 +195,10 @@ global.testHelpers = {
   /**
    * Teste l'utilisation de la mémoire d'une fonction
    */
-  async createMemoryTest(fn: Function, iterations: number): Promise<{ initial: number; final: number; diff: number }> {
+  async createMemoryTest(
+    fn: Function,
+    iterations: number,
+  ): Promise<{ initial: number; final: number; diff: number }> {
     // Force garbage collection si disponible
     if (global.gc) {
       global.gc();
@@ -198,7 +229,7 @@ global.testHelpers = {
 afterEach(() => {
   // Nettoyer les mocks si nécessaire
   jest.clearAllMocks();
-  
+
   // Nettoyer les variables globales modifiées
   delete (global as any).maliciousCode;
   delete (global as any).maliciousValueOf;
@@ -305,16 +336,27 @@ export const TestUtils = {
   /**
    * Crée une suite de tests de performance standardisée
    */
-  createPerformanceSuite(name: string, fn: Function, expectedTime: number, iterations = 10000): void {
+  createPerformanceSuite(
+    name: string,
+    fn: Function,
+    expectedTime: number,
+    iterations = 10000,
+  ): void {
     describe(`${name} Performance`, () => {
       it(`should complete ${iterations} iterations within ${expectedTime}ms`, async () => {
-        const actualTime = await global.testHelpers.createPerformanceTest(fn, iterations);
+        const actualTime = await global.testHelpers.createPerformanceTest(
+          fn,
+          iterations,
+        );
         expect(actualTime).toBeLessThan(expectedTime);
       });
 
       it(`should not leak memory over ${iterations} iterations`, async () => {
-        const memoryResult = await global.testHelpers.createMemoryTest(fn, iterations);
-        
+        const memoryResult = await global.testHelpers.createMemoryTest(
+          fn,
+          iterations,
+        );
+
         // La mémoire ne devrait pas augmenter de plus de 10MB
         expect(memoryResult.diff).toBeLessThan(10 * 1024 * 1024);
       });

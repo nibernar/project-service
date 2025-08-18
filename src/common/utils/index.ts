@@ -1,24 +1,24 @@
 /**
  * Index centralisé des utilitaires communs du service
- * 
+ *
  * Export centralisé de tous les utilitaires réutilisables pour faciliter
  * l'import et maintenir une organisation claire du code.
- * 
+ *
  * @fileoverview Export centralisé des utilitaires
  * @version 1.0.0
  */
 
 // Utilitaires de validation métier
-export { 
+export {
   ValidationUtils,
   ValidationResult,
-  SanitizeOptions
+  SanitizeOptions,
 } from './validation.utils';
 
 // Types utilitaires pour la validation
 export type {
   ValidationResult as ValidationResponse,
-  SanitizeOptions as TextSanitizeOptions
+  SanitizeOptions as TextSanitizeOptions,
 } from './validation.utils';
 
 /**

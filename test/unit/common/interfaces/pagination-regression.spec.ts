@@ -1,6 +1,6 @@
 /**
  * Tests de régression pour les interfaces de pagination.
- * 
+ *
  * Ces tests garantissent que les modifications futures ne cassent pas
  * les comportements établis et documentés de l'API de pagination.
  */
@@ -28,7 +28,7 @@ describe('Pagination Regression Tests', () => {
       it('should maintain exact calculations for documented examples', () => {
         // Cas documenté dans la v1.0.0
         const result = calculatePaginationMeta(3, 10, 42);
-        
+
         expect(result).toEqual({
           page: 3,
           limit: 10,
@@ -42,7 +42,7 @@ describe('Pagination Regression Tests', () => {
       it('should preserve edge case behavior for zero total', () => {
         // Comportement établi pour total = 0
         const result = calculatePaginationMeta(1, 10, 0);
-        
+
         expect(result).toEqual({
           page: 1,
           limit: 10,
@@ -56,7 +56,7 @@ describe('Pagination Regression Tests', () => {
       it('should maintain behavior for single page scenarios', () => {
         // Comportement pour un seul élément
         const result = calculatePaginationMeta(1, 10, 5);
-        
+
         expect(result).toEqual({
           page: 1,
           limit: 10,
@@ -130,10 +130,10 @@ describe('Pagination Regression Tests', () => {
         expect(result).toHaveProperty('data');
         expect(result).toHaveProperty('pagination');
         expect(result).toHaveProperty('total');
-        
+
         expect(result.data).toBe(data); // Référence directe
         expect(result.total).toBe(20);
-        
+
         // Structure de pagination exacte
         expect(result.pagination).toHaveProperty('page');
         expect(result.pagination).toHaveProperty('limit');
@@ -145,7 +145,7 @@ describe('Pagination Regression Tests', () => {
 
       it('should preserve options handling behavior', () => {
         const data = ['test'];
-        
+
         // Comportement avec includeTotalCount: false
         const resultWithoutTotal = createPaginatedResult(data, 1, 10, 100, {
           includeTotalCount: false,
@@ -166,18 +166,32 @@ describe('Pagination Regression Tests', () => {
         const validCases = [
           {
             data: [],
-            pagination: { page: 1, limit: 10, totalPages: 0, hasNext: false, hasPrevious: false, offset: 0 },
+            pagination: {
+              page: 1,
+              limit: 10,
+              totalPages: 0,
+              hasNext: false,
+              hasPrevious: false,
+              offset: 0,
+            },
             total: 0,
           },
           {
             data: ['test'],
-            pagination: { page: 1, limit: 10, totalPages: 1, hasNext: false, hasPrevious: false, offset: 0 },
+            pagination: {
+              page: 1,
+              limit: 10,
+              totalPages: 1,
+              hasNext: false,
+              hasPrevious: false,
+              offset: 0,
+            },
             total: 1,
             extra: 'should be ignored',
           },
         ];
 
-        validCases.forEach(testCase => {
+        validCases.forEach((testCase) => {
           expect(isPaginatedResult(testCase)).toBe(true);
         });
 
@@ -192,7 +206,7 @@ describe('Pagination Regression Tests', () => {
           { data: [], pagination: {}, total: 'not number' },
         ];
 
-        invalidCases.forEach(testCase => {
+        invalidCases.forEach((testCase) => {
           expect(isPaginatedResult(testCase)).toBe(false);
         });
       });
@@ -266,10 +280,10 @@ describe('Pagination Regression Tests', () => {
       it('should support method chaining patterns', () => {
         const data = [1, 2, 3];
         const result = createPaginatedResult(data, 1, 10, 3);
-        
+
         // Pattern de chaînage qui doit rester supporté
         expect(() => {
-          const mapped = mapPaginatedResult(result, x => x * 2);
+          const mapped = mapPaginatedResult(result, (x) => x * 2);
           const valid = isPaginatedResult(mapped);
           expect(valid).toBe(true);
         }).not.toThrow();
@@ -288,7 +302,7 @@ describe('Pagination Regression Tests', () => {
         const start = performance.now();
 
         for (let i = 0; i < iterations; i++) {
-          calculatePaginationMeta(i % 100 + 1, 10, 1000);
+          calculatePaginationMeta((i % 100) + 1, 10, 1000);
         }
 
         const duration = performance.now() - start;
@@ -303,7 +317,7 @@ describe('Pagination Regression Tests', () => {
         const start = performance.now();
 
         for (let i = 0; i < iterations; i++) {
-          validatePaginationParams(i % 1000, i % 100 + 1, 200);
+          validatePaginationParams(i % 1000, (i % 100) + 1, 200);
         }
 
         const duration = performance.now() - start;
@@ -319,7 +333,7 @@ describe('Pagination Regression Tests', () => {
         const start = performance.now();
 
         for (let i = 0; i < iterations; i++) {
-          createPaginatedResult(data, i % 10 + 1, 10, 100);
+          createPaginatedResult(data, (i % 10) + 1, 10, 100);
         }
 
         const duration = performance.now() - start;
@@ -330,8 +344,7 @@ describe('Pagination Regression Tests', () => {
       });
     });
 
-    describe('Memory Usage Baseline', () => {
-    });
+    describe('Memory Usage Baseline', () => {});
   });
 
   describe('Error Handling Regression', () => {
@@ -344,11 +357,11 @@ describe('Pagination Regression Tests', () => {
         // Ces comportements d'erreur doivent rester identiques
         expect(() => calculatePaginationMeta(1, 0, 100)).not.toThrow();
         expect(() => validatePaginationParams(NaN, NaN, 100)).not.toThrow();
-        
+
         // mapPaginatedResult doit laisser les erreurs du mapper remonter
         const data = [1, 2, 3];
         const result = createPaginatedResult(data, 1, 10, 3);
-        
+
         expect(() => {
           mapPaginatedResult(result, (x) => {
             if (x === 2) throw new Error('Test error');
@@ -364,7 +377,7 @@ describe('Pagination Regression Tests', () => {
           { data: [], pagination: {}, total: null },
         ];
 
-        malformedObjects.forEach(obj => {
+        malformedObjects.forEach((obj) => {
           expect(isPaginatedResult(obj)).toBe(false);
         });
       });
@@ -379,11 +392,11 @@ describe('Pagination Regression Tests', () => {
     describe('Serialization Compatibility', () => {
       it('should maintain JSON serialization compatibility', () => {
         const result = createPaginatedResult(['test'], 1, 10, 1);
-        
+
         // Doit pouvoir être sérialisé et désérialisé sans perte
         const serialized = JSON.stringify(result);
         const deserialized = JSON.parse(serialized);
-        
+
         expect(isPaginatedResult(deserialized)).toBe(true);
         expect(deserialized.data).toEqual(['test']);
         expect(deserialized.pagination.page).toBe(1);
@@ -395,13 +408,13 @@ describe('Pagination Regression Tests', () => {
           { id: 1, createdAt: new Date('2023-01-01') },
           { id: 2, createdAt: new Date('2023-01-02') },
         ];
-        
+
         const result = createPaginatedResult(dataWithDates, 1, 10, 2);
-        
+
         // La sérialisation ne doit pas altérer la structure de base
         const serialized = JSON.stringify(result);
         const deserialized = JSON.parse(serialized);
-        
+
         expect(deserialized.data).toHaveLength(2);
         expect(deserialized.data[0].id).toBe(1);
         expect(typeof deserialized.data[0].createdAt).toBe('string'); // Date devient string
@@ -414,24 +427,24 @@ describe('Pagination Regression Tests', () => {
           id: number;
           name: string;
         }
-        
+
         const items: TestItem[] = [
           { id: 1, name: 'test1' },
           { id: 2, name: 'test2' },
         ];
-        
+
         const result = createPaginatedResult(items, 1, 10, 2);
-        
+
         // TypeScript doit inférer correctement le type
         expect(result.data[0].id).toBe(1);
         expect(result.data[0].name).toBe('test1');
-        
+
         // mapPaginatedResult doit préserver les types
-        const mapped = mapPaginatedResult(result, item => ({
+        const mapped = mapPaginatedResult(result, (item) => ({
           ...item,
           displayName: item.name.toUpperCase(),
         }));
-        
+
         expect(mapped.data[0].displayName).toBe('TEST1');
       });
     });
@@ -450,9 +463,9 @@ describe('Pagination Regression Tests', () => {
           { id: 1, name: 'Project 1' },
           { id: 2, name: 'Project 2' },
         ];
-        
+
         const result = createPaginatedResult(projects, 1, 10, 42);
-        
+
         expect(result.data).toBe(projects);
         expect(result.total).toBe(42);
         expect(result.pagination.page).toBe(1);
@@ -466,26 +479,35 @@ describe('Pagination Regression Tests', () => {
         const result = createPaginatedResult(data, 1, 10, -1, {
           includeTotalCount: false,
         });
-        
+
         expect(result.total).toBe(-1);
         expect(result.data).toBe(data);
       });
 
       it('should validate transformation example from documentation', () => {
-        interface Entity { id: number; internal: string; }
-        interface DTO { id: number; public: string; }
-        
+        interface Entity {
+          id: number;
+          internal: string;
+        }
+        interface DTO {
+          id: number;
+          public: string;
+        }
+
         const entities: Entity[] = [
           { id: 1, internal: 'internal1' },
           { id: 2, internal: 'internal2' },
         ];
-        
+
         const entityResult = createPaginatedResult(entities, 1, 10, 2);
-        const dtoResult = mapPaginatedResult(entityResult, (entity): DTO => ({
-          id: entity.id,
-          public: `public_${entity.internal}`,
-        }));
-        
+        const dtoResult = mapPaginatedResult(
+          entityResult,
+          (entity): DTO => ({
+            id: entity.id,
+            public: `public_${entity.internal}`,
+          }),
+        );
+
         expect(dtoResult.data[0].public).toBe('public_internal1');
         expect(dtoResult.pagination).toEqual(entityResult.pagination);
       });
@@ -512,11 +534,11 @@ describe('Pagination Regression Tests', () => {
           },
           total: 1,
         };
-        
+
         expect(isPaginatedResult(v1Result)).toBe(true);
-        
+
         // Doit pouvoir être traité par les nouvelles fonctions
-        const mapped = mapPaginatedResult(v1Result, x => x.toUpperCase());
+        const mapped = mapPaginatedResult(v1Result, (x) => x.toUpperCase());
         expect(mapped.data[0]).toBe('TEST');
       });
     });
@@ -545,7 +567,7 @@ describe('Pagination Regression Tests', () => {
           },
           total: 1,
         };
-        
+
         // Doit rester compatible
         expect(isPaginatedResult(resultWithCursor)).toBe(true);
       });
@@ -571,7 +593,7 @@ describe('Pagination Regression Tests', () => {
             generatedAt: new Date(),
           },
         };
-        
+
         expect(isPaginatedResult(resultWithMetadata)).toBe(true);
       });
     });

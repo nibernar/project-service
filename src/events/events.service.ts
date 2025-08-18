@@ -1,23 +1,23 @@
 /**
  * EventsService - Stub temporaire pour la publication d'événements métier
- * 
+ *
  * ATTENTION : Cette implémentation est temporaire !
- * 
+ *
  * Ce service stub permet de tester le workflow complet sans attendre
  * l'implémentation finale du module Events (Phase 6 de la roadmap).
- * 
+ *
  * FONCTIONNALITÉS ACTUELLES :
  * - Logging structuré des événements
  * - Interface compatible avec l'implémentation finale
  * - Simulation des délais de réseau
  * - Gestion basique des erreurs
- * 
+ *
  * À REMPLACER PAR (Phase 6) :
  * - Publication réelle vers l'orchestrateur (HTTP/Message Queue)
  * - Gestion des retry et dead letter queues
  * - Monitoring des flux d'événements
  * - Sérialisation/désérialisation avancée
- * 
+ *
  * @fileoverview Stub temporaire pour les événements projet
  * @version 0.1.0-stub
  * @since 2025-01-28
@@ -31,7 +31,7 @@ import { ConfigService } from '@nestjs/config';
  */
 export const EVENT_TYPES = {
   PROJECT_CREATED: 'project.created',
-  PROJECT_UPDATED: 'project.updated', 
+  PROJECT_UPDATED: 'project.updated',
   PROJECT_ARCHIVED: 'project.archived',
   PROJECT_DELETED: 'project.deleted',
   PROJECT_FILES_UPDATED: 'project.files.updated',
@@ -109,7 +109,7 @@ interface EventsConfig {
 
 /**
  * Service stub pour la publication d'événements métier
- * 
+ *
  * IMPORTANT : Ne pas utiliser en production !
  * Ce service simule la publication d'événements avec logging.
  */
@@ -121,19 +121,25 @@ export class EventsService {
   constructor(private readonly configService: ConfigService) {
     // Configuration du stub (peut être surchargée via environment)
     this.config = {
-      simulateNetworkDelay: this.configService.get('EVENTS_SIMULATE_DELAY', 'true') === 'true',
+      simulateNetworkDelay:
+        this.configService.get('EVENTS_SIMULATE_DELAY', 'true') === 'true',
       delayMs: parseInt(this.configService.get('EVENTS_DELAY_MS', '100'), 10),
-      failureRate: parseFloat(this.configService.get('EVENTS_FAILURE_RATE', '0.0')),
-      enableDetailedLogging: this.configService.get('NODE_ENV') === 'development',
+      failureRate: parseFloat(
+        this.configService.get('EVENTS_FAILURE_RATE', '0.0'),
+      ),
+      enableDetailedLogging:
+        this.configService.get('NODE_ENV') === 'development',
     };
 
-    this.logger.warn('⚠️  USING STUB EventsService - Events are only logged, not published!');
+    this.logger.warn(
+      '⚠️  USING STUB EventsService - Events are only logged, not published!',
+    );
     this.logger.log('Events configuration', this.config);
   }
 
   /**
    * Publie un événement de création de projet
-   * 
+   *
    * @param event Données de l'événement de création
    */
   async publishProjectCreated(event: ProjectCreatedEventDto): Promise<void> {
@@ -171,7 +177,7 @@ export class EventsService {
 
   /**
    * Publie un événement de mise à jour de projet
-   * 
+   *
    * @param event Données de l'événement de mise à jour
    */
   async publishProjectUpdated(event: ProjectUpdatedEventDto): Promise<void> {
@@ -203,7 +209,7 @@ export class EventsService {
 
   /**
    * Publie un événement d'archivage de projet
-   * 
+   *
    * @param event Données de l'événement d'archivage
    */
   async publishProjectArchived(event: ProjectArchivedEventDto): Promise<void> {
@@ -233,7 +239,7 @@ export class EventsService {
 
   /**
    * Publie un événement de suppression de projet
-   * 
+   *
    * @param event Données de l'événement de suppression
    */
   async publishProjectDeleted(event: ProjectDeletedEventDto): Promise<void> {
@@ -266,10 +272,12 @@ export class EventsService {
 
   /**
    * Publie un événement de mise à jour des fichiers générés
-   * 
+   *
    * @param event Données de l'événement de mise à jour des fichiers
    */
-  async publishProjectFilesUpdated(event: ProjectFilesUpdatedEventDto): Promise<void> {
+  async publishProjectFilesUpdated(
+    event: ProjectFilesUpdatedEventDto,
+  ): Promise<void> {
     const eventData = {
       type: EVENT_TYPES.PROJECT_FILES_UPDATED,
       projectId: event.projectId,
@@ -304,7 +312,7 @@ export class EventsService {
 
   /**
    * Simule la publication d'un événement avec délai et échecs possibles
-   * 
+   *
    * @param eventData Données de l'événement à publier
    * @throws Error si la simulation d'échec est activée
    */
@@ -318,7 +326,9 @@ export class EventsService {
     if (this.config.failureRate > 0) {
       const random = Math.random();
       if (random < this.config.failureRate) {
-        const error = new Error(`Simulated event publication failure (${Math.floor(random * 100)}% chance)`);
+        const error = new Error(
+          `Simulated event publication failure (${Math.floor(random * 100)}% chance)`,
+        );
         this.logger.error('❌ Event publication simulation failed', {
           eventType: eventData.type,
           projectId: eventData.projectId,
@@ -332,7 +342,7 @@ export class EventsService {
     // - HTTP POST vers service d'orchestration
     // - Ou publication dans une queue (RabbitMQ/Redis)
     // - Avec retry et dead letter queue
-    
+
     this.logger.debug('✅ Event publication simulated successfully', {
       eventType: eventData.type,
       projectId: eventData.projectId,
@@ -341,16 +351,16 @@ export class EventsService {
 
   /**
    * Fonction utilitaire pour simuler un délai
-   * 
+   *
    * @param ms Millisecondes à attendre
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
    * Tronque une chaîne pour les logs
-   * 
+   *
    * @param text Texte à tronquer
    * @param maxLength Longueur maximale
    * @returns Texte tronqué avec ellipse si nécessaire
@@ -368,7 +378,7 @@ export class EventsService {
 
   /**
    * Retourne la configuration actuelle du stub
-   * 
+   *
    * @returns Configuration du service d'événements
    */
   getConfig(): EventsConfig {
@@ -377,7 +387,7 @@ export class EventsService {
 
   /**
    * Met à jour la configuration du stub (pour les tests)
-   * 
+   *
    * @param updates Mises à jour partielles de la configuration
    */
   updateConfig(updates: Partial<EventsConfig>): void {

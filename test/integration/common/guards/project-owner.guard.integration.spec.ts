@@ -13,10 +13,10 @@ import { DatabaseModule } from '../../../../src/database/database.module';
 import { CacheModule } from '../../../../src/cache/cache.module';
 import { databaseConfig } from '../../../../src/config/database.config';
 import { cacheConfig } from '../../../../src/config/cache.config';
-import { 
+import {
   ProjectNotFoundException,
   UnauthorizedAccessException,
-  InvalidOperationException
+  InvalidOperationException,
 } from '../../../../src/common/exceptions';
 import { User } from '../../../../src/common/interfaces/user.interface';
 import { ProjectStatus } from '../../../../src/common/enums/project-status.enum';
@@ -36,12 +36,15 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
   };
 
   const testUser2: User = {
-    id: 'integration-user-456', 
+    id: 'integration-user-456',
     email: 'integration-test2@example.com',
     roles: ['user'],
   };
 
-  const createMockExecutionContext = (projectId: string, user: User = testUser) => {
+  const createMockExecutionContext = (
+    projectId: string,
+    user: User = testUser,
+  ) => {
     return createMock<ExecutionContext>({
       getType: () => 'http',
       switchToHttp: () => ({
@@ -81,7 +84,7 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
     reflector = module.get<Reflector>(Reflector) as jest.Mocked<Reflector>;
 
     // Attendre que les services soient prêts
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   });
 
   afterAll(async () => {
@@ -105,7 +108,7 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         `project_owner:*:${testUser.id}`,
         `project_owner:*:${testUser2.id}`,
       ];
-      
+
       for (const pattern of cacheKeys) {
         try {
           await cacheService.del(pattern);
@@ -116,14 +119,14 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
     } catch (error) {
       // Ignorer les erreurs de cache pour les tests
     }
-    
+
     // Réinitialiser les mocks
     jest.clearAllMocks();
     reflector.get.mockReturnValue({});
   });
 
   describe('🔗 Intégration Complète', () => {
-    describe('G1. Cycle de vie complet d\'un projet', () => {
+    describe("G1. Cycle de vie complet d'un projet", () => {
       it('should handle complete project lifecycle with real database and cache', async () => {
         // Arrange - Créer un projet en base avec UUID valide
         const project = await databaseService.project.create({
@@ -174,7 +177,9 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         }
 
         // Sans option allowArchived, doit échouer
-        await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedAccessException);
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          UnauthorizedAccessException,
+        );
 
         // Avec option allowArchived, doit réussir
         reflector.get.mockReturnValue({ allowArchived: true });
@@ -203,7 +208,9 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         }
 
         // Même avec allowArchived, doit échouer pour un projet supprimé
-        await expect(guard.canActivate(context)).rejects.toThrow(ProjectNotFoundException);
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          ProjectNotFoundException,
+        );
       });
     });
 
@@ -226,7 +233,7 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         const projectUser2 = await databaseService.project.create({
           data: {
             id: '20000000-0000-4000-8000-000000000003',
-            name: 'Project User 2', 
+            name: 'Project User 2',
             description: 'Project belonging to user 2',
             initialPrompt: 'Create app for user 2',
             ownerId: testUser2.id,
@@ -237,22 +244,38 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         });
 
         // Act & Assert - User 1 accède à son projet
-        const contextUser1OwnProject = createMockExecutionContext(projectUser1.id, testUser);
+        const contextUser1OwnProject = createMockExecutionContext(
+          projectUser1.id,
+          testUser,
+        );
         const result1 = await guard.canActivate(contextUser1OwnProject);
         expect(result1).toBe(true);
 
         // Act & Assert - User 2 accède à son projet
-        const contextUser2OwnProject = createMockExecutionContext(projectUser2.id, testUser2);
+        const contextUser2OwnProject = createMockExecutionContext(
+          projectUser2.id,
+          testUser2,
+        );
         const result2 = await guard.canActivate(contextUser2OwnProject);
         expect(result2).toBe(true);
 
         // Act & Assert - User 1 tente d'accéder au projet de User 2
-        const contextUser1CrossAccess = createMockExecutionContext(projectUser2.id, testUser);
-        await expect(guard.canActivate(contextUser1CrossAccess)).rejects.toThrow(UnauthorizedAccessException);
+        const contextUser1CrossAccess = createMockExecutionContext(
+          projectUser2.id,
+          testUser,
+        );
+        await expect(
+          guard.canActivate(contextUser1CrossAccess),
+        ).rejects.toThrow(UnauthorizedAccessException);
 
         // Act & Assert - User 2 tente d'accéder au projet de User 1
-        const contextUser2CrossAccess = createMockExecutionContext(projectUser1.id, testUser2);
-        await expect(guard.canActivate(contextUser2CrossAccess)).rejects.toThrow(UnauthorizedAccessException);
+        const contextUser2CrossAccess = createMockExecutionContext(
+          projectUser1.id,
+          testUser2,
+        );
+        await expect(
+          guard.canActivate(contextUser2CrossAccess),
+        ).rejects.toThrow(UnauthorizedAccessException);
       });
     });
 
@@ -273,47 +296,49 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
                 generatedFileIds: [],
               },
             });
-          })
+          }),
         );
 
         // Act - Première vague de requêtes (cache miss)
         const startTime1 = performance.now();
-        const contexts1 = projects.map(p => createMockExecutionContext(p.id));
+        const contexts1 = projects.map((p) => createMockExecutionContext(p.id));
         const results1 = await Promise.all(
-          contexts1.map(context => guard.canActivate(context))
+          contexts1.map((context) => guard.canActivate(context)),
         );
         const duration1 = performance.now() - startTime1;
 
         // Assert
-        expect(results1.every(result => result === true)).toBe(true);
+        expect(results1.every((result) => result === true)).toBe(true);
         expect(results1).toHaveLength(20);
 
         // Act - Deuxième vague de requêtes (cache hit)
         const startTime2 = performance.now();
-        const contexts2 = projects.map(p => createMockExecutionContext(p.id));
+        const contexts2 = projects.map((p) => createMockExecutionContext(p.id));
         const results2 = await Promise.all(
-          contexts2.map(context => guard.canActivate(context))
+          contexts2.map((context) => guard.canActivate(context)),
         );
         const duration2 = performance.now() - startTime2;
 
         // Assert - Cache doit améliorer les performances
-        expect(results2.every(result => result === true)).toBe(true);
+        expect(results2.every((result) => result === true)).toBe(true);
         expect(results2).toHaveLength(20);
-        
+
         // CORRECTION : Attentes plus réalistes sur l'amélioration des performances
         // Test 1: Durée totale moins stricte (80% au lieu de 50%)
         expect(duration2).toBeLessThan(duration1 * 0.8);
-        
+
         // Test 2: Moyenne par requête doit être meilleure
         const avgDuration1 = duration1 / 20;
         const avgDuration2 = duration2 / 20;
         expect(avgDuration2).toBeLessThan(avgDuration1);
-        
+
         // Test 3: Le cache doit au moins apporter une amélioration mesurable
         expect(duration2).toBeLessThan(duration1);
-        
+
         // Log pour debugging (optionnel)
-        console.log(`Performance: Cache miss ${duration1.toFixed(2)}ms, Cache hit ${duration2.toFixed(2)}ms, Improvement: ${((duration1 - duration2) / duration1 * 100).toFixed(1)}%`);
+        console.log(
+          `Performance: Cache miss ${duration1.toFixed(2)}ms, Cache hit ${duration2.toFixed(2)}ms, Improvement: ${(((duration1 - duration2) / duration1) * 100).toFixed(1)}%`,
+        );
       });
 
       it('should handle high frequency requests without memory leaks', async () => {
@@ -332,23 +357,23 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         });
 
         const context = createMockExecutionContext(project.id);
-        
+
         // CORRECTION : Forcer le garbage collection et obtenir une baseline plus stable
         if (global.gc) {
           global.gc();
           global.gc(); // Appeler deux fois pour être sûr
         }
-        
+
         // Attendre un peu pour stabiliser la mémoire
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         const initialMemory = process.memoryUsage();
 
         // Act - Beaucoup de requêtes rapides
         for (let i = 0; i < 200; i++) {
           const result = await guard.canActivate(context);
           expect(result).toBe(true);
-          
+
           // CORRECTION : GC périodique pour éviter l'accumulation temporaire
           if (i % 50 === 0 && global.gc) {
             global.gc();
@@ -360,24 +385,27 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
           global.gc();
           global.gc();
         }
-        
+
         // Attendre que le GC se termine
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Assert - La mémoire ne doit pas augmenter drastiquement
         const finalMemory = process.memoryUsage();
         const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed;
-        
+
         // CORRECTION : Tolérance plus réaliste pour les variations d'environnement
         // 20MB au lieu de 10MB pour tenir compte des variations de l'environnement de test
         expect(memoryIncrease).toBeLessThan(20 * 1024 * 1024);
-        
+
         // CORRECTION : Test alternatif plus robuste - vérifier que la mémoire n'explose pas
-        const memoryIncreasePercentage = (memoryIncrease / initialMemory.heapUsed) * 100;
+        const memoryIncreasePercentage =
+          (memoryIncrease / initialMemory.heapUsed) * 100;
         expect(memoryIncreasePercentage).toBeLessThan(50); // Pas plus de 50% d'augmentation
-        
+
         // Log pour debugging (optionnel)
-        console.log(`Memory usage: Initial ${(initialMemory.heapUsed / 1024 / 1024).toFixed(2)}MB, Final ${(finalMemory.heapUsed / 1024 / 1024).toFixed(2)}MB, Increase: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB (${memoryIncreasePercentage.toFixed(1)}%)`);
+        console.log(
+          `Memory usage: Initial ${(initialMemory.heapUsed / 1024 / 1024).toFixed(2)}MB, Final ${(finalMemory.heapUsed / 1024 / 1024).toFixed(2)}MB, Increase: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB (${memoryIncreasePercentage.toFixed(1)}%)`,
+        );
       });
     });
   });
@@ -404,9 +432,13 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         // Act - Simuler panne Redis en mockant les méthodes cache
         const originalGet = cacheService.get;
         const originalSet = cacheService.set;
-        
-        cacheService.get = jest.fn().mockRejectedValue(new Error('Redis connection failed'));
-        cacheService.set = jest.fn().mockRejectedValue(new Error('Redis connection failed'));
+
+        cacheService.get = jest
+          .fn()
+          .mockRejectedValue(new Error('Redis connection failed'));
+        cacheService.set = jest
+          .fn()
+          .mockRejectedValue(new Error('Redis connection failed'));
 
         let result: boolean;
         let errorThrown = false;
@@ -469,7 +501,7 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         const project = await databaseService.project.create({
           data: {
             id: '20000000-0000-4000-8000-000000000006',
-            name: 'Concurrent Access Test Project', 
+            name: 'Concurrent Access Test Project',
             description: 'Project for concurrent access testing',
             initialPrompt: 'Create concurrent-safe app',
             ownerId: testUser.id,
@@ -487,16 +519,16 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         }
 
         // Act - Multiples accès simultanés au même projet
-        const contexts = Array.from({ length: 10 }, () => 
-          createMockExecutionContext(project.id)
+        const contexts = Array.from({ length: 10 }, () =>
+          createMockExecutionContext(project.id),
         );
 
         const results = await Promise.all(
-          contexts.map(context => guard.canActivate(context))
+          contexts.map((context) => guard.canActivate(context)),
         );
 
         // Assert - Tous doivent réussir
-        expect(results.every(result => result === true)).toBe(true);
+        expect(results.every((result) => result === true)).toBe(true);
         expect(results).toHaveLength(10);
       });
     });
@@ -535,8 +567,8 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
           // Étape 4: Mise à jour du projet (ajout de fichiers générés)
           await databaseService.project.update({
             where: { id: project.id },
-            data: { 
-              generatedFileIds: ['generated-1', 'generated-2', 'generated-3'] 
+            data: {
+              generatedFileIds: ['generated-1', 'generated-2', 'generated-3'],
             },
           });
 
@@ -552,25 +584,31 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
 
           // CORRECTION: Invalider le cache et s'assurer que reflector retourne {}
           try {
-            await cacheService.del(`project_owner:${project.id}:${testUser.id}`);
+            await cacheService.del(
+              `project_owner:${project.id}:${testUser.id}`,
+            );
           } catch (error) {
             // Ignorer les erreurs de cache
           }
           reflector.get.mockReturnValue({});
 
           // Étape 7: Accès au projet archivé sans option (doit échouer)
-          await expect(guard.canActivate(context1)).rejects.toThrow(UnauthorizedAccessException);
+          await expect(guard.canActivate(context1)).rejects.toThrow(
+            UnauthorizedAccessException,
+          );
 
           // Étape 8: Accès au projet archivé avec option (doit réussir)
           reflector.get.mockReturnValue({ allowArchived: true });
-          
+
           // Invalider le cache à nouveau
           try {
-            await cacheService.del(`project_owner:${project.id}:${testUser.id}`);
+            await cacheService.del(
+              `project_owner:${project.id}:${testUser.id}`,
+            );
           } catch (error) {
             // Ignorer les erreurs de cache
           }
-          
+
           const result4 = await guard.canActivate(context1);
           expect(result4).toBe(true);
 
@@ -582,14 +620,17 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
 
           // Invalider le cache
           try {
-            await cacheService.del(`project_owner:${project.id}:${testUser.id}`);
+            await cacheService.del(
+              `project_owner:${project.id}:${testUser.id}`,
+            );
           } catch (error) {
             // Ignorer les erreurs de cache
           }
 
           // Étape 10: Accès après suppression (toujours échouer)
-          await expect(guard.canActivate(context1)).rejects.toThrow(ProjectNotFoundException);
-
+          await expect(guard.canActivate(context1)).rejects.toThrow(
+            ProjectNotFoundException,
+          );
         } finally {
           // Cleanup
           if (project) {
@@ -605,7 +646,7 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
       });
     });
 
-    describe('L2. Patterns d\'accès réalistes', () => {
+    describe("L2. Patterns d'accès réalistes", () => {
       it('should handle realistic access patterns efficiently', async () => {
         // Arrange - Créer plusieurs projets pour un utilisateur avec des UUIDs VALIDES
         const projects = await Promise.all(
@@ -622,7 +663,7 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
                 generatedFileIds: [],
               },
             });
-          })
+          }),
         );
 
         // Pattern réaliste: accès fréquent aux projets récents, moins aux anciens
@@ -638,23 +679,27 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
         for (const { projectIndex, frequency, options } of accessPattern) {
           // CORRECTION : Configuration correcte du reflector pour chaque pattern
           reflector.get.mockReturnValue(options);
-          
+
           // CORRECTION : Invalider le cache pour le projet archivé si nécessaire
           if (options.allowArchived && projectIndex === 4) {
             try {
-              await cacheService.del(`project_owner:${projects[projectIndex].id}:${testUser.id}`);
+              await cacheService.del(
+                `project_owner:${projects[projectIndex].id}:${testUser.id}`,
+              );
             } catch (error) {
               // Ignorer les erreurs de cache
             }
           }
-          
+
           // Exécuter les accès répétés
           for (let i = 0; i < frequency; i++) {
-            const context = createMockExecutionContext(projects[projectIndex].id);
+            const context = createMockExecutionContext(
+              projects[projectIndex].id,
+            );
             const result = await guard.canActivate(context);
             expect(result).toBe(true);
           }
-          
+
           // CORRECTION : Nettoyer le mock du reflector après chaque pattern
           jest.clearAllMocks();
           reflector.get.mockReturnValue({}); // Reset par défaut

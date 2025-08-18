@@ -1,9 +1,9 @@
 /**
  * Utilitaires de validation métier pour le Service de Gestion des Projets
- * 
+ *
  * Centralise toutes les règles de validation métier pour garantir la cohérence
  * et éviter la duplication de code à travers l'application.
- * 
+ *
  * @fileoverview Utilitaires de validation réutilisables
  * @version 1.0.0
  */
@@ -29,15 +29,17 @@ export interface SanitizeOptions {
 
 /**
  * Classe utilitaire pour les validations métier
- * 
+ *
  * Toutes les méthodes sont statiques pour éviter l'instanciation
  * et faciliter l'utilisation à travers l'application.
  */
 export class ValidationUtils {
   // Expressions régulières pré-compilées pour les performances
-  private static readonly UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  private static readonly UUID_REGEX =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   private static readonly PROJECT_NAME_REGEX = /^[a-zA-Z0-9\s\-_]+$/;
-  private static readonly SAFE_TEXT_REGEX = /^[^<>\"'&\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*$/;
+  private static readonly SAFE_TEXT_REGEX =
+    /^[^<>\"'&\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*$/;
   // CORRECTION: Regex plus stricte pour les IDs de fichier
   private static readonly FILE_ID_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9\-_]{7,49}$/;
 
@@ -52,12 +54,14 @@ export class ValidationUtils {
    * Constructeur privé pour empêcher l'instanciation
    */
   private constructor() {
-    throw new Error('ValidationUtils is a static utility class and cannot be instantiated');
+    throw new Error(
+      'ValidationUtils is a static utility class and cannot be instantiated',
+    );
   }
 
   /**
    * Valide un nom de projet selon les règles métier
-   * 
+   *
    * @param name - Le nom du projet à valider
    * @returns true si le nom est valide, false sinon
    */
@@ -67,10 +71,12 @@ export class ValidationUtils {
     }
 
     const trimmedName = name.trim();
-    
+
     // Vérification de la longueur
-    if (trimmedName.length < this.MIN_PROJECT_NAME_LENGTH || 
-        trimmedName.length > this.MAX_PROJECT_NAME_LENGTH) {
+    if (
+      trimmedName.length < this.MIN_PROJECT_NAME_LENGTH ||
+      trimmedName.length > this.MAX_PROJECT_NAME_LENGTH
+    ) {
       return false;
     }
 
@@ -89,7 +95,7 @@ export class ValidationUtils {
 
   /**
    * Valide un nom de projet avec détails des erreurs
-   * 
+   *
    * @param name - Le nom du projet à valider
    * @returns Résultat détaillé de la validation
    */
@@ -108,38 +114,48 @@ export class ValidationUtils {
     if (trimmedName.length < this.MIN_PROJECT_NAME_LENGTH) {
       errors.push('Project name cannot be empty');
     } else if (trimmedName.length > this.MAX_PROJECT_NAME_LENGTH) {
-      errors.push(`Project name cannot exceed ${this.MAX_PROJECT_NAME_LENGTH} characters`);
+      errors.push(
+        `Project name cannot exceed ${this.MAX_PROJECT_NAME_LENGTH} characters`,
+      );
     }
 
     // Vérification des caractères autorisés
     if (!this.PROJECT_NAME_REGEX.test(trimmedName)) {
-      errors.push('Project name can only contain letters, numbers, spaces, hyphens, and underscores');
+      errors.push(
+        'Project name can only contain letters, numbers, spaces, hyphens, and underscores',
+      );
     }
 
     // Vérification du contenu significatif
     if (trimmedName.replace(/[\s\-_]/g, '').length === 0) {
-      errors.push('Project name must contain at least one alphanumeric character');
+      errors.push(
+        'Project name must contain at least one alphanumeric character',
+      );
     }
 
     // Avertissements pour les bonnes pratiques
     if (trimmedName.length < 3) {
-      warnings.push('Project names with less than 3 characters may be too short');
+      warnings.push(
+        'Project names with less than 3 characters may be too short',
+      );
     }
 
     if (trimmedName !== name) {
-      warnings.push('Project name will be trimmed of leading/trailing whitespace');
+      warnings.push(
+        'Project name will be trimmed of leading/trailing whitespace',
+      );
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
   /**
    * Sanitise une description de projet
-   * 
+   *
    * @param description - La description à sanitiser
    * @returns Description nettoyée et sécurisée
    */
@@ -168,7 +184,8 @@ export class ValidationUtils {
 
     // Limitation de la longueur
     if (sanitized.length > this.MAX_DESCRIPTION_LENGTH) {
-      sanitized = sanitized.substring(0, this.MAX_DESCRIPTION_LENGTH - 3) + '...';
+      sanitized =
+        sanitized.substring(0, this.MAX_DESCRIPTION_LENGTH - 3) + '...';
     }
 
     return sanitized;
@@ -176,7 +193,7 @@ export class ValidationUtils {
 
   /**
    * Valide une description de projet
-   * 
+   *
    * @param description - La description à valider
    * @returns true si la description est valide, false sinon
    */
@@ -190,7 +207,7 @@ export class ValidationUtils {
     }
 
     const trimmed = description.trim();
-    
+
     // Vérification de la longueur
     if (trimmed.length > this.MAX_DESCRIPTION_LENGTH) {
       return false;
@@ -202,7 +219,7 @@ export class ValidationUtils {
 
   /**
    * Valide un ID de fichier
-   * 
+   *
    * @param fileId - L'ID de fichier à valider
    * @returns true si l'ID est valide, false sinon
    */
@@ -219,7 +236,7 @@ export class ValidationUtils {
     }
 
     // CORRECTION: Validation ultra-stricte pour les formats alternatifs
-    
+
     // Longueur stricte
     if (trimmed.length < 8 || trimmed.length > 50) {
       return false;
@@ -242,13 +259,13 @@ export class ValidationUtils {
 
     // CORRECTION: Rejet spécifique des patterns problématiques identifiés
     const problematicPatterns = [
-      /^invalid-uuid$/, // Rejeter explicitement "invalid-uuid" 
+      /^invalid-uuid$/, // Rejeter explicitement "invalid-uuid"
       // SUPPRIMÉ: /^[0-9a-f-]{20,}$/, // Ce pattern rejetait les UUIDs valides !
       /^[a-zA-Z0-9]+_{2,}$/, // Rejeter les IDs se terminant par plusieurs underscores (abc123__)
       /^[a-zA-Z0-9]{1,6}_{2,}$/, // Rejeter les courts IDs + underscores multiples
     ];
 
-    if (problematicPatterns.some(pattern => pattern.test(trimmed))) {
+    if (problematicPatterns.some((pattern) => pattern.test(trimmed))) {
       return false;
     }
 
@@ -272,11 +289,11 @@ export class ValidationUtils {
     // Patterns spécifiquement invalides renforcés
     const forbiddenPatterns = [
       /^[_\-]*[0-9][_\-]*$/, // Un seul chiffre avec des underscores/tirets
-      /^[_\-]*[a-zA-Z][_\-]*$/, // Une seule lettre avec des underscores/tirets  
+      /^[_\-]*[a-zA-Z][_\-]*$/, // Une seule lettre avec des underscores/tirets
       /^[_\-]*[a-zA-Z0-9]{1,3}[_\-]*$/, // 1-3 caractères alphanumériques avec des underscores/tirets
     ];
 
-    if (forbiddenPatterns.some(pattern => pattern.test(trimmed))) {
+    if (forbiddenPatterns.some((pattern) => pattern.test(trimmed))) {
       return false;
     }
 
@@ -296,7 +313,7 @@ export class ValidationUtils {
 
   /**
    * Valide une liste d'IDs de fichiers
-   * 
+   *
    * @param fileIds - La liste d'IDs à valider
    * @returns Résultat détaillé de la validation
    */
@@ -340,7 +357,9 @@ export class ValidationUtils {
     }
 
     if (duplicateIds.size > 0) {
-      errors.push(`Duplicate file IDs found: ${Array.from(duplicateIds).join(', ')}`);
+      errors.push(
+        `Duplicate file IDs found: ${Array.from(duplicateIds).join(', ')}`,
+      );
     }
 
     // Avertissements
@@ -351,13 +370,13 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
   /**
    * Valide un prompt initial de projet
-   * 
+   *
    * @param prompt - Le prompt à valider
    * @returns true si le prompt est valide, false sinon
    */
@@ -369,8 +388,10 @@ export class ValidationUtils {
     const trimmed = prompt.trim();
 
     // Vérification de la longueur
-    if (trimmed.length < this.MIN_PROMPT_LENGTH || 
-        trimmed.length > this.MAX_PROMPT_LENGTH) {
+    if (
+      trimmed.length < this.MIN_PROMPT_LENGTH ||
+      trimmed.length > this.MAX_PROMPT_LENGTH
+    ) {
       return false;
     }
 
@@ -391,7 +412,7 @@ export class ValidationUtils {
 
   /**
    * Valide un prompt avec détails des erreurs
-   * 
+   *
    * @param prompt - Le prompt à valider
    * @returns Résultat détaillé de la validation
    */
@@ -408,14 +429,18 @@ export class ValidationUtils {
 
     // Vérification de la longueur
     if (trimmed.length < this.MIN_PROMPT_LENGTH) {
-      errors.push(`Prompt must be at least ${this.MIN_PROMPT_LENGTH} characters long`);
+      errors.push(
+        `Prompt must be at least ${this.MIN_PROMPT_LENGTH} characters long`,
+      );
     } else if (trimmed.length > this.MAX_PROMPT_LENGTH) {
       errors.push(`Prompt cannot exceed ${this.MAX_PROMPT_LENGTH} characters`);
     }
 
     // Vérification du contenu significatif
     if (trimmed.replace(/\s+/g, '').length < 5) {
-      errors.push('Prompt must contain meaningful content (at least 5 non-whitespace characters)');
+      errors.push(
+        'Prompt must contain meaningful content (at least 5 non-whitespace characters)',
+      );
     }
 
     // Vérification de l'encodage
@@ -427,7 +452,9 @@ export class ValidationUtils {
 
     // Avertissements pour les bonnes pratiques
     if (trimmed.length < 50) {
-      warnings.push('Short prompts may not provide enough context for optimal results');
+      warnings.push(
+        'Short prompts may not provide enough context for optimal results',
+      );
     }
 
     if (trimmed.split(/\s+/).length < 5) {
@@ -441,13 +468,13 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
   /**
    * Valide un UUID v4
-   * 
+   *
    * @param id - L'ID à valider
    * @returns true si l'UUID est valide, false sinon
    */
@@ -461,7 +488,7 @@ export class ValidationUtils {
 
   /**
    * Sanitise un texte selon les options fournies
-   * 
+   *
    * @param text - Le texte à sanitiser
    * @param options - Options de sanitisation
    * @returns Texte sanitisé
@@ -498,7 +525,7 @@ export class ValidationUtils {
 
   /**
    * Valide la longueur d'un texte
-   * 
+   *
    * @param text - Le texte à valider
    * @param min - Longueur minimale
    * @param max - Longueur maximale
@@ -515,7 +542,7 @@ export class ValidationUtils {
 
   /**
    * Valide un ID de projet pour s'assurer qu'il peut être utilisé en sécurité
-   * 
+   *
    * @param projectId - L'ID de projet à valider
    * @returns true si l'ID est valide et sûr, false sinon
    */
@@ -527,13 +554,17 @@ export class ValidationUtils {
     const trimmed = projectId.trim();
 
     // Doit être un UUID valide ou un format alternatif sécurisé
-    return this.isValidUUID(trimmed) || 
-           (this.FILE_ID_REGEX.test(trimmed) && trimmed.length >= 8 && trimmed.length <= 50);
+    return (
+      this.isValidUUID(trimmed) ||
+      (this.FILE_ID_REGEX.test(trimmed) &&
+        trimmed.length >= 8 &&
+        trimmed.length <= 50)
+    );
   }
 
   /**
    * Valide un type de ressource pour les exceptions d'accès
-   * 
+   *
    * @param resourceType - Le type de ressource à valider
    * @returns true si le type est valide, false sinon
    */
@@ -543,8 +574,16 @@ export class ValidationUtils {
     }
 
     const validTypes = [
-      'project', 'statistics', 'export', 'file', 'template', 
-      'user', 'organization', 'report', 'audit', 'config'
+      'project',
+      'statistics',
+      'export',
+      'file',
+      'template',
+      'user',
+      'organization',
+      'report',
+      'audit',
+      'config',
     ];
 
     return validTypes.includes(resourceType.toLowerCase());
@@ -552,7 +591,7 @@ export class ValidationUtils {
 
   /**
    * Valide une action pour les exceptions d'accès
-   * 
+   *
    * @param action - L'action à valider
    * @returns true si l'action est valide, false sinon
    */
@@ -562,9 +601,20 @@ export class ValidationUtils {
     }
 
     const validActions = [
-      'read', 'write', 'delete', 'create', 'update', 
-      'view', 'edit', 'admin', 'export', 'import',
-      'share', 'archive', 'restore', 'duplicate'
+      'read',
+      'write',
+      'delete',
+      'create',
+      'update',
+      'view',
+      'edit',
+      'admin',
+      'export',
+      'import',
+      'share',
+      'archive',
+      'restore',
+      'duplicate',
     ];
 
     return validActions.includes(action.toLowerCase());
@@ -572,7 +622,7 @@ export class ValidationUtils {
 
   /**
    * Valide un contexte additionnel pour les exceptions
-   * 
+   *
    * @param context - Le contexte à valider
    * @returns true si le contexte est valide, false sinon
    */
@@ -593,15 +643,22 @@ export class ValidationUtils {
     }
 
     // Vérification contre l'injection de code
-    const dangerous = ['<script', 'javascript:', 'data:', 'vbscript:', 'onload=', 'onerror='];
+    const dangerous = [
+      '<script',
+      'javascript:',
+      'data:',
+      'vbscript:',
+      'onload=',
+      'onerror=',
+    ];
     const lowerContext = trimmed.toLowerCase();
-    
-    return !dangerous.some(pattern => lowerContext.includes(pattern));
+
+    return !dangerous.some((pattern) => lowerContext.includes(pattern));
   }
 
   /**
    * Sanitise un contexte d'exception pour s'assurer qu'il est sûr
-   * 
+   *
    * @param context - Le contexte à sanitiser
    * @returns Contexte sanitisé et sécurisé
    */
@@ -631,7 +688,7 @@ export class ValidationUtils {
 
   /**
    * Valide les paramètres d'une exception d'accès non autorisé
-   * 
+   *
    * @param params - Paramètres de l'exception
    * @returns Résultat de validation avec paramètres sanitisés
    */
@@ -660,7 +717,9 @@ export class ValidationUtils {
         sanitized.resourceId = params.resourceId.trim();
       } else {
         // Pour la sécurité, on n'inclut pas l'ID invalide dans les logs
-        warnings.push('Invalid resource ID provided (excluded from logs for security)');
+        warnings.push(
+          'Invalid resource ID provided (excluded from logs for security)',
+        );
       }
     }
 
@@ -669,7 +728,9 @@ export class ValidationUtils {
       if (this.isValidUUID(params.userId)) {
         sanitized.userId = params.userId;
       } else {
-        warnings.push('Invalid user ID provided (excluded from logs for security)');
+        warnings.push(
+          'Invalid user ID provided (excluded from logs for security)',
+        );
       }
     }
 
@@ -686,13 +747,13 @@ export class ValidationUtils {
       isValid: errors.length === 0,
       errors,
       warnings,
-      sanitized: errors.length === 0 ? sanitized : undefined
+      sanitized: errors.length === 0 ? sanitized : undefined,
     };
   }
 
   /**
    * Valide et nettoie une entrée utilisateur complète
-   * 
+   *
    * @param input - L'entrée utilisateur à valider
    * @returns Résultat de validation avec données nettoyées
    */
@@ -727,7 +788,7 @@ export class ValidationUtils {
       }
     }
 
-    // CORRECTION: Validation simplifiée du prompt 
+    // CORRECTION: Validation simplifiée du prompt
     if (input.initialPrompt !== undefined) {
       const promptValidation = this.validatePrompt(input.initialPrompt);
       errors.push(...promptValidation.errors);
@@ -751,27 +812,27 @@ export class ValidationUtils {
       isValid: errors.length === 0,
       errors,
       warnings,
-      sanitized: errors.length === 0 ? sanitized : undefined
+      sanitized: errors.length === 0 ? sanitized : undefined,
     };
   }
 
   /**
    * Utilitaire pour créer une ProjectNotFoundException de façon sécurisée
-   * 
+   *
    * @param projectId - ID du projet non trouvé
    * @param context - Contexte additionnel optionnel
    * @returns Paramètres validés pour l'exception
    */
   static createSafeProjectNotFoundParams(
-    projectId: string, 
-    context?: string
+    projectId: string,
+    context?: string,
   ): { projectId: string; context?: string } | null {
     if (!this.isValidProjectId(projectId)) {
       return null; // ID invalide, ne pas créer l'exception
     }
 
     const result: { projectId: string; context?: string } = {
-      projectId: projectId.trim()
+      projectId: projectId.trim(),
     };
 
     if (context && this.isValidExceptionContext(context)) {

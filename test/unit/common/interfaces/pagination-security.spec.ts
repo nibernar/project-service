@@ -1,6 +1,6 @@
 /**
  * Tests de sécurité et edge cases critiques pour les interfaces de pagination.
- * 
+ *
  * Vérifie la robustesse contre les attaques, les abus, et les cas limites
  * qui pourraient compromettre la sécurité ou la stabilité du système.
  */
@@ -20,14 +20,14 @@ describe('Pagination Security and Critical Edge Cases', () => {
       it('should prevent excessive limit values (DoS protection)', () => {
         const maliciousLimit = 999999999;
         const result = validatePaginationParams(1, maliciousLimit, 100);
-        
+
         expect(result.limit).toBe(100); // Limité au maximum autorisé
         expect(result.limit).toBeLessThan(1000); // Bien en dessous de la valeur malveillante
       });
 
       it('should handle extremely large page numbers without crashing', () => {
         const hugePage = Number.MAX_SAFE_INTEGER;
-        
+
         expect(() => {
           const result = calculatePaginationMeta(hugePage, 10, 1000);
           expect(result.page).toBe(hugePage);
@@ -37,25 +37,27 @@ describe('Pagination Security and Critical Edge Cases', () => {
 
       it('should prevent memory exhaustion through large datasets', () => {
         const initialMemory = process.memoryUsage().heapUsed;
-        
+
         // Tentative de créer un très gros dataset
         const attemptedSize = 1000000;
         let actualData: string[] = [];
-        
+
         try {
           // Créer un dataset plus raisonnable pour le test
-          actualData = Array.from({ length: Math.min(attemptedSize, 10000) }, 
-            (_, i) => `item-${i}`);
+          actualData = Array.from(
+            { length: Math.min(attemptedSize, 10000) },
+            (_, i) => `item-${i}`,
+          );
         } catch (error) {
           // Si la création échoue, utiliser un dataset plus petit
           actualData = Array.from({ length: 1000 }, (_, i) => `item-${i}`);
         }
-        
+
         const result = createPaginatedResult(actualData, 1, 100, attemptedSize);
-        
+
         const finalMemory = process.memoryUsage().heapUsed;
         const memoryIncrease = finalMemory - initialMemory;
-        
+
         expect(result.data).toBe(actualData); // Pas de copie, référence directe
         expect(memoryIncrease).toBeLessThan(100 * 1024 * 1024); // Moins de 100MB
       });
@@ -63,14 +65,14 @@ describe('Pagination Security and Critical Edge Cases', () => {
       it('should handle rapid successive requests without degradation', () => {
         const start = performance.now();
         const iterations = 10000;
-        
+
         for (let i = 0; i < iterations; i++) {
           validatePaginationParams(i % 1000, i % 100, 200);
         }
-        
+
         const duration = performance.now() - start;
         const requestsPerSecond = iterations / (duration / 1000);
-        
+
         expect(requestsPerSecond).toBeGreaterThan(1000); // Au moins 1000 req/sec
       });
     });
@@ -83,8 +85,8 @@ describe('Pagination Security and Critical Edge Cases', () => {
           Number.MAX_VALUE,
           Number.MIN_VALUE,
         ];
-        
-        extremeValues.forEach(value => {
+
+        extremeValues.forEach((value) => {
           expect(() => {
             calculatePaginationMeta(value, 10, 1000);
             validatePaginationParams(value, 10, 100);
@@ -99,8 +101,8 @@ describe('Pagination Security and Critical Edge Cases', () => {
           Math.E,
           Number.EPSILON,
         ];
-        
-        problematicValues.forEach(value => {
+
+        problematicValues.forEach((value) => {
           const result = validatePaginationParams(value, value, 100);
           expect(Number.isInteger(result.page)).toBe(true);
           expect(Number.isInteger(result.limit)).toBe(true);
@@ -126,8 +128,8 @@ describe('Pagination Security and Critical Edge Cases', () => {
           { constructor: { name: 'Number' } },
           Object.create(null),
         ];
-        
-        maliciousObjects.forEach(obj => {
+
+        maliciousObjects.forEach((obj) => {
           expect(() => {
             validatePaginationParams(obj as any, 10, 100);
             validatePaginationParams(1, obj as any, 100);
@@ -137,7 +139,7 @@ describe('Pagination Security and Critical Edge Cases', () => {
 
       it('should sanitize prototype pollution attempts', () => {
         const maliciousData = JSON.parse('{"__proto__": {"isAdmin": true}}');
-        
+
         expect(() => {
           const result = createPaginatedResult([maliciousData], 1, 10, 1);
           expect(result.data[0]).toEqual(maliciousData);
@@ -150,7 +152,7 @@ describe('Pagination Security and Critical Edge Cases', () => {
           { name: 'test', malicious: () => 'hacked' },
           { name: 'test2', data: eval },
         ];
-        
+
         expect(() => {
           const result = createPaginatedResult(maliciousData, 1, 10, 2);
           expect(result.data).toBe(maliciousData); // Référence directe, pas de modification
@@ -161,8 +163,8 @@ describe('Pagination Security and Critical Edge Cases', () => {
     describe('Type confusion attacks', () => {
       it('should handle string numbers correctly', () => {
         const stringNumbers = ['1', '10', '100', '0', '-5'];
-        
-        stringNumbers.forEach(str => {
+
+        stringNumbers.forEach((str) => {
           const result = validatePaginationParams(str as any, str as any, 100);
           expect(typeof result.page).toBe('number');
           expect(typeof result.limit).toBe('number');
@@ -173,10 +175,14 @@ describe('Pagination Security and Critical Edge Cases', () => {
 
       it('should handle boolean to number coercion', () => {
         const booleans = [true, false];
-        
-        booleans.forEach(bool => {
+
+        booleans.forEach((bool) => {
           expect(() => {
-            const result = validatePaginationParams(bool as any, bool as any, 100);
+            const result = validatePaginationParams(
+              bool as any,
+              bool as any,
+              100,
+            );
             expect(typeof result.page).toBe('number');
             expect(typeof result.limit).toBe('number');
           }).not.toThrow();
@@ -185,8 +191,8 @@ describe('Pagination Security and Critical Edge Cases', () => {
 
       it('should handle array to number coercion attempts', () => {
         const arrays = [[], [1], [1, 2], ['1']];
-        
-        arrays.forEach(arr => {
+
+        arrays.forEach((arr) => {
           expect(() => {
             validatePaginationParams(arr as any, 10, 100);
           }).not.toThrow();
@@ -224,7 +230,7 @@ describe('Pagination Security and Critical Edge Cases', () => {
         };
 
         const result = mapPaginatedResult(paginatedData, maliciousMapper);
-        
+
         expect(result.total).toBe(3); // Valeur originale préservée
         expect(result.pagination).toBeDefined();
         expect(result.data).toEqual([2, 4, 6]);
@@ -276,7 +282,9 @@ describe('Pagination Security and Critical Edge Cases', () => {
 
       it('should handle objects with getters that throw', () => {
         const maliciousObj = {
-          get data() { throw new Error('Malicious getter'); },
+          get data() {
+            throw new Error('Malicious getter');
+          },
           pagination: {},
           total: 1,
         };
@@ -287,8 +295,10 @@ describe('Pagination Security and Critical Edge Cases', () => {
       });
 
       it('should handle objects with prototype pollution', () => {
-        const obj = JSON.parse('{"__proto__": {"data": [], "pagination": {}, "total": 1}}');
-        
+        const obj = JSON.parse(
+          '{"__proto__": {"data": [], "pagination": {}, "total": 1}}',
+        );
+
         const result = isPaginatedResult(obj);
         expect(typeof result).toBe('boolean');
       });
@@ -310,8 +320,9 @@ describe('Pagination Security and Critical Edge Cases', () => {
       });
 
       it('should handle large string payloads without crashing', () => {
-        const largeStrings = Array.from({ length: 100 }, (_, i) => 
-          'x'.repeat(10000) // 10KB par string
+        const largeStrings = Array.from(
+          { length: 100 },
+          (_, i) => 'x'.repeat(10000), // 10KB par string
         );
 
         expect(() => {
@@ -326,14 +337,15 @@ describe('Pagination Security and Critical Edge Cases', () => {
         const operations = [
           () => calculatePaginationMeta(999999, 1000, 50000000),
           () => validatePaginationParams(999999, 999999, 100),
-          () => createPaginatedResult(Array(1000).fill('test'), 500, 100, 50000),
+          () =>
+            createPaginatedResult(Array(1000).fill('test'), 500, 100, 50000),
         ];
 
-        operations.forEach(operation => {
+        operations.forEach((operation) => {
           const start = performance.now();
           operation();
           const duration = performance.now() - start;
-          
+
           expect(duration).toBeLessThan(10); // Max 10ms par opération
         });
       });
@@ -352,7 +364,7 @@ describe('Pagination Security and Critical Edge Cases', () => {
 
       it('should handle zero total with non-zero limit', () => {
         const result = calculatePaginationMeta(1, 10, 0);
-        
+
         expect(result.totalPages).toBe(0);
         expect(result.hasNext).toBe(false);
         expect(result.hasPrevious).toBe(false);
@@ -360,7 +372,7 @@ describe('Pagination Security and Critical Edge Cases', () => {
 
       it('should handle all zeros', () => {
         const result = calculatePaginationMeta(0, 0, 0);
-        
+
         expect(result.page).toBe(0);
         expect(result.limit).toBe(0);
         expect(result.totalPages).toBe(NaN); // 0/0 = NaN
@@ -371,7 +383,7 @@ describe('Pagination Security and Critical Edge Cases', () => {
     describe('Overflow et underflow', () => {
       it('should handle integer overflow scenarios', () => {
         const maxInt = Number.MAX_SAFE_INTEGER;
-        
+
         expect(() => {
           const result = calculatePaginationMeta(maxInt, maxInt, maxInt);
           expect(typeof result.offset).toBe('number');
@@ -380,7 +392,7 @@ describe('Pagination Security and Critical Edge Cases', () => {
 
       it('should handle negative overflow', () => {
         const minInt = Number.MIN_SAFE_INTEGER;
-        
+
         expect(() => {
           const result = calculatePaginationMeta(minInt, 10, 100);
           expect(result.page).toBe(minInt);
@@ -394,24 +406,32 @@ describe('Pagination Security and Critical Edge Cases', () => {
     describe('Race conditions', () => {
       it('should handle concurrent modifications safely', async () => {
         let sharedData = Array.from({ length: 100 }, (_, i) => ({ id: i }));
-        
-        const concurrentOperations = Array.from({ length: 10 }, async (_, i) => {
-          return new Promise<void>((resolve) => {
-            setTimeout(() => {
-              // Simuler des modifications concurrentes
-              if (i % 2 === 0) {
-                sharedData = [...sharedData, { id: 100 + i }];
-              } else {
-                sharedData = sharedData.filter(item => item.id !== i);
-              }
-              
-              // La pagination ne doit pas crasher malgré les modifications
-              const result = createPaginatedResult(sharedData, 1, 10, sharedData.length);
-              expect(result.data).toBeDefined();
-              resolve();
-            }, Math.random() * 10);
-          });
-        });
+
+        const concurrentOperations = Array.from(
+          { length: 10 },
+          async (_, i) => {
+            return new Promise<void>((resolve) => {
+              setTimeout(() => {
+                // Simuler des modifications concurrentes
+                if (i % 2 === 0) {
+                  sharedData = [...sharedData, { id: 100 + i }];
+                } else {
+                  sharedData = sharedData.filter((item) => item.id !== i);
+                }
+
+                // La pagination ne doit pas crasher malgré les modifications
+                const result = createPaginatedResult(
+                  sharedData,
+                  1,
+                  10,
+                  sharedData.length,
+                );
+                expect(result.data).toBeDefined();
+                resolve();
+              }, Math.random() * 10);
+            });
+          },
+        );
 
         await expect(Promise.all(concurrentOperations)).resolves.not.toThrow();
       });
@@ -457,8 +477,8 @@ describe('Pagination Security and Critical Edge Cases', () => {
     describe('Unicode and special characters', () => {
       it('should handle unicode in numeric contexts', () => {
         const unicodeStrings = ['１', '２', '①', '②']; // Unicode numbers
-        
-        unicodeStrings.forEach(unicode => {
+
+        unicodeStrings.forEach((unicode) => {
           expect(() => {
             validatePaginationParams(unicode as any, 10, 100);
           }).not.toThrow();

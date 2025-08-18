@@ -11,7 +11,9 @@ describe('ProjectNotFoundException', () => {
 
       expect(exception).toBeInstanceOf(ProjectNotFoundException);
       expect(exception).toBeInstanceOf(NotFoundException);
-      expect(exception.message).toBe(`Project with ID "${validProjectId}" not found`);
+      expect(exception.message).toBe(
+        `Project with ID "${validProjectId}" not found`,
+      );
       expect(exception.projectId).toBe(validProjectId);
       expect(exception.errorCode).toBe('PROJECT_NOT_FOUND');
       expect(exception.timestamp).toBeInstanceOf(Date);
@@ -19,10 +21,13 @@ describe('ProjectNotFoundException', () => {
     });
 
     it('should include additional context when provided', () => {
-      const exception = new ProjectNotFoundException(validProjectId, additionalContext);
+      const exception = new ProjectNotFoundException(
+        validProjectId,
+        additionalContext,
+      );
 
       expect(exception.message).toBe(
-        `Project with ID "${validProjectId}" not found: ${additionalContext}`
+        `Project with ID "${validProjectId}" not found: ${additionalContext}`,
       );
       expect(exception.additionalContext).toBe(additionalContext);
     });
@@ -34,29 +39,29 @@ describe('ProjectNotFoundException', () => {
 
     it('should validate project ID is not empty', () => {
       expect(() => new ProjectNotFoundException('')).toThrow(
-        'ProjectId cannot be empty when creating ProjectNotFoundException'
+        'ProjectId cannot be empty when creating ProjectNotFoundException',
       );
     });
 
     it('should validate project ID is not null or undefined', () => {
       expect(() => new ProjectNotFoundException(null as any)).toThrow(
-        'ProjectId cannot be empty when creating ProjectNotFoundException'
+        'ProjectId cannot be empty when creating ProjectNotFoundException',
       );
-      
+
       expect(() => new ProjectNotFoundException(undefined as any)).toThrow(
-        'ProjectId cannot be empty when creating ProjectNotFoundException'
+        'ProjectId cannot be empty when creating ProjectNotFoundException',
       );
     });
 
     it('should validate project ID is a string', () => {
       expect(() => new ProjectNotFoundException(123 as any)).toThrow(
-        'ProjectId cannot be empty when creating ProjectNotFoundException'
+        'ProjectId cannot be empty when creating ProjectNotFoundException',
       );
     });
 
     it('should validate project ID is not only whitespace', () => {
       expect(() => new ProjectNotFoundException('   ')).toThrow(
-        'ProjectId cannot be empty when creating ProjectNotFoundException'
+        'ProjectId cannot be empty when creating ProjectNotFoundException',
       );
     });
 
@@ -66,8 +71,12 @@ describe('ProjectNotFoundException', () => {
       const afterCreation = new Date();
 
       expect(exception.timestamp).toBeInstanceOf(Date);
-      expect(exception.timestamp.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime());
-      expect(exception.timestamp.getTime()).toBeLessThanOrEqual(afterCreation.getTime());
+      expect(exception.timestamp.getTime()).toBeGreaterThanOrEqual(
+        beforeCreation.getTime(),
+      );
+      expect(exception.timestamp.getTime()).toBeLessThanOrEqual(
+        afterCreation.getTime(),
+      );
     });
 
     it('should preserve stack trace', () => {
@@ -80,7 +89,10 @@ describe('ProjectNotFoundException', () => {
 
   describe('getAuditInfo', () => {
     it('should return complete audit information', () => {
-      const exception = new ProjectNotFoundException(validProjectId, additionalContext);
+      const exception = new ProjectNotFoundException(
+        validProjectId,
+        additionalContext,
+      );
       const auditInfo = exception.getAuditInfo();
 
       expect(auditInfo).toEqual({
@@ -104,7 +116,10 @@ describe('ProjectNotFoundException', () => {
 
   describe('toJSON', () => {
     it('should serialize all properties for logging', () => {
-      const exception = new ProjectNotFoundException(validProjectId, additionalContext);
+      const exception = new ProjectNotFoundException(
+        validProjectId,
+        additionalContext,
+      );
       const json = exception.toJSON();
 
       expect(json).toEqual({
@@ -129,7 +144,10 @@ describe('ProjectNotFoundException', () => {
 
   describe('toPublicError', () => {
     it('should create sanitized public error response', () => {
-      const exception = new ProjectNotFoundException(validProjectId, additionalContext);
+      const exception = new ProjectNotFoundException(
+        validProjectId,
+        additionalContext,
+      );
       const publicError = exception.toPublicError();
 
       expect(publicError).toEqual({
@@ -140,26 +158,38 @@ describe('ProjectNotFoundException', () => {
     });
 
     it('should not expose sensitive context in public error', () => {
-      const sensitiveContext = 'Internal database error occurred while checking user permissions';
-      const exception = new ProjectNotFoundException(validProjectId, sensitiveContext);
+      const sensitiveContext =
+        'Internal database error occurred while checking user permissions';
+      const exception = new ProjectNotFoundException(
+        validProjectId,
+        sensitiveContext,
+      );
       const publicError = exception.toPublicError();
 
       expect(publicError.message).not.toContain('database error');
       expect(publicError.message).not.toContain('permissions');
-      expect(publicError.message).toBe(`Project with ID "${validProjectId}" not found`);
+      expect(publicError.message).toBe(
+        `Project with ID "${validProjectId}" not found`,
+      );
     });
   });
 
   describe('properties', () => {
     it('should have readonly properties', () => {
-      const exception = new ProjectNotFoundException(validProjectId, additionalContext);
+      const exception = new ProjectNotFoundException(
+        validProjectId,
+        additionalContext,
+      );
 
       expect(exception.projectId).toBe(validProjectId);
       expect(exception.errorCode).toBe('PROJECT_NOT_FOUND');
     });
 
     it('should maintain property values after creation', () => {
-      const exception = new ProjectNotFoundException(validProjectId, additionalContext);
+      const exception = new ProjectNotFoundException(
+        validProjectId,
+        additionalContext,
+      );
       const originalTimestamp = exception.timestamp;
       const originalProjectId = exception.projectId;
 
@@ -190,8 +220,12 @@ describe('ProjectNotFoundException', () => {
     });
 
     it('should handle Unicode characters in context', () => {
-      const unicodeContext = 'Utilisateur français avec émojis 🚀 a tenté d\'accéder';
-      const exception = new ProjectNotFoundException(validProjectId, unicodeContext);
+      const unicodeContext =
+        "Utilisateur français avec émojis 🚀 a tenté d'accéder";
+      const exception = new ProjectNotFoundException(
+        validProjectId,
+        unicodeContext,
+      );
 
       expect(exception.additionalContext).toBe(unicodeContext);
       expect(exception.message).toContain(unicodeContext);
@@ -199,7 +233,10 @@ describe('ProjectNotFoundException', () => {
 
     it('should handle very long additional context', () => {
       const longContext = 'Very long context: ' + 'a'.repeat(5000);
-      const exception = new ProjectNotFoundException(validProjectId, longContext);
+      const exception = new ProjectNotFoundException(
+        validProjectId,
+        longContext,
+      );
 
       expect(exception.additionalContext).toBe(longContext);
       expect(exception.message).toContain(longContext);
@@ -217,7 +254,7 @@ describe('ProjectNotFoundException', () => {
 
     it('should be catchable as NotFoundException', () => {
       let caught = false;
-      
+
       try {
         throw new ProjectNotFoundException(validProjectId);
       } catch (error) {
@@ -241,7 +278,7 @@ describe('ProjectNotFoundException', () => {
   describe('integration with NestJS', () => {
     it('should be properly serialized by NestJS exception filters', () => {
       const exception = new ProjectNotFoundException(validProjectId);
-      
+
       // Simulate what NestJS does internally
       const response = {
         message: exception.message,

@@ -50,7 +50,7 @@ declare global {
 // Matcher pour vérifier qu'un objet est un ProjectResponseDto valide
 expect.extend({
   toBeValidProjectResponseDto(received: any) {
-    const pass = 
+    const pass =
       received &&
       typeof received.id === 'string' &&
       typeof received.name === 'string' &&
@@ -67,7 +67,8 @@ expect.extend({
 
     if (pass) {
       return {
-        message: () => `expected ${received} not to be a valid ProjectResponseDto`,
+        message: () =>
+          `expected ${received} not to be a valid ProjectResponseDto`,
         pass: true,
       };
     } else {
@@ -105,12 +106,14 @@ expect.extend({
 
     if (pass) {
       return {
-        message: () => `expected ${received} not to be a valid StatisticsResponseDto`,
+        message: () =>
+          `expected ${received} not to be a valid StatisticsResponseDto`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected ${received} to be a valid StatisticsResponseDto`,
+        message: () =>
+          `expected ${received} to be a valid StatisticsResponseDto`,
         pass: false,
       };
     }
@@ -127,24 +130,27 @@ expect.extend({
       };
     }
 
-    const invalidItems = received.filter(item => 
-      typeof item !== 'string' || 
-      item.length === 0 ||
-      item.includes('<script>') ||
-      item.includes('javascript:') ||
-      item.includes('data:')
+    const invalidItems = received.filter(
+      (item) =>
+        typeof item !== 'string' ||
+        item.length === 0 ||
+        item.includes('<script>') ||
+        item.includes('javascript:') ||
+        item.includes('data:'),
     );
 
     const pass = invalidItems.length === 0;
 
     if (pass) {
       return {
-        message: () => `expected ${received} not to contain only valid file IDs`,
+        message: () =>
+          `expected ${received} not to contain only valid file IDs`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected ${received} to contain only valid file IDs, but found invalid items: ${JSON.stringify(invalidItems)}`,
+        message: () =>
+          `expected ${received} to contain only valid file IDs, but found invalid items: ${JSON.stringify(invalidItems)}`,
         pass: false,
       };
     }
@@ -163,21 +169,25 @@ expect.extend({
       /<script>/i,
       /javascript:/i,
       /data:/i,
-      /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/,  // Email
-      /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/,     // Numéro de carte
+      /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/, // Email
+      /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/, // Numéro de carte
     ];
 
-    const foundSensitiveData = sensitivePatterns.some(pattern => pattern.test(received));
+    const foundSensitiveData = sensitivePatterns.some((pattern) =>
+      pattern.test(received),
+    );
     const pass = !foundSensitiveData;
 
     if (pass) {
       return {
-        message: () => `expected log output "${received}" to contain sensitive data`,
+        message: () =>
+          `expected log output "${received}" to contain sensitive data`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected log output "${received}" not to contain sensitive data`,
+        message: () =>
+          `expected log output "${received}" not to contain sensitive data`,
         pass: false,
       };
     }
@@ -201,12 +211,14 @@ expect.extend({
 
     if (pass) {
       return {
-        message: () => `expected date ${received.toISOString()} not to be fresh (less than 24h old)`,
+        message: () =>
+          `expected date ${received.toISOString()} not to be fresh (less than 24h old)`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected date ${received.toISOString()} to be fresh (less than 24h old), but it's ${Math.round(age / (60 * 60 * 1000))}h old`,
+        message: () =>
+          `expected date ${received.toISOString()} to be fresh (less than 24h old), but it's ${Math.round(age / (60 * 60 * 1000))}h old`,
         pass: false,
       };
     }
@@ -216,7 +228,11 @@ expect.extend({
 // Matcher pour vérifier qu'une date est dans une plage donnée
 expect.extend({
   toBeWithinTimeRange(received: Date, start: Date, end: Date) {
-    if (!(received instanceof Date) || !(start instanceof Date) || !(end instanceof Date)) {
+    if (
+      !(received instanceof Date) ||
+      !(start instanceof Date) ||
+      !(end instanceof Date)
+    ) {
       return {
         message: () => `expected all parameters to be Date instances`,
         pass: false,
@@ -227,12 +243,14 @@ expect.extend({
 
     if (pass) {
       return {
-        message: () => `expected date ${received.toISOString()} not to be within range [${start.toISOString()}, ${end.toISOString()}]`,
+        message: () =>
+          `expected date ${received.toISOString()} not to be within range [${start.toISOString()}, ${end.toISOString()}]`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected date ${received.toISOString()} to be within range [${start.toISOString()}, ${end.toISOString()}]`,
+        message: () =>
+          `expected date ${received.toISOString()} to be within range [${start.toISOString()}, ${end.toISOString()}]`,
         pass: false,
       };
     }
@@ -273,18 +291,23 @@ global.createTestDate = (offset: number = 0): Date => {
 };
 
 // Utilitaire pour créer des IDs de test cohérents
-global.createTestId = (prefix: string = 'test', suffix: string = ''): string => {
+global.createTestId = (
+  prefix: string = 'test',
+  suffix: string = '',
+): string => {
   const uuid = '550e8400-e29b-41d4-a716-446655440000';
   return suffix ? `${prefix}-${uuid}-${suffix}` : `${prefix}-${uuid}`;
 };
 
 // Utilitaire pour attendre un délai (pour les tests de performance)
 global.sleep = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 // Utilitaire pour mesurer le temps d'exécution
-global.measureTime = async <T>(fn: () => T | Promise<T>): Promise<{ result: T; duration: number }> => {
+global.measureTime = async <T>(
+  fn: () => T | Promise<T>,
+): Promise<{ result: T; duration: number }> => {
   const start = performance.now();
   const result = await fn();
   const end = performance.now();
@@ -292,7 +315,10 @@ global.measureTime = async <T>(fn: () => T | Promise<T>): Promise<{ result: T; d
 };
 
 // Utilitaire pour générer des données de test volumineuses
-global.generateLargeArray = <T>(size: number, generator: (index: number) => T): T[] => {
+global.generateLargeArray = <T>(
+  size: number,
+  generator: (index: number) => T,
+): T[] => {
   return Array.from({ length: size }, (_, index) => generator(index));
 };
 
@@ -307,8 +333,8 @@ global.isSecureString = (str: string): boolean => {
     /eval\s*\(/i,
     /expression\s*\(/i,
   ];
-  
-  return !dangerousPatterns.some(pattern => pattern.test(str));
+
+  return !dangerousPatterns.some((pattern) => pattern.test(str));
 };
 
 // =============================================================================
@@ -319,7 +345,11 @@ global.isSecureString = (str: string): boolean => {
 jest.setTimeout(30000);
 
 // Configuration pour capturer les métriques de performance
-let performanceMetrics: Array<{ testName: string; duration: number; memory: number }> = [];
+let performanceMetrics: Array<{
+  testName: string;
+  duration: number;
+  memory: number;
+}> = [];
 
 beforeEach(() => {
   // Enregistrer l'état initial pour les métriques
@@ -332,7 +362,7 @@ afterEach(() => {
   // Collecter les métriques de performance
   const testName = expect.getState().currentTestName || 'unknown';
   const memoryUsage = process.memoryUsage().heapUsed;
-  
+
   performanceMetrics.push({
     testName,
     duration: 0, // Sera mis à jour par les tests individuels si nécessaire
@@ -344,8 +374,10 @@ afterAll(() => {
   // Afficher un résumé des métriques de performance si en mode verbose
   if (process.env.JEST_VERBOSE === 'true') {
     console.log('\n=== Performance Metrics ===');
-    performanceMetrics.forEach(metric => {
-      console.log(`${metric.testName}: ${(metric.memory / 1024 / 1024).toFixed(2)}MB`);
+    performanceMetrics.forEach((metric) => {
+      console.log(
+        `${metric.testName}: ${(metric.memory / 1024 / 1024).toFixed(2)}MB`,
+      );
     });
   }
 });
@@ -385,7 +417,7 @@ useContainer({
 global.debugTransformation = (data: any, TargetClass: any) => {
   console.log('=== DEBUG TRANSFORMATION ===');
   console.log('Input data:', JSON.stringify(data, null, 2));
-  
+
   try {
     const { plainToInstance } = require('class-transformer');
     const result = plainToInstance(TargetClass, data);
@@ -406,8 +438,13 @@ declare global {
   function createTestDate(offset?: number): Date;
   function createTestId(prefix?: string, suffix?: string): string;
   function sleep(ms: number): Promise<void>;
-  function measureTime<T>(fn: () => T | Promise<T>): Promise<{ result: T; duration: number }>;
-  function generateLargeArray<T>(size: number, generator: (index: number) => T): T[];
+  function measureTime<T>(
+    fn: () => T | Promise<T>,
+  ): Promise<{ result: T; duration: number }>;
+  function generateLargeArray<T>(
+    size: number,
+    generator: (index: number) => T,
+  ): T[];
   function isSecureString(str: string): boolean;
   function debugTransformation(data: any, TargetClass: any): any;
 }

@@ -11,7 +11,9 @@ describe('UnauthorizedAccessException', () => {
 
       expect(exception).toBeInstanceOf(UnauthorizedAccessException);
       expect(exception).toBeInstanceOf(ForbiddenException);
-      expect(exception.message).toBe('You do not have permission to access this resource');
+      expect(exception.message).toBe(
+        'You do not have permission to access this resource',
+      );
       expect(exception.resourceType).toBe('project');
       expect(exception.errorCode).toBe('UNAUTHORIZED_ACCESS');
       expect(exception.timestamp).toBeInstanceOf(Date);
@@ -28,14 +30,16 @@ describe('UnauthorizedAccessException', () => {
         'statistics',
         testResourceId,
         testUserId,
-        'delete'
+        'delete',
       );
 
       expect(exception.resourceType).toBe('statistics');
       expect(exception.resourceId).toBe(testResourceId);
       expect(exception.userId).toBe(testUserId);
       expect(exception.action).toBe('delete');
-      expect(exception.message).toBe('You do not have permission to delete this statistics');
+      expect(exception.message).toBe(
+        'You do not have permission to delete this statistics',
+      );
     });
 
     it('should handle partial parameters', () => {
@@ -45,7 +49,9 @@ describe('UnauthorizedAccessException', () => {
       expect(exception.resourceId).toBe(testResourceId);
       expect(exception.userId).toBeUndefined();
       expect(exception.action).toBeUndefined();
-      expect(exception.message).toBe('You do not have permission to access this file');
+      expect(exception.message).toBe(
+        'You do not have permission to access this file',
+      );
     });
 
     it('should include timestamp', () => {
@@ -54,8 +60,12 @@ describe('UnauthorizedAccessException', () => {
       const afterCreation = new Date();
 
       expect(exception.timestamp).toBeInstanceOf(Date);
-      expect(exception.timestamp.getTime()).toBeGreaterThanOrEqual(beforeCreation.getTime());
-      expect(exception.timestamp.getTime()).toBeLessThanOrEqual(afterCreation.getTime());
+      expect(exception.timestamp.getTime()).toBeGreaterThanOrEqual(
+        beforeCreation.getTime(),
+      );
+      expect(exception.timestamp.getTime()).toBeLessThanOrEqual(
+        afterCreation.getTime(),
+      );
     });
   });
 
@@ -65,12 +75,14 @@ describe('UnauthorizedAccessException', () => {
         'secret_database',
         'sensitive-id-123',
         'attacker-user',
-        'hack'
+        'hack',
       );
 
       // Message should be generic and not reveal the sensitive resource type
-      expect(exception.message).toBe('You do not have permission to hack this secret_database');
-      
+      expect(exception.message).toBe(
+        'You do not have permission to hack this secret_database',
+      );
+
       // But it should not expose the actual IDs in the public message
       expect(exception.message).not.toContain('sensitive-id-123');
       expect(exception.message).not.toContain('attacker-user');
@@ -78,9 +90,18 @@ describe('UnauthorizedAccessException', () => {
 
     it('should generate appropriate message for different resource types', () => {
       const cases = [
-        { resourceType: 'project', expected: 'You do not have permission to access this project' },
-        { resourceType: 'user', expected: 'You do not have permission to access this user' },
-        { resourceType: 'file', expected: 'You do not have permission to access this file' },
+        {
+          resourceType: 'project',
+          expected: 'You do not have permission to access this project',
+        },
+        {
+          resourceType: 'user',
+          expected: 'You do not have permission to access this user',
+        },
+        {
+          resourceType: 'file',
+          expected: 'You do not have permission to access this file',
+        },
       ];
 
       cases.forEach(({ resourceType, expected }) => {
@@ -91,13 +112,27 @@ describe('UnauthorizedAccessException', () => {
 
     it('should generate appropriate message with actions', () => {
       const cases = [
-        { action: 'read', expected: 'You do not have permission to read this project' },
-        { action: 'delete', expected: 'You do not have permission to delete this project' },
-        { action: 'modify', expected: 'You do not have permission to modify this project' },
+        {
+          action: 'read',
+          expected: 'You do not have permission to read this project',
+        },
+        {
+          action: 'delete',
+          expected: 'You do not have permission to delete this project',
+        },
+        {
+          action: 'modify',
+          expected: 'You do not have permission to modify this project',
+        },
       ];
 
       cases.forEach(({ action, expected }) => {
-        const exception = new UnauthorizedAccessException('project', undefined, undefined, action);
+        const exception = new UnauthorizedAccessException(
+          'project',
+          undefined,
+          undefined,
+          action,
+        );
         expect(exception.message).toBe(expected);
       });
     });
@@ -109,9 +144,9 @@ describe('UnauthorizedAccessException', () => {
         'project',
         testResourceId,
         testUserId,
-        'delete'
+        'delete',
       );
-      
+
       const auditInfo = exception.getAuditInfo();
 
       expect(auditInfo).toEqual({
@@ -121,7 +156,11 @@ describe('UnauthorizedAccessException', () => {
         userId: testUserId,
         action: 'delete',
         timestamp: exception.timestamp,
-        message: 'Unauthorized access attempt by user ' + testUserId + ' to delete project with ID ' + testResourceId,
+        message:
+          'Unauthorized access attempt by user ' +
+          testUserId +
+          ' to delete project with ID ' +
+          testResourceId,
         publicMessage: exception.message,
       });
     });
@@ -142,12 +181,12 @@ describe('UnauthorizedAccessException', () => {
         'statistics',
         testResourceId,
         testUserId,
-        'view'
+        'view',
       );
-      
+
       const auditInfo = exception.getAuditInfo();
       expect(auditInfo.message).toBe(
-        `Unauthorized access attempt by user ${testUserId} to view statistics with ID ${testResourceId}`
+        `Unauthorized access attempt by user ${testUserId} to view statistics with ID ${testResourceId}`,
       );
     });
   });
@@ -158,9 +197,9 @@ describe('UnauthorizedAccessException', () => {
         'project',
         testResourceId,
         testUserId,
-        'delete'
+        'delete',
       );
-      
+
       const json = exception.toJSON();
 
       expect(json).toEqual({
@@ -182,9 +221,9 @@ describe('UnauthorizedAccessException', () => {
         'project',
         testResourceId,
         testUserId,
-        'delete'
+        'delete',
       );
-      
+
       const json = exception.toJSON(true);
       expect(json.resourceId).toBe(testResourceId);
     });
@@ -196,9 +235,9 @@ describe('UnauthorizedAccessException', () => {
         'top_secret_resource',
         'classified-id-123',
         'spy-user-456',
-        'extract_data'
+        'extract_data',
       );
-      
+
       const publicError = exception.toPublicError();
 
       expect(publicError).toEqual({
@@ -218,7 +257,7 @@ describe('UnauthorizedAccessException', () => {
   describe('isSuspiciousActivity', () => {
     it('should detect suspicious activity based on recent attempts', () => {
       const exception = new UnauthorizedAccessException('project');
-      
+
       expect(exception.isSuspiciousActivity(0)).toBe(false);
       expect(exception.isSuspiciousActivity(3)).toBe(false);
       expect(exception.isSuspiciousActivity(6)).toBe(true);
@@ -229,56 +268,98 @@ describe('UnauthorizedAccessException', () => {
       const dangerousActions = ['delete', 'admin', 'modify'];
       const safeActions = ['read', 'view', 'list'];
 
-      dangerousActions.forEach(action => {
-        const exception = new UnauthorizedAccessException('project', undefined, undefined, action);
+      dangerousActions.forEach((action) => {
+        const exception = new UnauthorizedAccessException(
+          'project',
+          undefined,
+          undefined,
+          action,
+        );
         expect(exception.isSuspiciousActivity(0)).toBe(true);
       });
 
-      safeActions.forEach(action => {
-        const exception = new UnauthorizedAccessException('project', undefined, undefined, action);
+      safeActions.forEach((action) => {
+        const exception = new UnauthorizedAccessException(
+          'project',
+          undefined,
+          undefined,
+          action,
+        );
         expect(exception.isSuspiciousActivity(0)).toBe(false);
       });
     });
 
     it('should be case insensitive for action detection', () => {
-      const exception = new UnauthorizedAccessException('project', undefined, undefined, 'DELETE');
+      const exception = new UnauthorizedAccessException(
+        'project',
+        undefined,
+        undefined,
+        'DELETE',
+      );
       expect(exception.isSuspiciousActivity(0)).toBe(true);
 
-      const exception2 = new UnauthorizedAccessException('project', undefined, undefined, 'Admin');
+      const exception2 = new UnauthorizedAccessException(
+        'project',
+        undefined,
+        undefined,
+        'Admin',
+      );
       expect(exception2.isSuspiciousActivity(0)).toBe(true);
     });
   });
 
   describe('getAttemptHash', () => {
     it('should generate unique hash for deduplication', () => {
-      const exception1 = new UnauthorizedAccessException('project', testResourceId, testUserId, 'read');
-      const exception2 = new UnauthorizedAccessException('project', testResourceId, testUserId, 'read');
-      
+      const exception1 = new UnauthorizedAccessException(
+        'project',
+        testResourceId,
+        testUserId,
+        'read',
+      );
+      const exception2 = new UnauthorizedAccessException(
+        'project',
+        testResourceId,
+        testUserId,
+        'read',
+      );
+
       // Same parameters should generate similar hash (within the same hour)
       const hash1 = exception1.getAttemptHash();
       const hash2 = exception2.getAttemptHash();
-      
+
       expect(hash1).toBe(hash2);
       expect(typeof hash1).toBe('string');
       expect(hash1.length).toBeGreaterThan(0);
     });
 
     it('should generate different hashes for different users', () => {
-      const exception1 = new UnauthorizedAccessException('project', testResourceId, 'user1', 'read');
-      const exception2 = new UnauthorizedAccessException('project', testResourceId, 'user2', 'read');
-      
+      const exception1 = new UnauthorizedAccessException(
+        'project',
+        testResourceId,
+        'user1',
+        'read',
+      );
+      const exception2 = new UnauthorizedAccessException(
+        'project',
+        testResourceId,
+        'user2',
+        'read',
+      );
+
       const hash1 = exception1.getAttemptHash();
       const hash2 = exception2.getAttemptHash();
-      
+
       expect(hash1).not.toBe(hash2);
     });
 
     it('should handle anonymous users', () => {
       const exception = new UnauthorizedAccessException('project');
       const hash = exception.getAttemptHash();
-      
+
       expect(hash).toBeDefined();
-      expect(hash).toContain(Buffer.from('anonymous').toString('base64').substring(0, 8));
+      expect(hash).toContain(
+        Buffer.from('anonymous').toString('base64').substring(0, 8),
+      );
     });
   });
 
@@ -288,7 +369,7 @@ describe('UnauthorizedAccessException', () => {
         'project',
         testResourceId,
         testUserId,
-        'delete'
+        'delete',
       );
 
       expect(exception.resourceType).toBe('project');
@@ -299,7 +380,7 @@ describe('UnauthorizedAccessException', () => {
   describe('edge cases', () => {
     it('should handle empty string parameters', () => {
       const exception = new UnauthorizedAccessException('', '', '', '');
-      
+
       expect(exception.resourceType).toBe('');
       expect(exception.resourceId).toBe('');
       expect(exception.userId).toBe('');
@@ -308,8 +389,13 @@ describe('UnauthorizedAccessException', () => {
 
     it('should handle very long parameter values', () => {
       const longString = 'a'.repeat(1000);
-      const exception = new UnauthorizedAccessException(longString, longString, longString, longString);
-      
+      const exception = new UnauthorizedAccessException(
+        longString,
+        longString,
+        longString,
+        longString,
+      );
+
       expect(exception.resourceType).toBe(longString);
       expect(exception.resourceId).toBe(longString);
       expect(exception.userId).toBe(longString);
@@ -319,7 +405,7 @@ describe('UnauthorizedAccessException', () => {
     it('should handle Unicode characters', () => {
       const unicodeResource = 'ressource_française_🚀';
       const exception = new UnauthorizedAccessException(unicodeResource);
-      
+
       expect(exception.resourceType).toBe(unicodeResource);
       expect(exception.message).toContain(unicodeResource);
     });
@@ -336,7 +422,7 @@ describe('UnauthorizedAccessException', () => {
 
     it('should be catchable as ForbiddenException', () => {
       let caught = false;
-      
+
       try {
         throw new UnauthorizedAccessException();
       } catch (error) {
@@ -353,14 +439,21 @@ describe('UnauthorizedAccessException', () => {
       const forbiddenException = new ForbiddenException('Generic forbidden');
 
       expect(authException instanceof UnauthorizedAccessException).toBe(true);
-      expect(forbiddenException instanceof UnauthorizedAccessException).toBe(false);
+      expect(forbiddenException instanceof UnauthorizedAccessException).toBe(
+        false,
+      );
     });
   });
 
   describe('integration with NestJS', () => {
     it('should be properly serialized by NestJS exception filters', () => {
-      const exception = new UnauthorizedAccessException('project', testResourceId, testUserId, 'delete');
-      
+      const exception = new UnauthorizedAccessException(
+        'project',
+        testResourceId,
+        testUserId,
+        'delete',
+      );
+
       // Simulate what NestJS does internally
       const response = {
         message: exception.message,
@@ -370,7 +463,9 @@ describe('UnauthorizedAccessException', () => {
 
       expect(response.statusCode).toBe(403);
       expect(response.error).toBe('UnauthorizedAccessException');
-      expect(response.message).toBe('You do not have permission to delete this project');
+      expect(response.message).toBe(
+        'You do not have permission to delete this project',
+      );
     });
   });
 
@@ -378,15 +473,19 @@ describe('UnauthorizedAccessException', () => {
     it('should never expose internal IDs in public messages', () => {
       const sensitiveId = 'SENSITIVE_INTERNAL_ID_12345';
       const exception = new UnauthorizedAccessException('project', sensitiveId);
-      
+
       expect(exception.message).not.toContain(sensitiveId);
       expect(exception.toPublicError().message).not.toContain(sensitiveId);
     });
 
     it('should not leak user information in public responses', () => {
       const userId = 'internal-user-id-67890';
-      const exception = new UnauthorizedAccessException('project', testResourceId, userId);
-      
+      const exception = new UnauthorizedAccessException(
+        'project',
+        testResourceId,
+        userId,
+      );
+
       expect(exception.message).not.toContain(userId);
       expect(exception.toPublicError().message).not.toContain(userId);
     });
@@ -396,14 +495,14 @@ describe('UnauthorizedAccessException', () => {
         resourceType: 'classified_documents',
         resourceId: 'top-secret-123',
         userId: 'agent-007',
-        action: 'extract'
+        action: 'extract',
       };
 
       const exception = new UnauthorizedAccessException(
         sensitiveData.resourceType,
         sensitiveData.resourceId,
         sensitiveData.userId,
-        sensitiveData.action
+        sensitiveData.action,
       );
 
       // Audit info should contain everything
@@ -413,7 +512,9 @@ describe('UnauthorizedAccessException', () => {
 
       // Public response should be generic
       const publicError = exception.toPublicError();
-      expect(publicError.message).toBe('You do not have permission to access this resource');
+      expect(publicError.message).toBe(
+        'You do not have permission to access this resource',
+      );
     });
   });
 });

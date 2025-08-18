@@ -34,9 +34,10 @@ export class CacheService {
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     try {
       const cacheConfig = getCacheConfig(this.configService);
-      const finalTtl = ttl !== undefined ? ttl : cacheConfig.performance.defaultTtl;
+      const finalTtl =
+        ttl !== undefined ? ttl : cacheConfig.performance.defaultTtl;
       const fullKey = this.getFullKey(key);
-      
+
       await this.redis.setex(fullKey, finalTtl, JSON.stringify(value));
     } catch (error) {
       console.error(`Cache set error for key ${key}:`, error);
@@ -47,7 +48,7 @@ export class CacheService {
     try {
       if (Array.isArray(key)) {
         if (key.length > 0) {
-          const fullKeys = key.map(k => this.getFullKey(k));
+          const fullKeys = key.map((k) => this.getFullKey(k));
           await this.redis.del(...fullKeys);
         }
       } else {
@@ -59,26 +60,31 @@ export class CacheService {
     }
   }
 
-  async invalidateProjectCache(projectId: string, userId: string): Promise<void> {
+  async invalidateProjectCache(
+    projectId: string,
+    userId: string,
+  ): Promise<void> {
     try {
       const keys = [
         CACHE_KEYS.PROJECT(projectId),
         CACHE_KEYS.PROJECT_STATISTICS(projectId),
         CACHE_KEYS.USER_PROJECTS_COUNT(userId),
       ];
-      
+
       // Invalider aussi les listes de projets de l'utilisateur
       // Pour keys(), nous devons inclure le préfixe manuellement
       const prefix = this.getKeyPrefix();
       const listPattern = `${prefix}projects:${userId}:*`;
-      
+
       const listKeys = await this.redis.keys(listPattern);
-      
+
       // Enlever le préfixe des clés trouvées car del() applique automatiquement le préfixe
-      const listKeysWithoutPrefix = listKeys.map(key => key.replace(prefix, ''));
-      
+      const listKeysWithoutPrefix = listKeys.map((key) =>
+        key.replace(prefix, ''),
+      );
+
       const allKeysToDelete = [...keys, ...listKeysWithoutPrefix];
-      
+
       await this.del(allKeysToDelete);
     } catch (error) {
       console.error(`Cache delete error:`, error);
@@ -92,10 +98,10 @@ export class CacheService {
       const prefix = this.getKeyPrefix();
       const listPattern = `${prefix}projects:${userId}:*`;
       const keys = await this.redis.keys(listPattern);
-      
+
       // Enlever le préfixe des clés trouvées car del() applique automatiquement le préfixe
-      const keysWithoutPrefix = keys.map(key => key.replace(prefix, ''));
-      
+      const keysWithoutPrefix = keys.map((key) => key.replace(prefix, ''));
+
       if (keysWithoutPrefix.length > 0) {
         await this.del(keysWithoutPrefix);
       }

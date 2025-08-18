@@ -3,7 +3,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HttpModule, HttpService } from '@nestjs/axios';
-import { ExecutionContext, UnauthorizedException, ServiceUnavailableException, InternalServerErrorException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  UnauthorizedException,
+  ServiceUnavailableException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { of, throwError, delay } from 'rxjs';
 import { AxiosResponse, AxiosError } from 'axios';
 import Redis from 'ioredis-mock';
@@ -65,7 +70,7 @@ describe('AuthGuard - Integration Tests', () => {
   });
 
   const waitForCache = (ms: number = 50): Promise<void> => {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   };
 
   // ============================================================================
@@ -107,7 +112,11 @@ describe('AuthGuard - Integration Tests', () => {
             const mockCacheService = {
               redis: redisClient,
               async get(key: string) {
-                return redisClient.get(key).then((value: string | null) => value ? JSON.parse(value) : null); // Fix: Type explicite pour value
+                return redisClient
+                  .get(key)
+                  .then((value: string | null) =>
+                    value ? JSON.parse(value) : null,
+                  ); // Fix: Type explicite pour value
               },
               async set(key: string, value: any, ttl?: number) {
                 const serialized = JSON.stringify(value);
@@ -117,7 +126,9 @@ describe('AuthGuard - Integration Tests', () => {
                 return redisClient.set(key, serialized);
               },
               async del(key: string | string[]) {
-                return Array.isArray(key) ? redisClient.del(...key) : redisClient.del(key);
+                return Array.isArray(key)
+                  ? redisClient.del(...key)
+                  : redisClient.del(key);
               },
             };
             return mockCacheService;
@@ -165,7 +176,9 @@ describe('AuthGuard - Integration Tests', () => {
       const context = createMockExecutionContext(request);
 
       // Mock HTTP service response
-      jest.spyOn(httpService, 'post').mockReturnValue(of(createAuthResponse(user)));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(createAuthResponse(user)));
 
       // Act
       const result = await authGuard.canActivate(context);
@@ -212,8 +225,12 @@ describe('AuthGuard - Integration Tests', () => {
       const context = createMockExecutionContext(request);
 
       // Simulate cache failure
-      jest.spyOn(cacheService, 'get').mockRejectedValue(new Error('Redis connection lost'));
-      jest.spyOn(httpService, 'post').mockReturnValue(of(createAuthResponse(user)));
+      jest
+        .spyOn(cacheService, 'get')
+        .mockRejectedValue(new Error('Redis connection lost'));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(createAuthResponse(user)));
 
       // Act
       const result = await authGuard.canActivate(context);
@@ -234,13 +251,17 @@ describe('AuthGuard - Integration Tests', () => {
       jest.spyOn(httpService, 'post').mockReturnValue(
         throwError(() => ({
           response: { status: 401 },
-          message: 'Unauthorized'
-        }))
+          message: 'Unauthorized',
+        })),
       );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      await expect(authGuard.canActivate(context)).rejects.toThrow('Authentication failed');
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        'Authentication failed',
+      );
 
       // Verify no cache pollution
       const cacheKey = `auth:token:${require('crypto').createHash('sha256').update(token).digest('hex')}`;
@@ -265,11 +286,13 @@ describe('AuthGuard - Integration Tests', () => {
       let capturedConfig: any = {};
 
       // Mock HTTP service to capture actual call
-      jest.spyOn(httpService, 'post').mockImplementation((url, data, config) => {
-        capturedUrl = url;
-        capturedConfig = config;
-        return of(createAuthResponse(user));
-      });
+      jest
+        .spyOn(httpService, 'post')
+        .mockImplementation((url, data, config) => {
+          capturedUrl = url;
+          capturedConfig = config;
+          return of(createAuthResponse(user));
+        });
 
       // Act
       await authGuard.canActivate(context);
@@ -290,7 +313,9 @@ describe('AuthGuard - Integration Tests', () => {
       const request = { headers: { authorization: `Bearer ${token}` } };
       const context = createMockExecutionContext(request);
 
-      jest.spyOn(httpService, 'post').mockReturnValue(of(createAuthResponse(user)));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(createAuthResponse(user)));
 
       // Act
       await authGuard.canActivate(context);
@@ -306,10 +331,13 @@ describe('AuthGuard - Integration Tests', () => {
     it('should handle missing configuration gracefully', async () => {
       // Arrange
       const originalGet = configService.get.bind(configService);
-      jest.spyOn(configService, 'get').mockImplementation((key: string, defaultValue?: any) => { // Fix: Ajout du paramètre defaultValue
-        if (key === 'AUTH_SERVICE_URL') return undefined;
-        return originalGet(key, defaultValue); // Fix: Appel direct avec bind
-      });
+      jest
+        .spyOn(configService, 'get')
+        .mockImplementation((key: string, defaultValue?: any) => {
+          // Fix: Ajout du paramètre defaultValue
+          if (key === 'AUTH_SERVICE_URL') return undefined;
+          return originalGet(key, defaultValue); // Fix: Appel direct avec bind
+        });
 
       const token = 'eyJhbGciOiJIUzI1NiJ9.missing-config.signature';
       const request = { headers: { authorization: `Bearer ${token}` } };
@@ -334,9 +362,7 @@ describe('AuthGuard - Integration Tests', () => {
       jest.spyOn(httpService, 'post').mockImplementation(() => {
         authServiceCallCount++;
         // Simulate network delay with delayed Observable
-        return of(createAuthResponse(user)).pipe(
-          delay(50)
-        );
+        return of(createAuthResponse(user)).pipe(delay(50));
       });
 
       // Act - 20 concurrent requests
@@ -349,8 +375,8 @@ describe('AuthGuard - Integration Tests', () => {
       const results = await Promise.all(promises);
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
-      
+      expect(results.every((result) => result === true)).toBe(true);
+
       // All requests should succeed even if auth service is called multiple times
       expect(authServiceCallCount).toBeGreaterThan(0);
       expect(authServiceCallCount).toBeLessThanOrEqual(20);
@@ -370,7 +396,9 @@ describe('AuthGuard - Integration Tests', () => {
         roles: ['user'],
       }));
 
-      const tokens = users.map((_, i) => `eyJhbGciOiJIUzI1NiJ9.concurrent-${i}.signature`);
+      const tokens = users.map(
+        (_, i) => `eyJhbGciOiJIUzI1NiJ9.concurrent-${i}.signature`,
+      );
 
       // Pre-populate cache for first 3 users
       for (let i = 0; i < 3; i++) {
@@ -384,18 +412,18 @@ describe('AuthGuard - Integration Tests', () => {
       });
 
       // Act - Concurrent requests with mix of cache hits and misses
-      const promises = tokens.flatMap(token => 
+      const promises = tokens.flatMap((token) =>
         Array.from({ length: 4 }, async () => {
           const request = { headers: { authorization: `Bearer ${token}` } };
           const context = createMockExecutionContext(request);
           return authGuard.canActivate(context);
-        })
+        }),
       );
 
       const results = await Promise.all(promises);
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
       expect(results).toHaveLength(20); // 5 tokens × 4 requests each
     });
   });
@@ -417,10 +445,12 @@ describe('AuthGuard - Integration Tests', () => {
           code: 'ECONNABORTED',
           message: 'timeout of 5000ms exceeded',
           name: 'Error',
-        }))
+        })),
       );
 
-      await expect(authGuard.canActivate(context)).rejects.toThrow(ServiceUnavailableException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        ServiceUnavailableException,
+      );
     });
 
     it('should handle network connection errors', async () => {
@@ -435,11 +465,13 @@ describe('AuthGuard - Integration Tests', () => {
           code: 'ECONNREFUSED',
           message: 'connect ECONNREFUSED 127.0.0.1:3001',
           name: 'Error',
-        }))
+        })),
       );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(ServiceUnavailableException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        ServiceUnavailableException,
+      );
     });
 
     it('should handle DNS resolution errors', async () => {
@@ -454,11 +486,13 @@ describe('AuthGuard - Integration Tests', () => {
           code: 'ENOTFOUND',
           message: 'getaddrinfo ENOTFOUND non-existent-auth-service.local',
           name: 'Error',
-        }))
+        })),
       );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(ServiceUnavailableException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        ServiceUnavailableException,
+      );
     });
 
     it('should recover after network issues are resolved', async () => {
@@ -469,13 +503,13 @@ describe('AuthGuard - Integration Tests', () => {
 
       const httpSpy = jest.spyOn(httpService, 'post');
 
-      httpSpy.mockReturnValueOnce(
-        throwError(() => new Error('Network error'))
-      );
+      httpSpy.mockReturnValueOnce(throwError(() => new Error('Network error')));
 
       httpSpy.mockReturnValueOnce(of(createAuthResponse(user)));
 
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
 
       const result = await authGuard.canActivate(context);
 
@@ -495,7 +529,9 @@ describe('AuthGuard - Integration Tests', () => {
       const request = { headers: { authorization: `Bearer ${token}` } };
       const context = createMockExecutionContext(request);
 
-      jest.spyOn(httpService, 'post').mockReturnValue(of(createAuthResponse(user)));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(createAuthResponse(user)));
 
       // Act
       await authGuard.canActivate(context);
@@ -503,7 +539,7 @@ describe('AuthGuard - Integration Tests', () => {
       // Assert - Verify Redis operations
       await waitForCache();
       const cacheKey = `auth:token:${require('crypto').createHash('sha256').update(token).digest('hex')}`;
-      
+
       // Check direct Redis operations
       const exists = await redisClient.exists(cacheKey);
       expect(exists).toBe(1);
@@ -524,9 +560,15 @@ describe('AuthGuard - Integration Tests', () => {
       const context = createMockExecutionContext(request);
 
       // Simulate Redis failure
-      jest.spyOn(cacheService, 'get').mockRejectedValue(new Error('Redis connection failed'));
-      jest.spyOn(cacheService, 'set').mockRejectedValue(new Error('Redis connection failed'));
-      jest.spyOn(httpService, 'post').mockReturnValue(of(createAuthResponse(user)));
+      jest
+        .spyOn(cacheService, 'get')
+        .mockRejectedValue(new Error('Redis connection failed'));
+      jest
+        .spyOn(cacheService, 'set')
+        .mockRejectedValue(new Error('Redis connection failed'));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(createAuthResponse(user)));
 
       // Act
       const result = await authGuard.canActivate(context);
@@ -542,12 +584,13 @@ describe('AuthGuard - Integration Tests', () => {
       // Arrange
       const token1 = 'eyJhbGciOiJIUzI1NiJ9.collision-test-1.signature';
       const token2 = 'eyJhbGciOiJIUzI1NiJ9.collision-test-2.signature';
-      
+
       const user1 = { ...createTestUser(), id: 'user-1' };
       const user2 = { ...createTestUser(), id: 'user-2' };
 
       // Act - Cache both users
-      jest.spyOn(httpService, 'post')
+      jest
+        .spyOn(httpService, 'post')
         .mockReturnValueOnce(of(createAuthResponse(user1)))
         .mockReturnValueOnce(of(createAuthResponse(user2)));
 
@@ -561,7 +604,7 @@ describe('AuthGuard - Integration Tests', () => {
 
       // Assert - Verify both users are cached separately
       await waitForCache();
-      
+
       const cacheKey1 = `auth:token:${require('crypto').createHash('sha256').update(token1).digest('hex')}`;
       const cacheKey2 = `auth:token:${require('crypto').createHash('sha256').update(token2).digest('hex')}`;
 
@@ -591,10 +634,12 @@ describe('AuthGuard - Integration Tests', () => {
       expect(result1).toBe(true);
 
       // Wait for expiration
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      await new Promise((resolve) => setTimeout(resolve, 1100));
 
       // Setup auth service for cache miss
-      jest.spyOn(httpService, 'post').mockReturnValue(of(createAuthResponse(user)));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(createAuthResponse(user)));
 
       // Second call should miss cache and hit auth service
       const result2 = await authGuard.canActivate(context);
@@ -617,7 +662,9 @@ describe('AuthGuard - Integration Tests', () => {
       const request = { headers: { authorization: `Bearer ${token}` } };
       const context = createMockExecutionContext(request);
 
-      jest.spyOn(httpService, 'post').mockReturnValue(of(createAuthResponse(user)));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(createAuthResponse(user)));
 
       // Mock metrics collection
       const metricsCollected: any[] = [];
@@ -647,9 +694,11 @@ describe('AuthGuard - Integration Tests', () => {
       const request = { headers: { authorization: `Bearer ${token}` } };
       const context = createMockExecutionContext(request);
 
-      jest.spyOn(httpService, 'post').mockReturnValue(
-        throwError(() => new AxiosError('Unauthorized', '401'))
-      );
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(
+          throwError(() => new AxiosError('Unauthorized', '401')),
+        );
 
       // Mock metrics collection
       const metricsCollected: any[] = [];
@@ -662,7 +711,9 @@ describe('AuthGuard - Integration Tests', () => {
       };
 
       try {
-        await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+        await expect(authGuard.canActivate(context)).rejects.toThrow(
+          UnauthorizedException,
+        );
       } finally {
         console.error = originalConsoleError;
       }
@@ -674,15 +725,23 @@ describe('AuthGuard - Integration Tests', () => {
       const user = createTestUser();
 
       // Pre-populate cache for some tokens
-      const cachedTokens = Array.from({ length: 3 }, (_, i) => `${baseToken}-cached-${i}.signature`);
-      const uncachedTokens = Array.from({ length: 7 }, (_, i) => `${baseToken}-uncached-${i}.signature`);
+      const cachedTokens = Array.from(
+        { length: 3 },
+        (_, i) => `${baseToken}-cached-${i}.signature`,
+      );
+      const uncachedTokens = Array.from(
+        { length: 7 },
+        (_, i) => `${baseToken}-uncached-${i}.signature`,
+      );
 
       for (const token of cachedTokens) {
         const cacheKey = `auth:token:${require('crypto').createHash('sha256').update(token).digest('hex')}`;
         await cacheService.set(cacheKey, user, 300);
       }
 
-      jest.spyOn(httpService, 'post').mockReturnValue(of(createAuthResponse(user)));
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValue(of(createAuthResponse(user)));
 
       let cacheHits = 0;
       let cacheMisses = 0;

@@ -4,10 +4,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { DatabaseService } from '../../../../src/database/database.service';
-import { 
+import {
   createDatabaseTestingModule,
   createPrismaPromiseMock,
-  expectDatabaseError 
+  expectDatabaseError,
 } from '../../../setup/database-test-setup';
 
 /**
@@ -40,7 +40,8 @@ describe('DatabaseService - Security Tests', () => {
       const warnSpy = jest.spyOn(Logger.prototype, 'warn');
 
       module = await createDatabaseTestingModule({
-        'DATABASE_URL': 'postgresql://secret_user:secret_password@localhost:5432/test_db',
+        DATABASE_URL:
+          'postgresql://secret_user:secret_password@localhost:5432/test_db',
       });
       service = module.get<DatabaseService>(DatabaseService);
 
@@ -57,7 +58,7 @@ describe('DatabaseService - Security Tests', () => {
 
       expect(allLogs).not.toContain('secret_password');
       expect(allLogs).not.toContain('secret_user');
-      
+
       // Vérifier que les URLs de connexion sont masquées dans les logs
       if (allLogs.includes('postgresql://')) {
         expect(allLogs).not.toMatch(/postgresql:\/\/[^:]+:[^@]+@/);
@@ -77,17 +78,17 @@ describe('DatabaseService - Security Tests', () => {
       for (const maliciousUrl of maliciousUrls) {
         try {
           module = await createDatabaseTestingModule({
-            'DATABASE_URL': maliciousUrl,
+            DATABASE_URL: maliciousUrl,
           });
           service = module.get<DatabaseService>(DatabaseService);
-          
+
           // Même avec une URL malicieuse, le service ne devrait pas exposer d'infos
           await service.onModuleInit().catch(() => {});
-          
+
           // Vérifier que l'erreur ne contient pas l'URL complète
           const errorSpy = jest.spyOn(Logger.prototype, 'error');
           await service.isHealthy().catch(() => {});
-          
+
           if (errorSpy.mock.calls.length > 0) {
             const errorMessages = errorSpy.mock.calls.flat().join(' ');
             expect(errorMessages).not.toContain(maliciousUrl);
@@ -106,7 +107,8 @@ describe('DatabaseService - Security Tests', () => {
 
     it('should handle invalid credentials without exposure', async () => {
       module = await createDatabaseTestingModule({
-        'DATABASE_URL': 'postgresql://invalid_user:wrong_password@localhost:5432/nonexistent',
+        DATABASE_URL:
+          'postgresql://invalid_user:wrong_password@localhost:5432/nonexistent',
       });
       service = module.get<DatabaseService>(DatabaseService);
 
@@ -128,8 +130,9 @@ describe('DatabaseService - Security Tests', () => {
 
     it('should use secure connection settings in production', async () => {
       module = await createDatabaseTestingModule({
-        'NODE_ENV': 'production',
-        'DATABASE_URL': 'postgresql://user:pass@localhost:5432/db?sslmode=require',
+        NODE_ENV: 'production',
+        DATABASE_URL:
+          'postgresql://user:pass@localhost:5432/db?sslmode=require',
       });
       service = module.get<DatabaseService>(DatabaseService);
 
@@ -158,19 +161,26 @@ describe('DatabaseService - Security Tests', () => {
       for (const maliciousInput of maliciousInputs) {
         try {
           // Utiliser Prisma's raw query avec paramètres (protection attendue)
-          const mockQueryRaw = jest.spyOn(service, '$queryRaw').mockImplementation(() => {
-            // Simuler que Prisma protège contre l'injection
-            if (maliciousInput.includes('DROP') || maliciousInput.includes('INSERT') || maliciousInput.includes('UNION')) {
-              return Promise.reject(new Error('Potentially unsafe query detected'));
-            }
-            return createPrismaPromiseMock([]);
-          });
+          const mockQueryRaw = jest
+            .spyOn(service, '$queryRaw')
+            .mockImplementation(() => {
+              // Simuler que Prisma protège contre l'injection
+              if (
+                maliciousInput.includes('DROP') ||
+                maliciousInput.includes('INSERT') ||
+                maliciousInput.includes('UNION')
+              ) {
+                return Promise.reject(
+                  new Error('Potentially unsafe query detected'),
+                );
+              }
+              return createPrismaPromiseMock([]);
+            });
 
           await service.$queryRaw`SELECT * FROM projects WHERE name = ${maliciousInput}`;
-          
+
           // Si on arrive ici, vérifier que l'input a été échappé
           expect(mockQueryRaw).toHaveBeenCalled();
-          
         } catch (error) {
           // C'est attendu pour les inputs malicieux
           expect(error.message).toContain('unsafe query');
@@ -189,9 +199,11 @@ describe('DatabaseService - Security Tests', () => {
         '_underscore_', // Underscore wildcard
       ];
 
-      const mockCreate = jest.fn().mockImplementation(() => createPrismaPromiseMock({ id: 'test' }));
+      const mockCreate = jest
+        .fn()
+        .mockImplementation(() => createPrismaPromiseMock({ id: 'test' }));
       Object.assign(service, {
-        project: { create: mockCreate }
+        project: { create: mockCreate },
       });
 
       for (const specialChar of specialCharacters) {
@@ -214,20 +226,20 @@ describe('DatabaseService - Security Tests', () => {
     });
 
     it('should prevent query manipulation through parameters', async () => {
-      const mockQueryRaw = jest.spyOn(service, '$queryRaw').mockImplementation(() => 
-        createPrismaPromiseMock([])
-      );
+      const mockQueryRaw = jest
+        .spyOn(service, '$queryRaw')
+        .mockImplementation(() => createPrismaPromiseMock([]));
 
       // Tentatives de manipulation via paramètres
       const maliciousParams = [
-        "1; DROP TABLE projects; --",
-        "1 OR 1=1",
+        '1; DROP TABLE projects; --',
+        '1 OR 1=1',
         "1' AND (SELECT COUNT(*) FROM pg_tables) > 0 --",
       ];
 
       for (const param of maliciousParams) {
         await service.$queryRaw`SELECT * FROM projects WHERE id = ${param}`;
-        
+
         // Vérifier que la requête a été exécutée (Prisma gère la sécurité)
         expect(mockQueryRaw).toHaveBeenCalled();
       }
@@ -243,16 +255,16 @@ describe('DatabaseService - Security Tests', () => {
     it('should enforce environment-based operation restrictions', async () => {
       // Test en production - resetDatabase devrait être interdit
       const prodModule = await createDatabaseTestingModule({
-        'NODE_ENV': 'production',
+        NODE_ENV: 'production',
       });
       const prodService = prodModule.get<DatabaseService>(DatabaseService);
 
       await expect(prodService.resetDatabase()).rejects.toThrow(
-        'Database reset is only allowed in test environment'
+        'Database reset is only allowed in test environment',
       );
 
       await expect(prodService.seedDatabase()).rejects.toThrow(
-        'Database seeding is only allowed in development and test environments'
+        'Database seeding is only allowed in development and test environments',
       );
 
       await prodModule.close();
@@ -261,21 +273,21 @@ describe('DatabaseService - Security Tests', () => {
     it('should enforce environment-based operation restrictions in production', async () => {
       // Sauvegarder l'environnement actuel
       const originalNodeEnv = process.env.NODE_ENV;
-      
+
       try {
         // Test en production - resetDatabase devrait être interdit
         process.env.NODE_ENV = 'production';
         const prodModule = await createDatabaseTestingModule({
-          'NODE_ENV': 'production',
+          NODE_ENV: 'production',
         });
         const prodService = prodModule.get<DatabaseService>(DatabaseService);
 
         await expect(prodService.resetDatabase()).rejects.toThrow(
-          'Database reset is only allowed in test environment'
+          'Database reset is only allowed in test environment',
         );
 
         await expect(prodService.seedDatabase()).rejects.toThrow(
-          'Database seeding is only allowed in development and test environments'
+          'Database seeding is only allowed in development and test environments',
         );
 
         await prodModule.close();
@@ -289,11 +301,11 @@ describe('DatabaseService - Security Tests', () => {
       // Les opérations normales devraient fonctionner en test
       const health = await service.isHealthy();
       expect(typeof health).toBe('boolean');
-      
+
       const connectionStatus = await service.getConnectionStatus();
       expect(connectionStatus).toHaveProperty('isConnected');
       expect(connectionStatus).toHaveProperty('responseTime');
-      
+
       const healthMetrics = service.getHealthMetrics();
       expect(healthMetrics).toHaveProperty('status');
       expect(healthMetrics).toHaveProperty('responseTime');
@@ -303,7 +315,7 @@ describe('DatabaseService - Security Tests', () => {
       // Tentatives d'accès aux tables système
       const systemTables = [
         'pg_shadow',
-        'pg_user', 
+        'pg_user',
         'information_schema.tables',
         'pg_tables',
         'pg_stat_activity',
@@ -312,11 +324,13 @@ describe('DatabaseService - Security Tests', () => {
       for (const table of systemTables) {
         // ✅ Mock qui bloque spécifiquement cette table
         jest.spyOn(service, '$queryRaw').mockImplementation(() => {
-          return Promise.reject(new Error('Access to system tables is restricted'));
+          return Promise.reject(
+            new Error('Access to system tables is restricted'),
+          );
         });
 
         await expect(
-          service.$queryRaw`SELECT * FROM ${table}` as any
+          service.$queryRaw`SELECT * FROM ${table}` as any,
         ).rejects.toThrow('Access to system tables is restricted');
 
         // Nettoyer le mock après chaque test
@@ -337,14 +351,17 @@ describe('DatabaseService - Security Tests', () => {
         if (typeof data.data.name !== 'string') {
           return Promise.reject(new Error('Invalid data type for name field'));
         }
-        if (data.data.status && !['ACTIVE', 'ARCHIVED', 'DELETED'].includes(data.data.status)) {
+        if (
+          data.data.status &&
+          !['ACTIVE', 'ARCHIVED', 'DELETED'].includes(data.data.status)
+        ) {
           return Promise.reject(new Error('Invalid status value'));
         }
         return createPrismaPromiseMock({ id: 'test' });
       });
 
       Object.assign(service, {
-        project: { create: mockCreate }
+        project: { create: mockCreate },
       });
 
       // Test avec des types invalides
@@ -364,11 +381,11 @@ describe('DatabaseService - Security Tests', () => {
               description: 'Test',
               initialPrompt: 'Test prompt',
               ownerId: 'test-user',
-              status: input.status as any || 'ACTIVE',
+              status: (input.status as any) || 'ACTIVE',
               uploadedFileIds: [],
               generatedFileIds: [],
             },
-          })
+          }),
         ).rejects.toThrow();
       }
     });
@@ -382,9 +399,11 @@ describe('DatabaseService - Security Tests', () => {
         '..\\..\\..\\windows\\system32\\config\\sam',
       ];
 
-      const mockCreate = jest.fn().mockImplementation(() => createPrismaPromiseMock({ id: 'test' }));
+      const mockCreate = jest
+        .fn()
+        .mockImplementation(() => createPrismaPromiseMock({ id: 'test' }));
       Object.assign(service, {
-        project: { create: mockCreate }
+        project: { create: mockCreate },
       });
 
       for (const dangerousInput of dangerousInputs) {
@@ -419,7 +438,7 @@ describe('DatabaseService - Security Tests', () => {
       });
 
       Object.assign(service, {
-        project: { create: mockCreate }
+        project: { create: mockCreate },
       });
 
       // Test avec string très longue (devrait échouer)
@@ -435,7 +454,7 @@ describe('DatabaseService - Security Tests', () => {
             uploadedFileIds: [],
             generatedFileIds: [],
           },
-        })
+        }),
       ).rejects.toThrow('String too long');
 
       // Test avec string acceptable (devrait réussir)
@@ -463,9 +482,13 @@ describe('DatabaseService - Security Tests', () => {
     });
 
     it('should not expose database structure in errors', async () => {
-      const mockQueryRaw = jest.spyOn(service, '$queryRaw').mockImplementation(() => 
-        Promise.reject(new Error('relation "secret_internal_table" does not exist'))
-      );
+      const mockQueryRaw = jest
+        .spyOn(service, '$queryRaw')
+        .mockImplementation(() =>
+          Promise.reject(
+            new Error('relation "secret_internal_table" does not exist'),
+          ),
+        );
 
       try {
         await service.isHealthy();
@@ -495,10 +518,12 @@ describe('DatabaseService - Security Tests', () => {
 
     it('should sanitize error messages for external consumption', async () => {
       const internalError = new Error(
-        'FATAL: password authentication failed for user "secret_user" at 192.168.1.100:5432'
+        'FATAL: password authentication failed for user "secret_user" at 192.168.1.100:5432',
       );
-      
-      const mockConnect = jest.spyOn(service, '$connect').mockRejectedValue(internalError);
+
+      const mockConnect = jest
+        .spyOn(service, '$connect')
+        .mockRejectedValue(internalError);
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
       try {
@@ -507,7 +532,9 @@ describe('DatabaseService - Security Tests', () => {
         expect(error.message).not.toContain('secret_user');
         expect(error.message).not.toContain('192.168.1.100');
         expect(error.message).not.toContain('password authentication');
-        expect(error.message).toBe('Failed to connect to database after 3 attempts');
+        expect(error.message).toBe(
+          'Failed to connect to database after 3 attempts',
+        );
       }
 
       expect(errorSpy).toHaveBeenCalled();
@@ -523,27 +550,30 @@ describe('DatabaseService - Security Tests', () => {
     it('should prevent connection pool exhaustion', async () => {
       // Simuler de nombreuses connexions simultanées
       const excessiveConnections = 50; // Plus que le pool configuré
-      
+
       const mockTransaction = jest.fn().mockImplementation(async (callback) => {
         // Simuler une transaction qui prend du temps
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return callback({} as any);
       });
 
       jest.spyOn(service, '$transaction').mockImplementation(mockTransaction);
 
       const promises = Array.from({ length: excessiveConnections }, () =>
-        service.withTransaction(async (tx) => {
-          return Promise.resolve('test');
-        }).catch(error => error.message)
+        service
+          .withTransaction(async (tx) => {
+            return Promise.resolve('test');
+          })
+          .catch((error) => error.message),
       );
 
       const results = await Promise.allSettled(promises);
-      
+
       // Certaines connexions devraient échouer ou être en timeout
-      const failed = results.filter(r => 
-        r.status === 'rejected' || 
-        (r.status === 'fulfilled' && typeof r.value === 'string')
+      const failed = results.filter(
+        (r) =>
+          r.status === 'rejected' ||
+          (r.status === 'fulfilled' && typeof r.value === 'string'),
       ).length;
 
       // Il devrait y avoir une limitation
@@ -552,10 +582,12 @@ describe('DatabaseService - Security Tests', () => {
 
     it('should handle memory exhaustion gracefully', async () => {
       // Simuler une requête qui consomme beaucoup de mémoire
-      const mockQueryRaw = jest.spyOn(service, '$queryRaw').mockImplementation(() => {
-        // Simuler une erreur de mémoire
-        return Promise.reject(new Error('out of memory'));
-      });
+      const mockQueryRaw = jest
+        .spyOn(service, '$queryRaw')
+        .mockImplementation(() => {
+          // Simuler une erreur de mémoire
+          return Promise.reject(new Error('out of memory'));
+        });
 
       try {
         await service.isHealthy();
@@ -564,26 +596,31 @@ describe('DatabaseService - Security Tests', () => {
       }
 
       // Le service devrait toujours fonctionner après l'erreur
-      mockQueryRaw.mockImplementation(() => createPrismaPromiseMock([{ '?column?': 1 }]));
+      mockQueryRaw.mockImplementation(() =>
+        createPrismaPromiseMock([{ '?column?': 1 }]),
+      );
       const health = await service.isHealthy();
       expect(typeof health).toBe('boolean');
     });
 
     it('should enforce query timeouts', async () => {
-      const mockTransaction = jest.spyOn(service, '$transaction').mockImplementation(
-        () => new Promise((resolve, reject) => {
-          setTimeout(() => reject(new Error('Transaction timeout')), 1000);
-        })
-      );
+      const mockTransaction = jest
+        .spyOn(service, '$transaction')
+        .mockImplementation(
+          () =>
+            new Promise((resolve, reject) => {
+              setTimeout(() => reject(new Error('Transaction timeout')), 1000);
+            }),
+        );
 
       await expect(
         service.withTransaction(
           async (tx) => {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 2000));
             return 'should timeout';
           },
-          { timeout: 500 }
-        )
+          { timeout: 500 },
+        ),
       ).rejects.toThrow();
 
       mockTransaction.mockRestore();
@@ -602,7 +639,7 @@ describe('DatabaseService - Security Tests', () => {
 
       // Déclencher des événements de sécurité
       await service.resetDatabase().catch(() => {}); // Tentative en non-test
-      
+
       // Vérifier que les tentatives sont loggées
       const allLogs = [
         ...errorSpy.mock.calls.flat(),
@@ -633,9 +670,9 @@ describe('DatabaseService - Security Tests', () => {
       const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
       // Simuler des échecs d'authentification
-      jest.spyOn(service, '$connect').mockRejectedValue(
-        new Error('authentication failed')
-      );
+      jest
+        .spyOn(service, '$connect')
+        .mockRejectedValue(new Error('authentication failed'));
 
       try {
         await service.onModuleInit();
@@ -645,9 +682,11 @@ describe('DatabaseService - Security Tests', () => {
 
       // Vérifier que l'échec est tracké
       expect(errorSpy).toHaveBeenCalled();
-      
+
       const errorMessages = errorSpy.mock.calls.flat().join(' ');
-      expect(errorMessages).toContain('Failed to establish database connection');
+      expect(errorMessages).toContain(
+        'Failed to establish database connection',
+      );
     });
   });
 });

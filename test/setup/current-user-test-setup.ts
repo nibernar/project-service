@@ -57,7 +57,9 @@ export interface UserTestVariants {
  * Crée un mock d'ExecutionContext pour les tests
  * TEMPORAIRE: Accepte n'importe quel format pour compatibilité avec les tests existants
  */
-export const createMockExecutionContext = (options: any = {}): ExecutionContext => {
+export const createMockExecutionContext = (
+  options: any = {},
+): ExecutionContext => {
   const mockRequest: any = {
     user: options.user,
     method: options.method || 'GET',
@@ -67,7 +69,7 @@ export const createMockExecutionContext = (options: any = {}): ExecutionContext 
     params: options.params || {},
     query: options.query || {},
     ip: options.ip || '127.0.0.1',
-    ...options
+    ...options,
   };
 
   return {
@@ -135,7 +137,10 @@ export const createTestUser = (overrides: Partial<User> = {}): User => ({
 /**
  * Crée un utilisateur avec propriétés étendues (pour tests de propriétés additionnelles)
  */
-export const createExtendedUser = (baseUser?: Partial<User>, extensions?: Record<string, any>) => ({
+export const createExtendedUser = (
+  baseUser?: Partial<User>,
+  extensions?: Record<string, any>,
+) => ({
   ...createTestUser(baseUser),
   ...extensions,
 });
@@ -194,7 +199,10 @@ export const assertValidExecutionContext = (context: ExecutionContext) => {
 /**
  * Mesure le temps d'exécution d'une fonction
  */
-export const measureExecutionTime = (fn: () => void, iterations: number = 1): number => {
+export const measureExecutionTime = (
+  fn: () => void,
+  iterations: number = 1,
+): number => {
   const startTime = process.hrtime.bigint();
   for (let i = 0; i < iterations; i++) {
     fn();
@@ -206,16 +214,18 @@ export const measureExecutionTime = (fn: () => void, iterations: number = 1): nu
 /**
  * Mesure l'utilisation mémoire d'une fonction
  */
-export const measureMemoryUsage = (fn: () => void): PerformanceMetrics['memoryUsage'] => {
+export const measureMemoryUsage = (
+  fn: () => void,
+): PerformanceMetrics['memoryUsage'] => {
   // Force garbage collection if available (requires --expose-gc)
   if (global.gc) {
     global.gc();
   }
-  
+
   const beforeMemory = process.memoryUsage();
   fn();
   const afterMemory = process.memoryUsage();
-  
+
   return {
     heapUsed: afterMemory.heapUsed - beforeMemory.heapUsed,
     heapTotal: afterMemory.heapTotal - beforeMemory.heapTotal,
@@ -227,16 +237,16 @@ export const measureMemoryUsage = (fn: () => void): PerformanceMetrics['memoryUs
  * Effectue un benchmark complet d'une fonction
  */
 export const benchmarkFunction = (
-  fn: () => void, 
-  options: { iterations?: number; warmup?: number } = {}
+  fn: () => void,
+  options: { iterations?: number; warmup?: number } = {},
 ): PerformanceMetrics => {
   const { iterations = 1000, warmup = 100 } = options;
-  
+
   // Warmup
   for (let i = 0; i < warmup; i++) {
     fn();
   }
-  
+
   // Measurement
   const executionTime = measureExecutionTime(fn, iterations);
   const memoryUsage = measureMemoryUsage(() => {
@@ -244,7 +254,7 @@ export const benchmarkFunction = (
       fn();
     }
   });
-  
+
   return {
     executionTime,
     memoryUsage,
@@ -257,12 +267,12 @@ export const benchmarkFunction = (
  * Valide les métriques de performance
  */
 export const assertPerformanceMetrics = (
-  metrics: PerformanceMetrics, 
-  expectations: { 
+  metrics: PerformanceMetrics,
+  expectations: {
     maxAverageTime?: number;
     maxTotalTime?: number;
     maxMemoryUsage?: number;
-  }
+  },
 ) => {
   if (expectations.maxAverageTime) {
     expect(metrics.averageTime).toBeLessThan(expectations.maxAverageTime);
@@ -271,7 +281,9 @@ export const assertPerformanceMetrics = (
     expect(metrics.executionTime).toBeLessThan(expectations.maxTotalTime);
   }
   if (expectations.maxMemoryUsage) {
-    expect(Math.abs(metrics.memoryUsage.heapUsed)).toBeLessThan(expectations.maxMemoryUsage);
+    expect(Math.abs(metrics.memoryUsage.heapUsed)).toBeLessThan(
+      expectations.maxMemoryUsage,
+    );
   }
 };
 
@@ -282,20 +294,22 @@ export const assertPerformanceMetrics = (
 /**
  * Générateur de contextes d'exécution aléatoires
  */
-export const generateRandomExecutionContexts = (count: number): ExecutionContext[] => {
+export const generateRandomExecutionContexts = (
+  count: number,
+): ExecutionContext[] => {
   const userVariants = createUserVariants();
   const variants = Object.values(userVariants);
-  
+
   return Array.from({ length: count }, (_, i) => {
     const user = variants[i % variants.length];
     return createMockExecutionContext({
       user,
       method: ['GET', 'POST', 'PUT', 'DELETE'][i % 4],
       url: `/api/endpoint-${i}`,
-      headers: { 
+      headers: {
         authorization: `Bearer token-${i}`,
-        'user-agent': `TestAgent/${i}`
-      }
+        'user-agent': `TestAgent/${i}`,
+      },
     });
   });
 };
@@ -305,26 +319,33 @@ export const generateRandomExecutionContexts = (count: number): ExecutionContext
  */
 export const runStressTest = (
   extractFunction: (data: any, context: ExecutionContext) => User,
-  options: { 
+  options: {
     iterations?: number;
     concurrency?: number;
     userTypes?: ('minimal' | 'typical' | 'complex' | 'large')[];
-  } = {}
+  } = {},
 ): PerformanceMetrics => {
-  const { iterations = 1000, concurrency = 1, userTypes = ['typical'] } = options;
+  const {
+    iterations = 1000,
+    concurrency = 1,
+    userTypes = ['typical'],
+  } = options;
   const userVariants = createUserVariants();
-  
+
   const contexts = Array.from({ length: iterations }, (_, i) => {
     const userType = userTypes[i % userTypes.length];
     const user = userVariants[userType];
     return createMockExecutionContext({ user });
   });
-  
-  return benchmarkFunction(() => {
-    contexts.forEach(context => {
-      extractFunction(undefined, context);
-    });
-  }, { iterations: 1, warmup: 0 }); // Single iteration because we loop inside
+
+  return benchmarkFunction(
+    () => {
+      contexts.forEach((context) => {
+        extractFunction(undefined, context);
+      });
+    },
+    { iterations: 1, warmup: 0 },
+  ); // Single iteration because we loop inside
 };
 
 // ============================================================================
@@ -383,7 +404,7 @@ export const createCorruptedContexts = () => ({
 beforeAll(() => {
   // Configuration des timeouts pour les tests de performance
   jest.setTimeout(30000);
-  
+
   // Configuration de la mémoire pour les tests de stress
   if (global.gc) {
     global.gc(); // Initial cleanup
@@ -394,7 +415,7 @@ beforeAll(() => {
 beforeEach(() => {
   // Reset des mocks
   jest.clearAllMocks();
-  
+
   // Nettoyage des variables globales si nécessaire
   delete (global as any).testMetrics;
 });
@@ -425,19 +446,19 @@ export const CurrentUserTestUtils = {
   createExtendedUser,
   createMaliciousUsers,
   createCorruptedContexts,
-  
+
   // Validators
   assertValidUser,
   assertUserIntegrity,
   assertDecoratorError,
   assertValidExecutionContext,
-  
+
   // Performance
   measureExecutionTime,
   measureMemoryUsage,
   benchmarkFunction,
   assertPerformanceMetrics,
-  
+
   // Stress testing
   generateRandomExecutionContexts,
   runStressTest,
@@ -457,13 +478,13 @@ export const TEST_CONSTANTS = {
     SUSTAINED_CALL_MAX_TIME: 0.005, // ms per call
     MAX_MEMORY_USAGE: 1024 * 1024, // 1MB
   },
-  
+
   STRESS_TEST_DEFAULTS: {
     ITERATIONS: 1000,
     CONCURRENCY: 10,
     TIMEOUT: 30000, // ms
   },
-  
+
   SECURITY_TEST_PATTERNS: {
     XSS_PATTERNS: [
       '<script>alert("XSS")</script>',

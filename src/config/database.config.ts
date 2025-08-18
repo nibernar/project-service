@@ -94,7 +94,7 @@ export class DatabaseConfigurationError extends Error {
   constructor(
     message: string,
     public readonly variable?: string,
-    public readonly value?: any
+    public readonly value?: any,
   ) {
     super(message);
     this.name = 'DatabaseConfigurationError';
@@ -106,7 +106,7 @@ export class DatabaseValidationError extends DatabaseConfigurationError {
     message: string,
     variable: string,
     value: any,
-    public readonly suggestion?: string
+    public readonly suggestion?: string,
   ) {
     super(message, variable, value);
     this.name = 'DatabaseValidationError';
@@ -116,7 +116,7 @@ export class DatabaseValidationError extends DatabaseConfigurationError {
 export class DatabaseConnectionError extends DatabaseConfigurationError {
   constructor(
     message: string,
-    public readonly originalError?: Error
+    public readonly originalError?: Error,
   ) {
     super(message);
     this.name = 'DatabaseConnectionError';
@@ -131,7 +131,7 @@ export const CONNECTION_LIMITS: EnvironmentLimits = {
   development: { min: 2, max: 15, recommended: 5 },
   test: { min: 1, max: 5, recommended: 2 },
   staging: { min: 5, max: 30, recommended: 10 },
-  production: { min: 10, max: 100, recommended: 25 }
+  production: { min: 10, max: 100, recommended: 25 },
 };
 
 export const ENVIRONMENT_MAPPINGS = {
@@ -152,7 +152,7 @@ export const ENVIRONMENT_MAPPINGS = {
   DB_LOG_LEVEL: 'logging.level',
   DB_SLOW_QUERY_THRESHOLD: 'logging.slowQueryThreshold',
   DB_AUTO_MIGRATE: 'migration.autoMigrate',
-  DB_SEED_ON_CREATE: 'migration.seedOnCreate'
+  DB_SEED_ON_CREATE: 'migration.seedOnCreate',
 };
 
 // ============================================================================
@@ -169,7 +169,7 @@ export class DatabaseConfigValidator {
         'Database URL is required',
         'DATABASE_URL',
         url,
-        'Format: postgresql://username:password@host:port/database'
+        'Format: postgresql://username:password@host:port/database',
       );
     }
 
@@ -179,19 +179,19 @@ export class DatabaseConfigValidator {
         'Database URL must include hostname',
         'DATABASE_URL',
         url,
-        'Format: postgresql://username:password@host:port/database'
+        'Format: postgresql://username:password@host:port/database',
       );
     }
 
     try {
       const urlObj = new URL(url);
-      
+
       if (!['postgres:', 'postgresql:'].includes(urlObj.protocol)) {
         throw new DatabaseValidationError(
           'Invalid database URL protocol',
           'DATABASE_URL',
           urlObj.protocol,
-          'Use postgresql:// protocol'
+          'Use postgresql:// protocol',
         );
       }
 
@@ -200,7 +200,7 @@ export class DatabaseConfigValidator {
           'Database URL must include hostname',
           'DATABASE_URL',
           url,
-          'Format: postgresql://username:password@host:port/database'
+          'Format: postgresql://username:password@host:port/database',
         );
       }
 
@@ -209,7 +209,7 @@ export class DatabaseConfigValidator {
           'Database URL must include database name',
           'DATABASE_URL',
           url,
-          'Format: postgresql://username:password@host:port/database'
+          'Format: postgresql://username:password@host:port/database',
         );
       }
 
@@ -218,13 +218,13 @@ export class DatabaseConfigValidator {
       if (error instanceof DatabaseValidationError) {
         throw error;
       }
-      
+
       // Pour toutes les autres erreurs (URL complètement invalide)
       throw new DatabaseValidationError(
         'Invalid database URL format',
         'DATABASE_URL',
         url,
-        'Format: postgresql://username:password@host:port/database'
+        'Format: postgresql://username:password@host:port/database',
       );
     }
   }
@@ -233,7 +233,13 @@ export class DatabaseConfigValidator {
    * Valide la cohérence des paramètres de pool
    */
   static validatePoolConfiguration(config: DatabaseConfig): void {
-    const { maxConnections, minConnections, connectionTimeout, idleTimeout, queryTimeout } = config;
+    const {
+      maxConnections,
+      minConnections,
+      connectionTimeout,
+      idleTimeout,
+      queryTimeout,
+    } = config;
 
     // ✅ Validation de maxConnections en premier
     if (maxConnections <= 0) {
@@ -241,7 +247,7 @@ export class DatabaseConfigValidator {
         'Maximum connections must be greater than 0',
         'DB_MAX_CONNECTIONS',
         maxConnections,
-        'Use a positive number like 10'
+        'Use a positive number like 10',
       );
     }
 
@@ -251,7 +257,7 @@ export class DatabaseConfigValidator {
         'Minimum connections must be less than maximum connections',
         'DB_MIN_CONNECTIONS',
         minConnections,
-        `Set DB_MIN_CONNECTIONS < ${maxConnections}`
+        `Set DB_MIN_CONNECTIONS < ${maxConnections}`,
       );
     }
 
@@ -261,7 +267,7 @@ export class DatabaseConfigValidator {
         'Connection timeout must be greater than 0',
         'DB_CONNECTION_TIMEOUT',
         connectionTimeout,
-        'Use a positive number in milliseconds like 30000'
+        'Use a positive number in milliseconds like 30000',
       );
     }
 
@@ -270,7 +276,7 @@ export class DatabaseConfigValidator {
         'Idle timeout should be greater than connection timeout',
         'DB_IDLE_TIMEOUT',
         idleTimeout,
-        `Set DB_IDLE_TIMEOUT > ${connectionTimeout}`
+        `Set DB_IDLE_TIMEOUT > ${connectionTimeout}`,
       );
     }
 
@@ -279,7 +285,7 @@ export class DatabaseConfigValidator {
         'Query timeout must be greater than 0',
         'DB_QUERY_TIMEOUT',
         queryTimeout,
-        'Use a positive number in milliseconds like 60000'
+        'Use a positive number in milliseconds like 60000',
       );
     }
   }
@@ -289,11 +295,11 @@ export class DatabaseConfigValidator {
    */
   static validateEnvironmentVariables(): void {
     const requiredVars = ['DATABASE_URL'];
-    const missingVars = requiredVars.filter(varName => !process.env[varName]);
+    const missingVars = requiredVars.filter((varName) => !process.env[varName]);
 
     if (missingVars.length > 0) {
       throw new DatabaseConfigurationError(
-        `Missing required database environment variables: ${missingVars.join(', ')}`
+        `Missing required database environment variables: ${missingVars.join(', ')}`,
       );
     }
 
@@ -303,12 +309,14 @@ export class DatabaseConfigValidator {
       const optionalImportantVars = [
         'DB_MAX_CONNECTIONS',
         'DB_CONNECTION_TIMEOUT',
-        'DB_SSL_ENABLED'
+        'DB_SSL_ENABLED',
       ];
 
-      optionalImportantVars.forEach(varName => {
+      optionalImportantVars.forEach((varName) => {
         if (!process.env[varName]) {
-          console.warn(`⚠️  Optional database environment variable not set: ${varName}`);
+          console.warn(
+            `⚠️  Optional database environment variable not set: ${varName}`,
+          );
         }
       });
     }
@@ -319,25 +327,44 @@ export class DatabaseConfigValidator {
    */
   static sanitizeConfig(config: Partial<DatabaseConfig>): DatabaseConfig {
     const nodeEnv = process.env.NODE_ENV || 'development';
-    
+
     // ✅ FIX: Utiliser directement createForEnvironment pour éviter les incohérences
     const envConfig = DatabaseConfigFactory.createForEnvironment(nodeEnv);
-    
+
     return {
       url: config.url || envConfig.url,
-      maxConnections: config.maxConnections !== undefined ? config.maxConnections : envConfig.maxConnections,
-      minConnections: config.minConnections !== undefined ? config.minConnections : envConfig.minConnections,
-      connectionTimeout: config.connectionTimeout !== undefined ? config.connectionTimeout : envConfig.connectionTimeout,
-      idleTimeout: config.idleTimeout !== undefined ? config.idleTimeout : envConfig.idleTimeout,
-      queryTimeout: config.queryTimeout !== undefined ? config.queryTimeout : envConfig.queryTimeout,
-      transactionTimeout: config.transactionTimeout !== undefined ? config.transactionTimeout : envConfig.transactionTimeout,
-      maxWait: config.maxWait !== undefined ? config.maxWait : envConfig.maxWait,
+      maxConnections:
+        config.maxConnections !== undefined
+          ? config.maxConnections
+          : envConfig.maxConnections,
+      minConnections:
+        config.minConnections !== undefined
+          ? config.minConnections
+          : envConfig.minConnections,
+      connectionTimeout:
+        config.connectionTimeout !== undefined
+          ? config.connectionTimeout
+          : envConfig.connectionTimeout,
+      idleTimeout:
+        config.idleTimeout !== undefined
+          ? config.idleTimeout
+          : envConfig.idleTimeout,
+      queryTimeout:
+        config.queryTimeout !== undefined
+          ? config.queryTimeout
+          : envConfig.queryTimeout,
+      transactionTimeout:
+        config.transactionTimeout !== undefined
+          ? config.transactionTimeout
+          : envConfig.transactionTimeout,
+      maxWait:
+        config.maxWait !== undefined ? config.maxWait : envConfig.maxWait,
       ssl: config.ssl !== undefined ? config.ssl : envConfig.ssl,
       logging: config.logging || envConfig.logging,
       performance: config.performance || envConfig.performance,
       migration: config.migration || envConfig.migration,
       health: config.health || envConfig.health,
-      retries: config.retries || envConfig.retries
+      retries: config.retries || envConfig.retries,
     };
   }
 }
@@ -353,7 +380,10 @@ export class DatabaseConfigFactory {
   static create(options: { strict?: boolean } = {}): DatabaseConfig {
     try {
       // Mode debug en développement
-      if (process.env.NODE_ENV === 'development' && process.env.DEBUG_CONFIG === 'true') {
+      if (
+        process.env.NODE_ENV === 'development' &&
+        process.env.DEBUG_CONFIG === 'true'
+      ) {
         this.debugEnvironmentVariables();
       }
 
@@ -389,7 +419,9 @@ export class DatabaseConfigFactory {
       case 'production':
         return this.createProductionConfig();
       default:
-        console.warn(`⚠️  Unknown environment "${actualEnv}", using development config`);
+        console.warn(
+          `⚠️  Unknown environment "${actualEnv}", using development config`,
+        );
         return this.createDevelopmentConfig();
     }
   }
@@ -399,22 +431,31 @@ export class DatabaseConfigFactory {
    */
   static createDevelopmentConfig(): DatabaseConfig {
     const limits = CONNECTION_LIMITS.development; // min: 2, max: 15, recommended: 5
-    
+
     return {
       url: process.env.DATABASE_URL || '',
-      maxConnections: this.parseInt(process.env.DB_MAX_CONNECTIONS, limits.recommended), // 5
+      maxConnections: this.parseInt(
+        process.env.DB_MAX_CONNECTIONS,
+        limits.recommended,
+      ), // 5
       minConnections: this.parseInt(process.env.DB_MIN_CONNECTIONS, limits.min), // 2
-      connectionTimeout: this.parseInt(process.env.DB_CONNECTION_TIMEOUT, 30000),
+      connectionTimeout: this.parseInt(
+        process.env.DB_CONNECTION_TIMEOUT,
+        30000,
+      ),
       idleTimeout: this.parseInt(process.env.DB_IDLE_TIMEOUT, 300000),
       queryTimeout: this.parseInt(process.env.DB_QUERY_TIMEOUT, 60000),
-      transactionTimeout: this.parseInt(process.env.DB_TRANSACTION_TIMEOUT, 10000),
+      transactionTimeout: this.parseInt(
+        process.env.DB_TRANSACTION_TIMEOUT,
+        10000,
+      ),
       maxWait: this.parseInt(process.env.DB_MAX_WAIT, 5000),
       ssl: this.createSSLConfig('development'),
       logging: this.createLoggingConfig('development'),
       performance: this.createPerformanceConfig('development'),
       migration: this.createMigrationConfig('development'),
       health: this.createHealthConfig('development'),
-      retries: this.createRetriesConfig('development')
+      retries: this.createRetriesConfig('development'),
     };
   }
 
@@ -423,10 +464,13 @@ export class DatabaseConfigFactory {
    */
   static createTestConfig(): DatabaseConfig {
     const limits = CONNECTION_LIMITS.test; // min: 1, max: 5, recommended: 2
-    
+
     return {
       url: process.env.DATABASE_URL || '',
-      maxConnections: this.parseInt(process.env.DB_MAX_CONNECTIONS, limits.recommended), // 2
+      maxConnections: this.parseInt(
+        process.env.DB_MAX_CONNECTIONS,
+        limits.recommended,
+      ), // 2
       minConnections: this.parseInt(process.env.DB_MIN_CONNECTIONS, limits.min), // 1
       connectionTimeout: 5000, // Plus court pour les tests
       idleTimeout: 30000,
@@ -438,7 +482,7 @@ export class DatabaseConfigFactory {
       performance: this.createPerformanceConfig('test'),
       migration: this.createMigrationConfig('test'),
       health: this.createHealthConfig('test'),
-      retries: this.createRetriesConfig('test')
+      retries: this.createRetriesConfig('test'),
     };
   }
 
@@ -447,22 +491,31 @@ export class DatabaseConfigFactory {
    */
   static createStagingConfig(): DatabaseConfig {
     const limits = CONNECTION_LIMITS.staging; // min: 5, max: 30, recommended: 10
-    
+
     return {
       url: process.env.DATABASE_URL || '',
-      maxConnections: this.parseInt(process.env.DB_MAX_CONNECTIONS, limits.recommended), // 10
+      maxConnections: this.parseInt(
+        process.env.DB_MAX_CONNECTIONS,
+        limits.recommended,
+      ), // 10
       minConnections: this.parseInt(process.env.DB_MIN_CONNECTIONS, limits.min), // 5
-      connectionTimeout: this.parseInt(process.env.DB_CONNECTION_TIMEOUT, 45000),
+      connectionTimeout: this.parseInt(
+        process.env.DB_CONNECTION_TIMEOUT,
+        45000,
+      ),
       idleTimeout: this.parseInt(process.env.DB_IDLE_TIMEOUT, 600000),
       queryTimeout: this.parseInt(process.env.DB_QUERY_TIMEOUT, 120000),
-      transactionTimeout: this.parseInt(process.env.DB_TRANSACTION_TIMEOUT, 15000),
+      transactionTimeout: this.parseInt(
+        process.env.DB_TRANSACTION_TIMEOUT,
+        15000,
+      ),
       maxWait: this.parseInt(process.env.DB_MAX_WAIT, 10000),
       ssl: this.createSSLConfig('staging'),
       logging: this.createLoggingConfig('staging'),
       performance: this.createPerformanceConfig('staging'),
       migration: this.createMigrationConfig('staging'),
       health: this.createHealthConfig('staging'),
-      retries: this.createRetriesConfig('staging')
+      retries: this.createRetriesConfig('staging'),
     };
   }
 
@@ -471,22 +524,31 @@ export class DatabaseConfigFactory {
    */
   static createProductionConfig(): DatabaseConfig {
     const limits = CONNECTION_LIMITS.production; // min: 10, max: 100, recommended: 25
-    
+
     return {
       url: process.env.DATABASE_URL || '',
-      maxConnections: this.parseInt(process.env.DB_MAX_CONNECTIONS, limits.recommended), // 25
+      maxConnections: this.parseInt(
+        process.env.DB_MAX_CONNECTIONS,
+        limits.recommended,
+      ), // 25
       minConnections: this.parseInt(process.env.DB_MIN_CONNECTIONS, limits.min), // 10
-      connectionTimeout: this.parseInt(process.env.DB_CONNECTION_TIMEOUT, 60000),
+      connectionTimeout: this.parseInt(
+        process.env.DB_CONNECTION_TIMEOUT,
+        60000,
+      ),
       idleTimeout: this.parseInt(process.env.DB_IDLE_TIMEOUT, 900000), // 15 minutes
       queryTimeout: this.parseInt(process.env.DB_QUERY_TIMEOUT, 180000), // 3 minutes
-      transactionTimeout: this.parseInt(process.env.DB_TRANSACTION_TIMEOUT, 30000),
+      transactionTimeout: this.parseInt(
+        process.env.DB_TRANSACTION_TIMEOUT,
+        30000,
+      ),
       maxWait: this.parseInt(process.env.DB_MAX_WAIT, 30000),
       ssl: this.createSSLConfig('production'),
       logging: this.createLoggingConfig('production'),
       performance: this.createPerformanceConfig('production'),
       migration: this.createMigrationConfig('production'),
       health: this.createHealthConfig('production'),
-      retries: this.createRetriesConfig('production')
+      retries: this.createRetriesConfig('production'),
     };
   }
 
@@ -496,10 +558,10 @@ export class DatabaseConfigFactory {
   static createSSLConfig(env: string): DatabaseSSLConfig | boolean {
     // SSL activé par défaut pour production ET staging
     const sslEnabled = this.parseBoolean(
-      process.env.DB_SSL_ENABLED, 
-      env === 'production' || env === 'staging'
+      process.env.DB_SSL_ENABLED,
+      env === 'production' || env === 'staging',
     );
-    
+
     if (!sslEnabled) {
       return false;
     }
@@ -507,12 +569,12 @@ export class DatabaseConfigFactory {
     return {
       enabled: true,
       rejectUnauthorized: this.parseBoolean(
-        process.env.DB_SSL_REJECT_UNAUTHORIZED, 
-        env === 'production' || env === 'staging'
+        process.env.DB_SSL_REJECT_UNAUTHORIZED,
+        env === 'production' || env === 'staging',
       ),
       ca: process.env.DB_SSL_CA,
       cert: process.env.DB_SSL_CERT,
-      key: process.env.DB_SSL_KEY
+      key: process.env.DB_SSL_KEY,
     };
   }
 
@@ -520,36 +582,50 @@ export class DatabaseConfigFactory {
    * ✅ CORRECTION: Crée la configuration de logging
    */
   static createLoggingConfig(env: string): DatabaseLoggingConfig {
-    const defaultLevel: ('query' | 'info' | 'warn' | 'error')[] = 
-      env === 'production' ? ['error'] : 
-      env === 'test' ? ['error'] : 
-      env === 'staging' ? ['warn', 'error'] :
-      ['query', 'info', 'warn', 'error'];
-    
+    const defaultLevel: ('query' | 'info' | 'warn' | 'error')[] =
+      env === 'production'
+        ? ['error']
+        : env === 'test'
+          ? ['error']
+          : env === 'staging'
+            ? ['warn', 'error']
+            : ['query', 'info', 'warn', 'error'];
+
     const levelStr = process.env.DB_LOG_LEVEL;
     let level: ('query' | 'info' | 'warn' | 'error')[] = defaultLevel;
-    
+
     if (levelStr) {
       const validLevels = ['query', 'info', 'warn', 'error'] as const;
-      const parsedLevels = levelStr.split(',').map(l => l.trim().toLowerCase());
-      
-      const filteredLevels = parsedLevels.filter((l): l is 'query' | 'info' | 'warn' | 'error' => 
-        validLevels.includes(l as any)
+      const parsedLevels = levelStr
+        .split(',')
+        .map((l) => l.trim().toLowerCase());
+
+      const filteredLevels = parsedLevels.filter(
+        (l): l is 'query' | 'info' | 'warn' | 'error' =>
+          validLevels.includes(l as any),
       );
-      
+
       if (filteredLevels.length > 0) {
         level = filteredLevels;
       } else {
-        console.warn(`⚠️  Invalid DB_LOG_LEVEL "${levelStr}", using default: ${defaultLevel.join(',')}`);
+        console.warn(
+          `⚠️  Invalid DB_LOG_LEVEL "${levelStr}", using default: ${defaultLevel.join(',')}`,
+        );
       }
     }
 
     return {
-      enabled: this.parseBoolean(process.env.DB_LOG_ENABLED, env !== 'production'),
+      enabled: this.parseBoolean(
+        process.env.DB_LOG_ENABLED,
+        env !== 'production',
+      ),
       level,
-      slowQueryThreshold: this.parseInt(process.env.DB_SLOW_QUERY_THRESHOLD, env === 'production' ? 2000 : 1000),
+      slowQueryThreshold: this.parseInt(
+        process.env.DB_SLOW_QUERY_THRESHOLD,
+        env === 'production' ? 2000 : 1000,
+      ),
       colorize: env === 'development',
-      includeParameters: env === 'development'
+      includeParameters: env === 'development',
     };
   }
 
@@ -558,14 +634,35 @@ export class DatabaseConfigFactory {
    */
   static createPerformanceConfig(env: string): DatabasePerformanceConfig {
     return {
-      statementCacheSize: this.parseInt(process.env.DB_STATEMENT_CACHE_SIZE, env === 'production' ? 1000 : 100),
-      connectionIdleTimeout: this.parseInt(process.env.DB_CONNECTION_IDLE_TIMEOUT, env === 'production' ? 900000 : 300000),
-      acquireTimeout: this.parseInt(process.env.DB_ACQUIRE_TIMEOUT, env === 'production' ? 60000 : 30000),
-      createTimeout: this.parseInt(process.env.DB_CREATE_TIMEOUT, env === 'production' ? 30000 : 15000),
+      statementCacheSize: this.parseInt(
+        process.env.DB_STATEMENT_CACHE_SIZE,
+        env === 'production' ? 1000 : 100,
+      ),
+      connectionIdleTimeout: this.parseInt(
+        process.env.DB_CONNECTION_IDLE_TIMEOUT,
+        env === 'production' ? 900000 : 300000,
+      ),
+      acquireTimeout: this.parseInt(
+        process.env.DB_ACQUIRE_TIMEOUT,
+        env === 'production' ? 60000 : 30000,
+      ),
+      createTimeout: this.parseInt(
+        process.env.DB_CREATE_TIMEOUT,
+        env === 'production' ? 30000 : 15000,
+      ),
       destroyTimeout: this.parseInt(process.env.DB_DESTROY_TIMEOUT, 5000),
-      reapInterval: this.parseInt(process.env.DB_REAP_INTERVAL, env === 'production' ? 10000 : 5000),
-      evictionRunIntervalMillis: this.parseInt(process.env.DB_EVICTION_RUN_INTERVAL, 300000),
-      numTestsPerEvictionRun: this.parseInt(process.env.DB_NUM_TESTS_PER_EVICTION, 3)
+      reapInterval: this.parseInt(
+        process.env.DB_REAP_INTERVAL,
+        env === 'production' ? 10000 : 5000,
+      ),
+      evictionRunIntervalMillis: this.parseInt(
+        process.env.DB_EVICTION_RUN_INTERVAL,
+        300000,
+      ),
+      numTestsPerEvictionRun: this.parseInt(
+        process.env.DB_NUM_TESTS_PER_EVICTION,
+        3,
+      ),
     };
   }
 
@@ -574,11 +671,20 @@ export class DatabaseConfigFactory {
    */
   static createMigrationConfig(env: string): DatabaseMigrationConfig {
     return {
-      autoMigrate: this.parseBoolean(process.env.DB_AUTO_MIGRATE, env === 'development'),
+      autoMigrate: this.parseBoolean(
+        process.env.DB_AUTO_MIGRATE,
+        env === 'development',
+      ),
       migrationPath: process.env.DB_MIGRATION_PATH || './prisma/migrations',
-      seedOnCreate: this.parseBoolean(process.env.DB_SEED_ON_CREATE, env === 'development'),
-      createDatabase: this.parseBoolean(process.env.DB_CREATE_DATABASE, env === 'development'),
-      dropDatabase: this.parseBoolean(process.env.DB_DROP_DATABASE, false)
+      seedOnCreate: this.parseBoolean(
+        process.env.DB_SEED_ON_CREATE,
+        env === 'development',
+      ),
+      createDatabase: this.parseBoolean(
+        process.env.DB_CREATE_DATABASE,
+        env === 'development',
+      ),
+      dropDatabase: this.parseBoolean(process.env.DB_DROP_DATABASE, false),
     };
   }
 
@@ -587,10 +693,22 @@ export class DatabaseConfigFactory {
    */
   static createHealthConfig(env: string): DatabaseHealthConfig {
     return {
-      enableHealthCheck: this.parseBoolean(process.env.DB_ENABLE_HEALTH_CHECK, true),
-      healthCheckInterval: this.parseInt(process.env.DB_HEALTH_CHECK_INTERVAL, env === 'production' ? 30000 : 60000),
-      maxHealthCheckFailures: this.parseInt(process.env.DB_MAX_HEALTH_CHECK_FAILURES, 3),
-      healthCheckTimeout: this.parseInt(process.env.DB_HEALTH_CHECK_TIMEOUT, 5000)
+      enableHealthCheck: this.parseBoolean(
+        process.env.DB_ENABLE_HEALTH_CHECK,
+        true,
+      ),
+      healthCheckInterval: this.parseInt(
+        process.env.DB_HEALTH_CHECK_INTERVAL,
+        env === 'production' ? 30000 : 60000,
+      ),
+      maxHealthCheckFailures: this.parseInt(
+        process.env.DB_MAX_HEALTH_CHECK_FAILURES,
+        3,
+      ),
+      healthCheckTimeout: this.parseInt(
+        process.env.DB_HEALTH_CHECK_TIMEOUT,
+        5000,
+      ),
     };
   }
 
@@ -599,11 +717,17 @@ export class DatabaseConfigFactory {
    */
   static createRetriesConfig(env: string): DatabaseConfig['retries'] {
     return {
-      enabled: this.parseBoolean(process.env.DB_RETRIES_ENABLED, env !== 'test'),
-      maxRetries: this.parseInt(process.env.DB_MAX_RETRIES, env === 'production' ? 5 : 3),
+      enabled: this.parseBoolean(
+        process.env.DB_RETRIES_ENABLED,
+        env !== 'test',
+      ),
+      maxRetries: this.parseInt(
+        process.env.DB_MAX_RETRIES,
+        env === 'production' ? 5 : 3,
+      ),
       delay: this.parseInt(process.env.DB_RETRY_DELAY, 1000),
       factor: parseFloat(process.env.DB_RETRY_FACTOR || '2'),
-      maxDelay: this.parseInt(process.env.DB_MAX_RETRY_DELAY, 30000)
+      maxDelay: this.parseInt(process.env.DB_MAX_RETRY_DELAY, 30000),
     };
   }
 
@@ -615,7 +739,9 @@ export class DatabaseConfigFactory {
     return this.createLoggingConfig(env);
   }
 
-  static createDefaultPerformanceConfig(env: string): DatabasePerformanceConfig {
+  static createDefaultPerformanceConfig(
+    env: string,
+  ): DatabasePerformanceConfig {
     return this.createPerformanceConfig(env);
   }
 
@@ -641,7 +767,10 @@ export class DatabaseConfigFactory {
   static debugEnvironmentVariables(): void {
     console.log('🔍 Database Environment Variables Debug:');
     console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('DATABASE_URL:', process.env.DATABASE_URL ? '[SET]' : '[NOT SET]');
+    console.log(
+      'DATABASE_URL:',
+      process.env.DATABASE_URL ? '[SET]' : '[NOT SET]',
+    );
     console.log('DB_MAX_CONNECTIONS:', process.env.DB_MAX_CONNECTIONS);
     console.log('DB_MIN_CONNECTIONS:', process.env.DB_MIN_CONNECTIONS);
     console.log('DB_CONNECTION_TIMEOUT:', process.env.DB_CONNECTION_TIMEOUT);
@@ -651,77 +780,97 @@ export class DatabaseConfigFactory {
   /**
    * Parse une variable d'environnement booléenne
    */
-  private static parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
+  private static parseBoolean(
+    value: string | undefined,
+    defaultValue: boolean,
+  ): boolean {
     if (value === undefined || value === null) {
       return defaultValue;
     }
-    
+
     const trimmedValue = value.toString().trim();
     if (trimmedValue === '') {
       return defaultValue;
     }
-    
+
     const lowerValue = trimmedValue.toLowerCase();
-    
+
     if (['true', '1', 'yes', 'on'].includes(lowerValue)) return true;
     if (['false', '0', 'no', 'off'].includes(lowerValue)) return false;
-    
-    console.warn(`⚠️  Invalid boolean value "${value}", using default: ${defaultValue}`);
+
+    console.warn(
+      `⚠️  Invalid boolean value "${value}", using default: ${defaultValue}`,
+    );
     return defaultValue;
   }
 
   /**
    * ✅ CORRECTION: Parse une variable d'environnement numérique
    */
-  private static parseInt(value: string | undefined, defaultValue: number): number {
+  private static parseInt(
+    value: string | undefined,
+    defaultValue: number,
+  ): number {
     if (value === undefined || value === null) {
       return defaultValue;
     }
-    
+
     const trimmedValue = value.toString().trim();
     if (trimmedValue === '') {
       return defaultValue;
     }
-    
+
     const parsed = parseInt(trimmedValue, 10);
-    
+
     if (isNaN(parsed) || parsed < 0) {
-      console.warn(`⚠️  Invalid number value "${value}", using default: ${defaultValue}`);
+      console.warn(
+        `⚠️  Invalid number value "${value}", using default: ${defaultValue}`,
+      );
       return defaultValue;
     }
-    
+
     return parsed;
   }
 
   /**
    * Calcule la taille optimale du pool de connexions
    */
-  static calculateOptimalPoolSize(environment: string, availableMemory?: number): number {
-    const limits = CONNECTION_LIMITS[environment as keyof EnvironmentLimits] || CONNECTION_LIMITS.development;
+  static calculateOptimalPoolSize(
+    environment: string,
+    availableMemory?: number,
+  ): number {
+    const limits =
+      CONNECTION_LIMITS[environment as keyof EnvironmentLimits] ||
+      CONNECTION_LIMITS.development;
     let baseSize = limits.recommended;
-    
+
     if (availableMemory) {
       // Estimation : ~512MB par connexion (très approximatif)
       const memoryFactor = Math.floor(availableMemory / 512);
       baseSize = Math.min(limits.max, baseSize + memoryFactor);
     }
-    
+
     return Math.max(limits.min, Math.min(limits.max, baseSize));
   }
 
   /**
    * Adapte les timeouts selon la latence réseau
    */
-  static adaptTimeouts(baseConfig: DatabaseConfig, networkLatency: number): DatabaseConfig {
+  static adaptTimeouts(
+    baseConfig: DatabaseConfig,
+    networkLatency: number,
+  ): DatabaseConfig {
     if (networkLatency <= 50) return baseConfig; // Latence acceptable
-    
+
     const multiplier = networkLatency > 200 ? 2 : 1.5;
-    
+
     return {
       ...baseConfig,
       connectionTimeout: Math.round(baseConfig.connectionTimeout * multiplier),
       queryTimeout: Math.round(baseConfig.queryTimeout * multiplier),
-      transactionTimeout: Math.round(baseConfig.transactionTimeout * multiplier)
+      transactionTimeout: Math.round(
+        baseConfig.transactionTimeout * multiplier,
+      ),
     };
   }
 }
@@ -758,7 +907,7 @@ export {
   DatabaseConfigFactory as DatabaseConfigurationFactory,
   DatabaseConfigValidator as DatabaseValidator,
   CONNECTION_LIMITS as DatabaseConnectionLimits,
-  ENVIRONMENT_MAPPINGS as DatabaseEnvironmentMappings
+  ENVIRONMENT_MAPPINGS as DatabaseEnvironmentMappings,
 };
 
 // ============================================================================
@@ -775,7 +924,7 @@ export function createAppLoggingConfig(nodeEnv: string): {
   timestamp: boolean;
 } {
   let defaultLevel: 'error' | 'warn' | 'info' | 'debug' | 'verbose';
-  
+
   switch (nodeEnv) {
     case 'production':
       defaultLevel = 'info';
@@ -788,14 +937,24 @@ export function createAppLoggingConfig(nodeEnv: string): {
       defaultLevel = 'debug';
       break;
   }
-  
-  const level = (process.env.LOG_LEVEL as 'error' | 'warn' | 'info' | 'debug' | 'verbose') || defaultLevel;
-  
+
+  const level =
+    (process.env.LOG_LEVEL as
+      | 'error'
+      | 'warn'
+      | 'info'
+      | 'debug'
+      | 'verbose') || defaultLevel;
+
   return {
     level,
-    format: (process.env.LOG_FORMAT as 'json' | 'text') || 
-            (nodeEnv === 'production' ? 'json' : 'text'),
-    enableColors: parseBoolean(process.env.LOG_COLORS, nodeEnv === 'development'),
+    format:
+      (process.env.LOG_FORMAT as 'json' | 'text') ||
+      (nodeEnv === 'production' ? 'json' : 'text'),
+    enableColors: parseBoolean(
+      process.env.LOG_COLORS,
+      nodeEnv === 'development',
+    ),
     timestamp: parseBoolean(process.env.LOG_TIMESTAMP, true),
   };
 }
@@ -803,21 +962,26 @@ export function createAppLoggingConfig(nodeEnv: string): {
 /**
  * Parse une variable d'environnement booléenne (utilitaire public)
  */
-export function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
+export function parseBoolean(
+  value: string | undefined,
+  defaultValue: boolean,
+): boolean {
   if (value === undefined || value === null) {
     return defaultValue;
   }
-  
+
   const trimmedValue = value.toString().trim();
   if (trimmedValue === '') {
     return defaultValue;
   }
-  
+
   const lowerValue = trimmedValue.toLowerCase();
-  
+
   if (['true', '1', 'yes', 'on'].includes(lowerValue)) return true;
   if (['false', '0', 'no', 'off'].includes(lowerValue)) return false;
-  
-  console.warn(`⚠️  Invalid boolean value "${value}", using default: ${defaultValue}`);
+
+  console.warn(
+    `⚠️  Invalid boolean value "${value}", using default: ${defaultValue}`,
+  );
   return defaultValue;
 }

@@ -35,11 +35,11 @@ import { ProjectModule } from './project/project.module';
     // Modules d'infrastructure
     DatabaseModule,
     CacheModule,
-    
+
     // Modules de support
-    CommonModule,  // AuthGuard, decorators, utilitaires communs
-    EventsModule,  // Publication d'événements métier (stub temporaire)
-    
+    CommonModule, // AuthGuard, decorators, utilitaires communs
+    EventsModule, // Publication d'événements métier (stub temporaire)
+
     // Modules métier
     ProjectModule, // Gestion des projets (CRUD + logique métier)
   ],

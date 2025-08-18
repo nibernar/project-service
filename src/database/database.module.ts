@@ -6,10 +6,7 @@ import { databaseConfig } from '../config/database.config';
 
 @Global()
 @Module({
-  imports: [
-    ConfigModule,
-    ConfigModule.forFeature(databaseConfig)
-  ],
+  imports: [ConfigModule, ConfigModule.forFeature(databaseConfig)],
   providers: [DatabaseService],
   exports: [DatabaseService],
 })

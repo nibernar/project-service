@@ -18,16 +18,19 @@ describe('DatabaseService - Integration Tests', () => {
 
   // Configuration pour base de test réelle
   const testConfig = {
-    'DATABASE_URL': process.env.TEST_DATABASE_URL || 
+    DATABASE_URL:
+      process.env.TEST_DATABASE_URL ||
       'postgresql://test_user:test_pass@localhost:5433/project_service_integration_test',
-    'NODE_ENV': 'test',
-    'DB_TRANSACTION_TIMEOUT': 10000,
-    'DB_MAX_WAIT': 5000,
+    NODE_ENV: 'test',
+    DB_TRANSACTION_TIMEOUT: 10000,
+    DB_MAX_WAIT: 5000,
   };
 
   beforeAll(async () => {
     if (!process.env.TEST_DATABASE_URL && !process.env.CI) {
-      console.log('⏭️  Integration tests skipped - No test database configured');
+      console.log(
+        '⏭️  Integration tests skipped - No test database configured',
+      );
       return;
     }
 
@@ -54,8 +57,7 @@ describe('DatabaseService - Integration Tests', () => {
 
     try {
       await service.resetDatabase();
-    } catch (error) {
-    }
+    } catch (error) {}
   });
 
   describe('Real Database Connection', () => {
@@ -63,7 +65,7 @@ describe('DatabaseService - Integration Tests', () => {
       if (!service) return;
 
       await expect(service.onModuleInit()).resolves.toBeUndefined();
-      
+
       const health = service.getHealthMetrics();
       expect(health.status).toBe('healthy');
     }, 15000);
@@ -113,7 +115,7 @@ describe('DatabaseService - Integration Tests', () => {
 
           // Forcer une erreur pour déclencher le rollback
           throw new Error('Force rollback');
-        })
+        }),
       ).rejects.toThrow('Force rollback');
 
       // Vérifier que les modifications ont été annulées
@@ -217,7 +219,7 @@ describe('DatabaseService - Integration Tests', () => {
 
           // Forcer une erreur
           throw new Error('Transaction should rollback');
-        })
+        }),
       ).rejects.toThrow('Transaction should rollback');
 
       // Vérifier que rien n'a été sauvegardé
@@ -246,7 +248,7 @@ describe('DatabaseService - Integration Tests', () => {
               generatedFileIds: [],
             },
           });
-        })
+        }),
       );
 
       const results = await Promise.all(promises);
@@ -297,7 +299,7 @@ describe('DatabaseService - Integration Tests', () => {
             data: { name: 'Updated in Serializable' },
           });
         },
-        { isolationLevel: 'Serializable' }
+        { isolationLevel: 'Serializable' },
       );
 
       // Vérifier la mise à jour
@@ -345,7 +347,7 @@ describe('DatabaseService - Integration Tests', () => {
       }));
 
       const startTime = Date.now();
-      
+
       const result = await service.project.createMany({
         data: projectsData,
         skipDuplicates: true,
@@ -385,7 +387,7 @@ describe('DatabaseService - Integration Tests', () => {
       });
 
       const startTime = Date.now();
-      
+
       const projects = await service.project.findMany({
         where: { ownerId: 'large-user' },
         include: { statistics: true },
@@ -434,7 +436,7 @@ describe('DatabaseService - Integration Tests', () => {
             uploadedFileIds: [],
             generatedFileIds: [],
           },
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -451,7 +453,7 @@ describe('DatabaseService - Integration Tests', () => {
             performance: {},
             usage: {},
           },
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -549,7 +551,7 @@ describe('DatabaseService - Integration Tests', () => {
       if (!service) return;
 
       const status = await service.getConnectionStatus();
-      
+
       expect(status.isConnected).toBe(true);
       expect(status.responseTime).toBeGreaterThanOrEqual(0);
       expect(status.lastCheck).toBeInstanceOf(Date);

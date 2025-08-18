@@ -1,6 +1,10 @@
 // test/unit/common/guards/auth.guard.spec.ts
 
-import { ExecutionContext, UnauthorizedException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  UnauthorizedException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -44,7 +48,9 @@ describe('AuthGuard - Unit Tests', () => {
     roles: ['user'],
   });
 
-  const createValidAuthResponse = (user: User = createValidUser()): AxiosResponse => ({
+  const createValidAuthResponse = (
+    user: User = createValidUser(),
+  ): AxiosResponse => ({
     data: {
       valid: true,
       user: {
@@ -146,7 +152,9 @@ describe('AuthGuard - Unit Tests', () => {
       // Assert
       expect(result).toBe(true);
       expect((request as any).user).toEqual(user);
-      expect(cacheService.get).toHaveBeenCalledWith(expect.stringMatching(/^auth:token:/));
+      expect(cacheService.get).toHaveBeenCalledWith(
+        expect.stringMatching(/^auth:token:/),
+      );
       expect(httpService.post).not.toHaveBeenCalled();
     });
 
@@ -175,12 +183,12 @@ describe('AuthGuard - Unit Tests', () => {
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
           }),
-        })
+        }),
       );
       expect(cacheService.set).toHaveBeenCalledWith(
         expect.stringMatching(/^auth:token:/),
         user,
-        expect.any(Number) // Plus flexible que 300 exact
+        expect.any(Number), // Plus flexible que 300 exact
       );
     });
 
@@ -259,8 +267,12 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      await expect(authGuard.canActivate(context)).rejects.toThrow('No token provided');
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        'No token provided',
+      );
 
       expect(cacheService.get).not.toHaveBeenCalled();
       expect(httpService.post).not.toHaveBeenCalled();
@@ -281,8 +293,12 @@ describe('AuthGuard - Unit Tests', () => {
         const context = createMockExecutionContext(request);
 
         // Act & Assert
-        await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-        await expect(authGuard.canActivate(context)).rejects.toThrow('Invalid token format');
+        await expect(authGuard.canActivate(context)).rejects.toThrow(
+          UnauthorizedException,
+        );
+        await expect(authGuard.canActivate(context)).rejects.toThrow(
+          'Invalid token format',
+        );
       }
     });
 
@@ -293,11 +309,17 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '401')));
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Invalid token', '401')),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      await expect(authGuard.canActivate(context)).rejects.toThrow('Authentication failed');
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        'Authentication failed',
+      );
 
       expect(cacheService.get).toHaveBeenCalled();
       expect(httpService.post).toHaveBeenCalled();
@@ -311,10 +333,14 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new AxiosError('Token expired', '401')));
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Token expired', '401')),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
 
       expect(cacheService.get).toHaveBeenCalled();
       expect(httpService.post).toHaveBeenCalled();
@@ -327,11 +353,21 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' })));
+      httpService.post.mockReturnValue(
+        throwError(() =>
+          Object.assign(new Error('connect ECONNREFUSED'), {
+            code: 'ECONNREFUSED',
+          }),
+        ),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(ServiceUnavailableException);
-      await expect(authGuard.canActivate(context)).rejects.toThrow('Authentication service unavailable');
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        ServiceUnavailableException,
+      );
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        'Authentication service unavailable',
+      );
     });
 
     it('should throw ServiceUnavailableException on timeout', async () => {
@@ -341,10 +377,14 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new Error('timeout of 5000ms exceeded')));
+      httpService.post.mockReturnValue(
+        throwError(() => new Error('timeout of 5000ms exceeded')),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(ServiceUnavailableException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        ServiceUnavailableException,
+      );
     });
 
     it('should handle auth service returning invalid response', async () => {
@@ -354,17 +394,23 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: { valid: false },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: { valid: false },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
-      await expect(authGuard.canActivate(context)).rejects.toThrow('Authentication failed');
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        'Authentication failed',
+      );
     });
 
     it('should handle auth service returning malformed response', async () => {
@@ -374,16 +420,20 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: { invalid: 'response' },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: { invalid: 'response' },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -410,7 +460,7 @@ describe('AuthGuard - Unit Tests', () => {
       expect(cacheService.set).toHaveBeenCalledWith(
         expect.stringMatching(/^auth:token:[a-f0-9]{64}$/),
         user,
-        300
+        300,
       );
     });
 
@@ -468,12 +518,12 @@ describe('AuthGuard - Unit Tests', () => {
 
       // Assert
       expect(cacheService.get).toHaveBeenCalledWith(
-        expect.stringMatching(/^auth:token:[a-f0-9]{64}$/)
+        expect.stringMatching(/^auth:token:[a-f0-9]{64}$/),
       );
       expect(cacheService.set).toHaveBeenCalledWith(
         expect.stringMatching(/^auth:token:[a-f0-9]{64}$/),
         user,
-        300
+        300,
       );
 
       // Vérifier que les clés get et set sont identiques
@@ -549,7 +599,7 @@ describe('AuthGuard - Unit Tests', () => {
       expect(httpService.post).toHaveBeenCalledWith(
         `${customUrl}/auth/validate`,
         { token },
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -579,7 +629,7 @@ describe('AuthGuard - Unit Tests', () => {
         expect.any(Object),
         expect.objectContaining({
           timeout: 10000,
-        })
+        }),
       );
     });
 
@@ -606,7 +656,7 @@ describe('AuthGuard - Unit Tests', () => {
         { token },
         expect.objectContaining({
           timeout: 7500,
-        })
+        }),
       );
     });
 
@@ -666,7 +716,9 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of(createValidAuthResponse(userWithoutRoles)));
+      httpService.post.mockReturnValue(
+        of(createValidAuthResponse(userWithoutRoles)),
+      );
 
       // Act
       const result = await authGuard.canActivate(context);
@@ -726,20 +778,24 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: {
-          valid: true,
-          // user missing
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: {
+            valid: true,
+            // user missing
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should reject user missing required fields', async () => {
@@ -749,24 +805,28 @@ describe('AuthGuard - Unit Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: {
-          valid: true,
-          user: {
-            // id missing
-            email: 'incomplete@example.com',
-            roles: ['user'],
+      httpService.post.mockReturnValue(
+        of({
+          data: {
+            valid: true,
+            user: {
+              // id missing
+              email: 'incomplete@example.com',
+              roles: ['user'],
+            },
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
           },
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

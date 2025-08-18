@@ -1,6 +1,10 @@
 // test/unit/common/guards/auth.guard.edge-cases.spec.ts
 
-import { ExecutionContext, UnauthorizedException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  UnauthorizedException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -38,7 +42,9 @@ describe('AuthGuard - Edge Cases', () => {
     } as ExecutionContext;
   };
 
-  const createExtremeUser = (type: 'minimal' | 'maximal' | 'unicode' | 'numeric'): User => {
+  const createExtremeUser = (
+    type: 'minimal' | 'maximal' | 'unicode' | 'numeric',
+  ): User => {
     switch (type) {
       case 'minimal':
         return {
@@ -49,8 +55,16 @@ describe('AuthGuard - Edge Cases', () => {
       case 'maximal':
         return {
           id: 'user-' + 'x'.repeat(1000),
-          email: 'very-long-email-address-' + 'x'.repeat(200) + '@very-long-domain-name-' + 'x'.repeat(100) + '.example.com',
-          roles: Array.from({ length: 100 }, (_, i) => `role-${i}-${'x'.repeat(50)}`),
+          email:
+            'very-long-email-address-' +
+            'x'.repeat(200) +
+            '@very-long-domain-name-' +
+            'x'.repeat(100) +
+            '.example.com',
+          roles: Array.from(
+            { length: 100 },
+            (_, i) => `role-${i}-${'x'.repeat(50)}`,
+          ),
         };
       case 'unicode':
         return {
@@ -200,7 +214,9 @@ describe('AuthGuard - Edge Cases', () => {
         const context = createMockExecutionContext(request);
 
         // Act & Assert
-        await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+        await expect(authGuard.canActivate(context)).rejects.toThrow(
+          UnauthorizedException,
+        );
       }
     });
 
@@ -211,7 +227,9 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new AxiosError('Request too large', '413')));
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Request too large', '413')),
+      );
 
       // Act & Assert
       await expect(authGuard.canActivate(context)).rejects.toThrow();
@@ -226,7 +244,9 @@ describe('AuthGuard - Edge Cases', () => {
         const context = createMockExecutionContext(request);
 
         cacheService.get.mockResolvedValue(null);
-        httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '400')));
+        httpService.post.mockReturnValue(
+          throwError(() => new AxiosError('Invalid token', '400')),
+        );
 
         // Act & Assert
         await expect(authGuard.canActivate(context)).rejects.toThrow();
@@ -248,7 +268,9 @@ describe('AuthGuard - Edge Cases', () => {
         const context = createMockExecutionContext(request);
 
         cacheService.get.mockResolvedValue(null);
-        httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '400')));
+        httpService.post.mockReturnValue(
+          throwError(() => new AxiosError('Invalid token', '400')),
+        );
 
         // Act & Assert
         await expect(authGuard.canActivate(context)).rejects.toThrow();
@@ -269,7 +291,9 @@ describe('AuthGuard - Edge Cases', () => {
         const context = createMockExecutionContext(request);
 
         // Act & Assert
-        await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+        await expect(authGuard.canActivate(context)).rejects.toThrow(
+          UnauthorizedException,
+        );
       }
     });
 
@@ -292,7 +316,9 @@ describe('AuthGuard - Edge Cases', () => {
         const context = createMockExecutionContext(request);
 
         cacheService.get.mockResolvedValue(null);
-        httpService.post.mockReturnValue(throwError(() => new AxiosError('Malformed JWT', '400')));
+        httpService.post.mockReturnValue(
+          throwError(() => new AxiosError('Malformed JWT', '400')),
+        );
 
         // Act & Assert
         await expect(authGuard.canActivate(context)).rejects.toThrow();
@@ -320,7 +346,9 @@ describe('AuthGuard - Edge Cases', () => {
         const context = createMockExecutionContext(request);
 
         cacheService.get.mockResolvedValue(null);
-        httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid', '401')));
+        httpService.post.mockReturnValue(
+          throwError(() => new AxiosError('Invalid', '401')),
+        );
 
         // Act & Assert
         // Le behavior peut varier selon l'implémentation
@@ -339,7 +367,9 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle extremely large headers', async () => {
@@ -353,7 +383,9 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new Error('Headers too large')));
+      httpService.post.mockReturnValue(
+        throwError(() => new Error('Headers too large')),
+      );
 
       // Act & Assert
       await expect(authGuard.canActivate(context)).rejects.toThrow();
@@ -396,17 +428,19 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: {
-          valid: true,
-          user: largeUser,
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: {
+            valid: true,
+            user: largeUser,
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act
       const result = await authGuard.canActivate(context);
@@ -417,7 +451,7 @@ describe('AuthGuard - Edge Cases', () => {
       expect(cacheService.set).toHaveBeenCalledWith(
         expect.any(String),
         largeUser,
-        expect.any(Number)
+        expect.any(Number),
       );
     });
 
@@ -429,17 +463,19 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: {
-          valid: true,
-          user: unicodeUser,
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: {
+            valid: true,
+            user: unicodeUser,
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act
       const result = await authGuard.canActivate(context);
@@ -456,16 +492,20 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: 'This is not JSON',
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: 'This is not JSON',
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle auth service returning null data', async () => {
@@ -475,16 +515,20 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: null,
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: null,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle auth service returning undefined data', async () => {
@@ -494,16 +538,20 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: undefined,
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: undefined,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should handle auth service returning circular JSON', async () => {
@@ -516,13 +564,15 @@ describe('AuthGuard - Edge Cases', () => {
       circularData.self = circularData;
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: circularData,
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: circularData,
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act & Assert
       await expect(authGuard.canActivate(context)).rejects.toThrow();
@@ -540,13 +590,15 @@ describe('AuthGuard - Edge Cases', () => {
       const unusualStatuses = [299, 418, 451, 599];
 
       for (const status of unusualStatuses) {
-        httpService.post.mockReturnValue(of({
-          data: { valid: true, user: createExtremeUser('minimal') },
-          status,
-          statusText: `Unusual Status ${status}`,
-          headers: {},
-          config: {} as any,
-        }));
+        httpService.post.mockReturnValue(
+          of({
+            data: { valid: true, user: createExtremeUser('minimal') },
+            status,
+            statusText: `Unusual Status ${status}`,
+            headers: {},
+            config: {} as any,
+          }),
+        );
 
         // Act
         if (status >= 200 && status < 300) {
@@ -555,7 +607,11 @@ describe('AuthGuard - Edge Cases', () => {
         } else {
           // Le AuthGuard traite tous les status 2xx comme valides
           // Pour les autres status, on doit mocker une erreur explicite
-          httpService.post.mockReturnValue(throwError(() => new AxiosError(`HTTP ${status}`, status.toString())));
+          httpService.post.mockReturnValue(
+            throwError(
+              () => new AxiosError(`HTTP ${status}`, status.toString()),
+            ),
+          );
           await expect(authGuard.canActivate(context)).rejects.toThrow();
         }
       }
@@ -581,17 +637,19 @@ describe('AuthGuard - Edge Cases', () => {
       };
 
       cacheService.get.mockResolvedValue(corruptedData);
-      httpService.post.mockReturnValue(of({
-        data: {
-          valid: true,
-          user: createExtremeUser('minimal'),
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: {
+            valid: true,
+            user: createExtremeUser('minimal'),
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act
       const result = await authGuard.canActivate(context);
@@ -628,25 +686,27 @@ describe('AuthGuard - Edge Cases', () => {
 
       // Simuler un timeout de cache (promise qui ne se résout jamais)
       cacheService.get.mockReturnValue(new Promise(() => {})); // Never resolves
-      
+
       const user = createExtremeUser('minimal');
-      httpService.post.mockReturnValue(of({
-        data: {
-          valid: true,
-          user,
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: {
+            valid: true,
+            user,
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act - Avec un timeout pour le test
       const result = await Promise.race([
         authGuard.canActivate(context),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Test timeout')), 1000)
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Test timeout')), 1000),
         ),
       ]).catch(() => {
         // En cas de timeout, on teste le fallback
@@ -724,7 +784,7 @@ describe('AuthGuard - Edge Cases', () => {
       const results = await Promise.all(promises);
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
       // Sans déduplication, chaque requête fait un appel
       // Dans une vraie implémentation, on pourrait optimiser cela
       expect(authServiceCallCount).toBe(1000);
@@ -752,17 +812,19 @@ describe('AuthGuard - Edge Cases', () => {
         return Promise.resolve();
       });
 
-      httpService.post.mockReturnValue(of({
-        data: {
-          valid: true,
-          user,
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: {
+            valid: true,
+            user,
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act - Plusieurs requêtes rapides
       const promises = Array.from({ length: 10 }, async () => {
@@ -774,26 +836,28 @@ describe('AuthGuard - Edge Cases', () => {
       const results = await Promise.all(promises);
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
       expect(cacheGetCallCount).toBeGreaterThanOrEqual(10);
     });
 
     it('should handle memory pressure during high concurrency', async () => {
       // Arrange
       const user = createExtremeUser('maximal'); // Large user object
-      
+
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(of({
-        data: {
-          valid: true,
-          user,
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
-        },
-        status: 200,
-        statusText: 'OK',
-        headers: {},
-        config: {} as any,
-      }));
+      httpService.post.mockReturnValue(
+        of({
+          data: {
+            valid: true,
+            user,
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          },
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          config: {} as any,
+        }),
+      );
 
       // Act - Beaucoup de requêtes avec de gros objets
       const promises = Array.from({ length: 100 }, async (_, i) => {
@@ -806,7 +870,7 @@ describe('AuthGuard - Edge Cases', () => {
       const results = await Promise.all(promises);
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
       expect(cacheService.set).toHaveBeenCalledTimes(100);
     });
   });
@@ -824,7 +888,9 @@ describe('AuthGuard - Edge Cases', () => {
 
       // Simuler épuisement des ressources
       cacheService.get.mockRejectedValue(new Error('Out of memory'));
-      httpService.post.mockReturnValue(throwError(() => new Error('No file descriptors available')));
+      httpService.post.mockReturnValue(
+        throwError(() => new Error('No file descriptors available')),
+      );
 
       // Act & Assert
       await expect(authGuard.canActivate(context)).rejects.toThrow();
@@ -837,10 +903,14 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new Error('Network is unreachable')));
+      httpService.post.mockReturnValue(
+        throwError(() => new Error('Network is unreachable')),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(ServiceUnavailableException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        ServiceUnavailableException,
+      );
     });
 
     it('should handle DNS resolution failures', async () => {
@@ -850,10 +920,14 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new Error('getaddrinfo ENOTFOUND')));
+      httpService.post.mockReturnValue(
+        throwError(() => new Error('getaddrinfo ENOTFOUND')),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(ServiceUnavailableException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        ServiceUnavailableException,
+      );
     });
 
     it('should handle TLS/SSL certificate errors', async () => {
@@ -863,10 +937,14 @@ describe('AuthGuard - Edge Cases', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new Error('certificate verify failed')));
+      httpService.post.mockReturnValue(
+        throwError(() => new Error('certificate verify failed')),
+      );
 
       // Act & Assert
-      await expect(authGuard.canActivate(context)).rejects.toThrow(ServiceUnavailableException);
+      await expect(authGuard.canActivate(context)).rejects.toThrow(
+        ServiceUnavailableException,
+      );
     });
 
     it('should handle unexpected Observable behaviors', async () => {

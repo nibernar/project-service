@@ -24,7 +24,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: null,
       });
-      
+
       expect(dto.getShortDescription()).toBe('');
       expect(dto.getCompletionScore()).toBe(0); // No bonus for description
     });
@@ -34,7 +34,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: undefined,
       });
-      
+
       expect(dto.getShortDescription()).toBe('');
       expect(dto.getCompletionScore()).toBe(0);
     });
@@ -44,7 +44,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         totalCost: null,
       });
-      
+
       expect(dto.getFormattedCost()).toBe('Non calculé');
       expect(() => dto.getTooltipSummary()).not.toThrow();
     });
@@ -57,7 +57,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         uploadedFilesCount: undefined,
         generatedFilesCount: undefined,
       });
-      
+
       expect(dto.uploadedFilesCount).toBe(0);
       expect(dto.generatedFilesCount).toBe(0);
       expect(dto.getTotalFilesCount()).toBe(0);
@@ -71,7 +71,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         uploadedFilesCount: undefined,
         generatedFilesCount: undefined,
       });
-      
+
       expect(dto.uploadedFilesCount).toBe(0);
       expect(dto.generatedFilesCount).toBe(0);
     });
@@ -84,7 +84,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         uploadedFilesCount: undefined,
         generatedFilesCount: undefined,
       });
-      
+
       expect(dto.uploadedFilesCount).toBe(0);
       expect(dto.generatedFilesCount).toBe(0);
     });
@@ -96,7 +96,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         hasStatistics: undefined,
         totalCost: undefined,
       });
-      
+
       expect(dto.hasStatistics).toBe(false);
       expect(dto.totalCost).toBeUndefined();
     });
@@ -108,7 +108,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         hasStatistics: undefined,
         totalCost: undefined,
       });
-      
+
       expect(dto.hasStatistics).toBe(false);
       expect(dto.totalCost).toBeUndefined();
     });
@@ -121,11 +121,11 @@ describe('ProjectListItemDto - Edge Cases', () => {
         createdAt: new Date('invalid-date'),
         updatedAt: new Date('invalid-date'),
       });
-      
+
       // Les dates invalides deviennent NaN
       expect(isNaN(dto.createdAt.getTime())).toBe(true);
       expect(isNaN(dto.updatedAt.getTime())).toBe(true);
-      
+
       // Les méthodes doivent gérer gracieusement
       expect(() => dto.getAgeInDays()).not.toThrow();
       expect(() => dto.getRelativeAge()).not.toThrow();
@@ -139,7 +139,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         createdAt: futureDate,
         updatedAt: futureDate,
       });
-      
+
       expect(dto.getAgeInDays()).toBeGreaterThan(0);
       expect(dto.getRelativeAge()).toContain('il y a');
     });
@@ -151,7 +151,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         createdAt: ancientDate,
         updatedAt: ancientDate,
       });
-      
+
       expect(dto.getAgeInDays()).toBeGreaterThan(365);
       expect(dto.getRelativeAge()).toContain('ans');
     });
@@ -163,7 +163,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         createdAt: epochDate,
         updatedAt: epochDate,
       });
-      
+
       expect(() => dto.getAgeInDays()).not.toThrow();
       expect(() => dto.getRelativeAge()).not.toThrow();
     });
@@ -176,7 +176,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: veryLongDescription,
       });
-      
+
       expect(dto.description).toBe(veryLongDescription);
       expect(dto.getShortDescription(100).length).toBeLessThanOrEqual(103);
       expect(dto.getCompletionScore()).toBeGreaterThanOrEqual(10); // Bonus for having description
@@ -188,7 +188,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         name: veryLongName,
       });
-      
+
       expect(dto.name).toBe(veryLongName);
       expect(() => dto.toString()).not.toThrow();
       expect(() => dto.getTooltipSummary()).not.toThrow();
@@ -200,7 +200,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         uploadedFilesCount: 999999,
         generatedFilesCount: 999999,
       });
-      
+
       expect(dto.uploadedFilesCount).toBe(999999);
       expect(dto.generatedFilesCount).toBe(999999);
       expect(dto.getTotalFilesCount()).toBe(1999998);
@@ -213,9 +213,9 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         totalCost: 999999.999,
       });
-      
+
       // CORRECTION: La transformation arrondit à 2 décimales
-      expect(dto.totalCost).toBe(1000000.00); // Arrondi automatique
+      expect(dto.totalCost).toBe(1000000.0); // Arrondi automatique
       expect(dto.getFormattedCost()).toBe('1000000.00€');
     });
 
@@ -224,9 +224,9 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         totalCost: 0.001,
       });
-      
+
       // CORRECTION: La transformation arrondit à 2 décimales
-      expect(dto.totalCost).toBe(0.00); // Arrondi vers le bas
+      expect(dto.totalCost).toBe(0.0); // Arrondi vers le bas
       expect(dto.getFormattedCost()).toBe('Gratuit'); // Puisque 0.00
     });
 
@@ -235,7 +235,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         totalCost: 0.1 + 0.2, // Classic floating point precision issue
       });
-      
+
       expect(dto.getFormattedCost()).toMatch(/0\.30€/); // Should handle precision
     });
   });
@@ -246,7 +246,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: 'Some description',
       });
-      
+
       const result = dto.getShortDescription(0);
       expect(result).toBe('...');
     });
@@ -256,7 +256,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: 'Some description',
       });
-      
+
       const result = dto.getShortDescription(1);
       expect(result.length).toBeLessThanOrEqual(4); // '...' might be added
     });
@@ -266,7 +266,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: 'Short',
       });
-      
+
       const result = dto.getShortDescription(10000);
       expect(result).toBe('Short'); // Should return as-is
     });
@@ -276,7 +276,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: 'verylongdescriptionwithoutanyspacesatall',
       });
-      
+
       const result = dto.getShortDescription(20);
       // CORRECTION: La vraie logique de troncature
       expect(result).toBe('verylongdescriptionw...');
@@ -288,7 +288,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: '     ',
       });
-      
+
       const result = dto.getShortDescription(10);
       expect(result).toBe('     ');
     });
@@ -298,7 +298,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: '',
       });
-      
+
       const result = dto.getShortDescription(10);
       expect(result).toBe('');
     });
@@ -308,7 +308,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         description: 'Description with émojis 😀 and special chars ñáéíóú',
       });
-      
+
       const result = dto.getShortDescription(30);
       expect(result).toContain('Description with émojis');
       expect(() => dto.getShortDescription(30)).not.toThrow();
@@ -324,7 +324,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         uploadedFilesCount: undefined,
         generatedFilesCount: undefined,
       });
-      
+
       expect(dto.uploadedFilesCount).toBe(0);
       expect(dto.generatedFilesCount).toBe(0);
     });
@@ -337,7 +337,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         uploadedFilesCount: undefined,
         generatedFilesCount: undefined,
       });
-      
+
       expect(dto.uploadedFilesCount).toBe(5); // Count all elements regardless of type
       expect(dto.generatedFilesCount).toBe(3);
     });
@@ -349,7 +349,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         hasStatistics: undefined,
         totalCost: undefined,
       });
-      
+
       // CORRECTION: string n'est pas null/undefined, donc hasStatistics = true
       expect(dto.hasStatistics).toBe(true);
       expect(dto.totalCost).toBeUndefined();
@@ -362,7 +362,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         hasStatistics: undefined,
         totalCost: undefined,
       });
-      
+
       expect(dto.hasStatistics).toBe(true);
       expect(dto.totalCost).toBeUndefined();
     });
@@ -374,7 +374,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         hasStatistics: undefined,
         totalCost: undefined,
       });
-      
+
       expect(dto.hasStatistics).toBe(true);
       expect(dto.totalCost).toBeUndefined();
     });
@@ -386,13 +386,13 @@ describe('ProjectListItemDto - Edge Cases', () => {
         hasStatistics: undefined,
         totalCost: undefined,
       });
-      
+
       expect(dto.hasStatistics).toBe(true);
       expect(dto.totalCost).toBeUndefined();
     });
   });
 
-  describe('Cas limites des calculs d\'âge', () => {
+  describe("Cas limites des calculs d'âge", () => {
     beforeEach(() => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date('2024-08-08T12:00:00Z'));
@@ -407,10 +407,10 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         createdAt: new Date('2024-08-08T12:00:00Z'),
       });
-      
+
       // CORRECTION: Même timestamp = 0 jours (pas 1)
       expect(dto.getAgeInDays()).toBe(0);
-      expect(dto.getRelativeAge()).toBe('aujourd\'hui');
+      expect(dto.getRelativeAge()).toBe("aujourd'hui");
     });
 
     it('should handle created timestamp in the future', () => {
@@ -418,7 +418,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         createdAt: new Date('2024-08-10T12:00:00Z'),
       });
-      
+
       expect(dto.getAgeInDays()).toBeGreaterThan(0); // Math.abs ensures positive
       expect(() => dto.getRelativeAge()).not.toThrow();
     });
@@ -428,7 +428,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         createdAt: new Date('2023-08-08T12:00:00Z'), // Exactly 1 year ago
       });
-      
+
       expect(dto.getAgeInDays()).toBe(366); // 365 + 1 due to Math.ceil
       expect(dto.getRelativeAge()).toBe('il y a 1 an');
     });
@@ -438,7 +438,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         ...baseDto,
         createdAt: new Date('2024-08-07T23:59:59Z'), // Almost yesterday
       });
-      
+
       expect(() => dto.getAgeInDays()).not.toThrow();
       expect(() => dto.getRelativeAge()).not.toThrow();
     });
@@ -453,23 +453,23 @@ describe('ProjectListItemDto - Edge Cases', () => {
         hasStatistics: false,
         description: '',
       });
-      
+
       expect(dto.getCompletionScore()).toBe(0);
     });
 
     it('should handle activity indicator with edge timestamps', () => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date('2024-08-08T00:00:00Z')); // Midnight
-      
+
       const dto = plainToInstance(ProjectListItemDto, {
         ...baseDto,
         createdAt: new Date('2024-08-07T23:59:59Z'), // 1 second before
         updatedAt: new Date('2024-08-07T23:59:59Z'),
         generatedFilesCount: 0,
       });
-      
+
       expect(() => dto.getActivityIndicator()).not.toThrow();
-      
+
       jest.useRealTimers();
     });
 
@@ -481,7 +481,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         generatedFilesCount: 0,
         totalCost: undefined,
       });
-      
+
       expect(() => dto.getTooltipSummary()).not.toThrow();
       const summary = dto.getTooltipSummary();
       expect(summary).toContain('0 fichier(s)');
@@ -494,7 +494,7 @@ describe('ProjectListItemDto - Edge Cases', () => {
         name: 'Project with "quotes" and \'apostrophes\' & symbols',
         description: 'Description with <html> tags and {json}',
       });
-      
+
       const logStr = dto.toLogSafeString();
       expect(logStr).not.toContain('Project with "quotes"');
       expect(logStr).not.toContain('<html>');

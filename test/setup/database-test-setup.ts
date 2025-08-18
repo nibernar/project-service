@@ -3,7 +3,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../../src/database/database.service';
-import { databaseConfig, DatabaseConfig } from '../../src/config/database.config';
+import {
+  databaseConfig,
+  DatabaseConfig,
+} from '../../src/config/database.config';
 
 /**
  * Configuration de test globale pour DatabaseService
@@ -17,17 +20,18 @@ export const createPrismaPromiseMock = (resolvedValue: any) => {
   const promise = Promise.resolve(resolvedValue);
   Object.defineProperty(promise, Symbol.toStringTag, {
     value: 'PrismaPromise',
-    configurable: true
+    configurable: true,
   });
   return promise;
 };
 
 export const createMockConfigService = (overrides: TestConfigValues = {}) => {
   const defaultConfig: TestConfigValues = {
-    'DATABASE_URL': 'postgresql://test_user:test_pass@localhost:5433/project_service_test',
-    'NODE_ENV': 'test',
-    'DB_TRANSACTION_TIMEOUT': 10000,
-    'DB_MAX_WAIT': 5000,
+    DATABASE_URL:
+      'postgresql://test_user:test_pass@localhost:5433/project_service_test',
+    NODE_ENV: 'test',
+    DB_TRANSACTION_TIMEOUT: 10000,
+    DB_MAX_WAIT: 5000,
     ...overrides,
   };
 
@@ -50,12 +54,16 @@ export const createMockConfigService = (overrides: TestConfigValues = {}) => {
 /**
  * Crée une configuration de base de données mock pour la nouvelle approche
  */
-const createMockDatabaseConfig = (overrides: TestConfigValues = {}): DatabaseConfig => {
+const createMockDatabaseConfig = (
+  overrides: TestConfigValues = {},
+): DatabaseConfig => {
   // ✅ Valeurs qui matchent avec les attentes des tests existants
   const isProductionTest = overrides.NODE_ENV === 'production';
-  
+
   return {
-    url: (overrides.DATABASE_URL as string) || 'postgresql://test_user:test_pass@localhost:5433/project_service_test',
+    url:
+      (overrides.DATABASE_URL as string) ||
+      'postgresql://test_user:test_pass@localhost:5433/project_service_test',
     maxConnections: (overrides.DB_MAX_CONNECTIONS as number) || 5,
     minConnections: 1,
     connectionTimeout: 5000,
@@ -109,7 +117,7 @@ export const createMockPrismaClient = () => {
     const promise = Promise.resolve(resolvedValue);
     Object.defineProperty(promise, Symbol.toStringTag, {
       value: 'PrismaPromise',
-      configurable: true
+      configurable: true,
     });
     return promise;
   };
@@ -118,33 +126,52 @@ export const createMockPrismaClient = () => {
     $connect: jest.fn().mockResolvedValue(undefined),
     $disconnect: jest.fn().mockResolvedValue(undefined),
     $queryRaw: jest.fn().mockImplementation(() => {
-      return new Promise(resolve => {
-        setTimeout(() => {
-          resolve([{ '?column?': 1 }]);
-        }, Math.floor(Math.random() * 50) + 10); // 10-60ms aléatoire
+      return new Promise((resolve) => {
+        setTimeout(
+          () => {
+            resolve([{ '?column?': 1 }]);
+          },
+          Math.floor(Math.random() * 50) + 10,
+        ); // 10-60ms aléatoire
       });
     }),
     $transaction: jest.fn().mockImplementation((callback: any) => {
       if (typeof callback === 'function') {
         return callback({
-          $queryRaw: jest.fn().mockImplementation(() => createPrismaPromiseMock([{ '?column?': 1 }])),
+          $queryRaw: jest
+            .fn()
+            .mockImplementation(() =>
+              createPrismaPromiseMock([{ '?column?': 1 }]),
+            ),
           project: {
-            createMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 3 })),
-            deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
+            createMany: jest
+              .fn()
+              .mockImplementation(() => createPrismaPromiseMock({ count: 3 })),
+            deleteMany: jest
+              .fn()
+              .mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
           },
           projectStatistics: {
-            deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
+            deleteMany: jest
+              .fn()
+              .mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
           },
         });
       }
       return createPrismaPromiseMock(undefined);
     }),
     project: {
-      createMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
-      deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
+      createMany: jest
+        .fn()
+        .mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
+      deleteMany: jest
+        .fn()
+        .mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
     },
     projectStatistics: {
-      deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
+      deleteMany: jest
+        .fn()
+        .mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
     },
     $on: jest.fn(),
   };
@@ -173,7 +200,7 @@ export const createDatabaseTestingModule = async (
   if (mockPrisma) {
     const databaseService = module.get<DatabaseService>(DatabaseService);
     const mockClient = createMockPrismaClient();
-    
+
     // Override des méthodes Prisma avec les mocks
     Object.assign(databaseService, mockClient);
   }
@@ -197,14 +224,15 @@ export const createSafeDatabaseTestingModule = async (
 // Utilitaires pour les tests d'intégration
 export const setupIntegrationDatabase = async () => {
   // Setup d'une vraie base de données pour les tests d'intégration
-  const testDbUrl = process.env.TEST_DATABASE_URL || 
+  const testDbUrl =
+    process.env.TEST_DATABASE_URL ||
     'postgresql://test_user:test_pass@localhost:5433/project_service_test';
-  
+
   // Ici on pourrait ajouter la logique pour :
   // - Créer une base de test isolée
   // - Exécuter les migrations
   // - Préparer les données de test
-  
+
   return testDbUrl;
 };
 
@@ -243,16 +271,19 @@ export const mockSetTimeout = () => {
 };
 
 // Helper pour créer des mocks avec timeout
-export const createDelayedPrismaPromiseMock = (resolvedValue: any, delay: number = 1000) => {
+export const createDelayedPrismaPromiseMock = (
+  resolvedValue: any,
+  delay: number = 1000,
+) => {
   const promise = new Promise((resolve) => {
     setTimeout(() => resolve(resolvedValue), delay);
   });
-  
+
   Object.defineProperty(promise, Symbol.toStringTag, {
     value: 'PrismaPromise',
-    configurable: true
+    configurable: true,
   });
-  
+
   return promise;
 };
 
@@ -261,13 +292,23 @@ export const createTransactionMock = (mockImplementation?: any) => {
   return jest.fn().mockImplementation((callback: any) => {
     if (typeof callback === 'function') {
       const txMock = {
-        $queryRaw: jest.fn().mockImplementation(() => createPrismaPromiseMock([{ '?column?': 1 }])),
+        $queryRaw: jest
+          .fn()
+          .mockImplementation(() =>
+            createPrismaPromiseMock([{ '?column?': 1 }]),
+          ),
         project: {
-          createMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
-          deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
+          createMany: jest
+            .fn()
+            .mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
+          deleteMany: jest
+            .fn()
+            .mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
         },
         projectStatistics: {
-          deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
+          deleteMany: jest
+            .fn()
+            .mockImplementation(() => createPrismaPromiseMock({ count: 1 })),
         },
       };
       return callback(txMock);
@@ -277,7 +318,9 @@ export const createTransactionMock = (mockImplementation?: any) => {
 };
 
 // ✅ NOUVEAUX HELPERS pour cas spéciaux (optionnels, vos tests existants marchent sans)
-export const createDatabaseTestingModuleWithRetries = async (maxRetries: number = 3) => {
+export const createDatabaseTestingModuleWithRetries = async (
+  maxRetries: number = 3,
+) => {
   return createDatabaseTestingModule({
     // Ces valeurs seront utilisées pour créer la config databaseConfig.KEY
     DB_MAX_RETRIES: maxRetries,
@@ -285,7 +328,9 @@ export const createDatabaseTestingModuleWithRetries = async (maxRetries: number 
   });
 };
 
-export const createDatabaseTestingModuleWithHealthCheck = async (enabled: boolean = true) => {
+export const createDatabaseTestingModuleWithHealthCheck = async (
+  enabled: boolean = true,
+) => {
   return createDatabaseTestingModule({
     DB_HEALTH_CHECK_ENABLED: enabled,
   });

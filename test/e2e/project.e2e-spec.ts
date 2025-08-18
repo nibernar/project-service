@@ -17,13 +17,14 @@ describe('DatabaseService - E2E Tests', () => {
   let module: TestingModule;
 
   const testConfig = {
-    'DATABASE_URL': process.env.E2E_DATABASE_URL || 
+    DATABASE_URL:
+      process.env.E2E_DATABASE_URL ||
       process.env.TEST_DATABASE_URL ||
       'postgresql://nicolasbernard@localhost:5432/project_service_e2e_test_db',
-    'NODE_ENV': 'test',
-    'DB_TRANSACTION_TIMEOUT': 15000,
-    'DB_MAX_WAIT': 10000,
-    'DB_MAX_CONNECTIONS': 10,
+    NODE_ENV: 'test',
+    DB_TRANSACTION_TIMEOUT: 15000,
+    DB_MAX_WAIT: 10000,
+    DB_MAX_CONNECTIONS: 10,
   };
 
   console.log('🔍 E2E_DATABASE_URL:', process.env.E2E_DATABASE_URL);
@@ -32,7 +33,11 @@ describe('DatabaseService - E2E Tests', () => {
 
   beforeAll(async () => {
     // Skip si pas de base E2E configurée
-    if (!process.env.E2E_DATABASE_URL && !process.env.TEST_DATABASE_URL && !process.env.CI) {
+    if (
+      !process.env.E2E_DATABASE_URL &&
+      !process.env.TEST_DATABASE_URL &&
+      !process.env.CI
+    ) {
       console.log('⏭️  E2E tests skipped - No test database configured');
       return;
     }
@@ -48,7 +53,8 @@ describe('DatabaseService - E2E Tests', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: (key: string, defaultValue?: any) => (testConfig as any)[key] ?? defaultValue,
+            get: (key: string, defaultValue?: any) =>
+              (testConfig as any)[key] ?? defaultValue,
           },
         },
       ],
@@ -104,8 +110,8 @@ describe('DatabaseService - E2E Tests', () => {
           id: 'stats-lifecycle',
           projectId: project.id,
           costs: {
-            claudeApi: 15.50,
-            storage: 2.30,
+            claudeApi: 15.5,
+            storage: 2.3,
             compute: 8.75,
             total: 26.55,
           },
@@ -175,7 +181,7 @@ describe('DatabaseService - E2E Tests', () => {
             uploadedFileIds: [`upload-${i}`],
             generatedFileIds: [],
           },
-        })
+        }),
       );
 
       const projects = await Promise.all(createPromises);
@@ -191,7 +197,7 @@ describe('DatabaseService - E2E Tests', () => {
             performance: { totalTime: 1000 * i },
             usage: { documentsGenerated: i },
           },
-        })
+        }),
       );
 
       const stats = await Promise.all(statsPromises);
@@ -205,23 +211,27 @@ describe('DatabaseService - E2E Tests', () => {
       });
 
       expect(userProjects).toHaveLength(projectCount);
-      expect(userProjects.every(p => p.statistics !== null)).toBe(true);
+      expect(userProjects.every((p) => p.statistics !== null)).toBe(true);
 
       // Mettre à jour tous les projets en parallèle
-      const updatePromises = userProjects.map(project =>
+      const updatePromises = userProjects.map((project) =>
         service.project.update({
           where: { id: project.id },
           data: {
             generatedFileIds: [`gen-${project.id}`],
             status: 'ACTIVE',
           },
-        })
+        }),
       );
 
       const updatedProjects = await Promise.all(updatePromises);
-      expect(updatedProjects.every(p => p.generatedFileIds.length > 0)).toBe(true);
+      expect(updatedProjects.every((p) => p.generatedFileIds.length > 0)).toBe(
+        true,
+      );
 
-      console.log(`✅ ${projectCount} concurrent projects handled successfully`);
+      console.log(
+        `✅ ${projectCount} concurrent projects handled successfully`,
+      );
     });
 
     it('should handle data consistency across complex transactions', async () => {
@@ -251,8 +261,8 @@ describe('DatabaseService - E2E Tests', () => {
             costs: {
               claudeApi: 25.75,
               storage: 5.25,
-              compute: 15.50,
-              total: 46.50,
+              compute: 15.5,
+              total: 46.5,
             },
             performance: {
               generationTime: 65000,
@@ -271,7 +281,11 @@ describe('DatabaseService - E2E Tests', () => {
         const updatedProject = await tx.project.update({
           where: { id: project.id },
           data: {
-            generatedFileIds: ['gen-complex-1', 'gen-complex-2', 'gen-complex-3'],
+            generatedFileIds: [
+              'gen-complex-1',
+              'gen-complex-2',
+              'gen-complex-3',
+            ],
           },
         });
 
@@ -291,7 +305,7 @@ describe('DatabaseService - E2E Tests', () => {
 
       expect(dbProject).not.toBeNull();
       expect(dbProject?.statistics).not.toBeNull();
-      expect(dbProject?.statistics?.costs).toHaveProperty('total', 46.50);
+      expect(dbProject?.statistics?.costs).toHaveProperty('total', 46.5);
       expect(dbProject?.generatedFileIds).toHaveLength(3);
 
       console.log('✅ Complex transaction consistency test passed');
@@ -354,8 +368,8 @@ describe('DatabaseService - E2E Tests', () => {
       const longOperations = Array.from({ length: 5 }, (_, i) =>
         service.withTransaction(async (tx) => {
           // Simuler une opération qui prend du temps
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
           return tx.project.create({
             data: {
               id: `restart-${i}`,
@@ -368,12 +382,12 @@ describe('DatabaseService - E2E Tests', () => {
               generatedFileIds: [],
             },
           });
-        })
+        }),
       );
 
       // Attendre que toutes les opérations se terminent
       const results = await Promise.allSettled(longOperations);
-      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const successful = results.filter((r) => r.status === 'fulfilled').length;
 
       expect(successful).toBeGreaterThan(0); // Au moins 60% de succès
 
@@ -381,7 +395,9 @@ describe('DatabaseService - E2E Tests', () => {
       const health = await service.isHealthy();
       expect(health).toBe(true);
 
-      console.log(`✅ Service restart test: ${successful}/5 operations completed`);
+      console.log(
+        `✅ Service restart test: ${successful}/5 operations completed`,
+      );
     });
 
     it('should handle database maintenance scenarios', async () => {
@@ -468,7 +484,7 @@ describe('DatabaseService - E2E Tests', () => {
             uploadedFileIds: [],
             generatedFileIds: [],
           },
-        })
+        }),
       ).rejects.toThrow();
 
       // Vérifier que le service fonctionne toujours
@@ -539,7 +555,7 @@ describe('DatabaseService - E2E Tests', () => {
 
           // 4. Forcer une erreur pour déclencher le rollback
           throw new Error('Forced rollback');
-        })
+        }),
       ).rejects.toThrow();
 
       // Vérifier que rien n'a été modifié
@@ -569,46 +585,48 @@ describe('DatabaseService - E2E Tests', () => {
 
       // Lancer de nombreuses opérations concurrentes
       const promises = Array.from({ length: concurrentOperations }, (_, i) =>
-        service.withTransaction(async (tx) => {
-          // Mélanger succès et échecs
-          if (i % 4 === 0) {
-            // Opération qui échoue intentionnellement
-            await tx.project.create({
-              data: {
-                id: 'duplicate-id', // ID dupliqué pour forcer l'échec
-                name: `Stress Test ${i}`,
-                description: 'Should fail',
-                initialPrompt: 'Test prompt',
-                ownerId: userId,
-                status: 'ACTIVE',
-                uploadedFileIds: [],
-                generatedFileIds: [],
-              },
-            });
-          } else {
-            // Opération normale
-            return tx.project.create({
-              data: {
-                id: `stress-${i}`,
-                name: `Stress Test ${i}`,
-                description: 'Stress test project',
-                initialPrompt: 'Test prompt',
-                ownerId: userId,
-                status: 'ACTIVE',
-                uploadedFileIds: [],
-                generatedFileIds: [],
-              },
-            });
-          }
-        }).catch(error => {
-          // Ignorer les erreurs attendues
-          return null;
-        })
+        service
+          .withTransaction(async (tx) => {
+            // Mélanger succès et échecs
+            if (i % 4 === 0) {
+              // Opération qui échoue intentionnellement
+              await tx.project.create({
+                data: {
+                  id: 'duplicate-id', // ID dupliqué pour forcer l'échec
+                  name: `Stress Test ${i}`,
+                  description: 'Should fail',
+                  initialPrompt: 'Test prompt',
+                  ownerId: userId,
+                  status: 'ACTIVE',
+                  uploadedFileIds: [],
+                  generatedFileIds: [],
+                },
+              });
+            } else {
+              // Opération normale
+              return tx.project.create({
+                data: {
+                  id: `stress-${i}`,
+                  name: `Stress Test ${i}`,
+                  description: 'Stress test project',
+                  initialPrompt: 'Test prompt',
+                  ownerId: userId,
+                  status: 'ACTIVE',
+                  uploadedFileIds: [],
+                  generatedFileIds: [],
+                },
+              });
+            }
+          })
+          .catch((error) => {
+            // Ignorer les erreurs attendues
+            return null;
+          }),
       );
 
       const results = await Promise.allSettled(promises);
-      const successful = results.filter(r => 
-        r.status === 'fulfilled' && r.value !== null
+      const successful = results.filter(
+        (r) => r.status === 'fulfilled' && r.value !== null,
       ).length;
 
       // Au moins 70% des opérations non-dupliquées devraient réussir
@@ -625,7 +643,9 @@ describe('DatabaseService - E2E Tests', () => {
       const health = await service.isHealthy();
       expect(health).toBe(true);
 
-      console.log(`✅ Concurrent stress test: ${successful}/${concurrentOperations} operations succeeded`);
+      console.log(
+        `✅ Concurrent stress test: ${successful}/${concurrentOperations} operations succeeded`,
+      );
     });
   });
 
@@ -640,10 +660,10 @@ describe('DatabaseService - E2E Tests', () => {
       // Simuler des vagues d'utilisation typiques
       for (let batch = 0; batch < dailyOperations / batchSize; batch++) {
         const batchStart = Date.now();
-        
+
         const batchOperations = Array.from({ length: batchSize }, (_, i) => {
           const operationId = batch * batchSize + i;
-          
+
           if (operationId % 5 === 0) {
             // Health check (20%)
             return service.isHealthy();
@@ -655,41 +675,48 @@ describe('DatabaseService - E2E Tests', () => {
             });
           } else {
             // Création/modification (47%)
-            return service.project.create({
-              data: {
-                id: `daily-${operationId}`,
-                name: `Daily Project ${operationId}`,
-                description: 'Daily usage pattern',
-                initialPrompt: 'Test prompt',
-                ownerId: `user-${operationId % 10}`,
-                status: 'ACTIVE',
-                uploadedFileIds: [],
-                generatedFileIds: [],
-              },
-            }).catch(() => null); // Ignorer les erreurs de duplication
+            return service.project
+              .create({
+                data: {
+                  id: `daily-${operationId}`,
+                  name: `Daily Project ${operationId}`,
+                  description: 'Daily usage pattern',
+                  initialPrompt: 'Test prompt',
+                  ownerId: `user-${operationId % 10}`,
+                  status: 'ACTIVE',
+                  uploadedFileIds: [],
+                  generatedFileIds: [],
+                },
+              })
+              .catch(() => null); // Ignorer les erreurs de duplication
           }
         });
 
         const batchResults = await Promise.allSettled(batchOperations);
-        const batchSuccess = batchResults.filter(r => r.status === 'fulfilled').length;
+        const batchSuccess = batchResults.filter(
+          (r) => r.status === 'fulfilled',
+        ).length;
         const batchDuration = Date.now() - batchStart;
 
         results.push({ batch, success: batchSuccess, duration: batchDuration });
 
         // Pause courte entre les batches (simulation réaliste)
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
 
       // Analyser les résultats
       const totalSuccess = results.reduce((sum, r) => sum + r.success, 0);
-      const avgDuration = results.reduce((sum, r) => sum + r.duration, 0) / results.length;
-      const maxDuration = Math.max(...results.map(r => r.duration));
+      const avgDuration =
+        results.reduce((sum, r) => sum + r.duration, 0) / results.length;
+      const maxDuration = Math.max(...results.map((r) => r.duration));
 
       expect(totalSuccess).toBeGreaterThan(dailyOperations * 0.8); // 80% de succès
       expect(avgDuration).toBeLessThan(2000); // Moins de 2s par batch en moyenne
       expect(maxDuration).toBeLessThan(5000); // Moins de 5s pour le batch le plus lent
 
-      console.log(`✅ Daily usage pattern: ${totalSuccess}/${dailyOperations} operations, avg ${avgDuration.toFixed(0)}ms/batch`);
+      console.log(
+        `✅ Daily usage pattern: ${totalSuccess}/${dailyOperations} operations, avg ${avgDuration.toFixed(0)}ms/batch`,
+      );
     }, 30000);
 
     it('should handle peak traffic simulation', async () => {
@@ -702,28 +729,30 @@ describe('DatabaseService - E2E Tests', () => {
 
       let operationId = 0;
       while (Date.now() - startTime < peakDuration) {
-        const operation = service.project.create({
-          data: {
-            id: `peak-${operationId}-${Date.now()}`,
-            name: `Peak Project ${operationId}`,
-            description: 'Peak traffic simulation',
-            initialPrompt: 'Test prompt',
-            ownerId: `peak-user-${operationId % 5}`,
-            status: 'ACTIVE',
-            uploadedFileIds: [],
-            generatedFileIds: [],
-          },
-        }).catch(() => null);
+        const operation = service.project
+          .create({
+            data: {
+              id: `peak-${operationId}-${Date.now()}`,
+              name: `Peak Project ${operationId}`,
+              description: 'Peak traffic simulation',
+              initialPrompt: 'Test prompt',
+              ownerId: `peak-user-${operationId % 5}`,
+              status: 'ACTIVE',
+              uploadedFileIds: [],
+              generatedFileIds: [],
+            },
+          })
+          .catch(() => null);
 
         operations.push(operation);
         operationId++;
 
-        await new Promise(resolve => setTimeout(resolve, requestInterval));
+        await new Promise((resolve) => setTimeout(resolve, requestInterval));
       }
 
       const results = await Promise.allSettled(operations);
-      const successful = results.filter(r => 
-        r.status === 'fulfilled' && r.value !== null
+      const successful = results.filter(
+        (r) => r.status === 'fulfilled' && r.value !== null,
       ).length;
       const successRate = (successful / operations.length) * 100;
 
@@ -733,7 +762,9 @@ describe('DatabaseService - E2E Tests', () => {
       const health = await service.isHealthy();
       expect(health).toBe(true);
 
-      console.log(`✅ Peak traffic simulation: ${successful}/${operations.length} (${successRate.toFixed(1)}%) operations succeeded`);
+      console.log(
+        `✅ Peak traffic simulation: ${successful}/${operations.length} (${successRate.toFixed(1)}%) operations succeeded`,
+      );
     }, 15000);
   });
 });

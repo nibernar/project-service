@@ -1,11 +1,11 @@
 /**
  * ProjectModule - Module principal pour la gestion des projets
- * 
+ *
  * @fileoverview Module principal pour la gestion des projets utilisateurs
  * @version 1.0.0
  * @since 2025-01-28
  * @author Coders Team
- * 
+ *
  * @example
  * ```typescript
  * // Utilisation dans un autre module
@@ -28,7 +28,7 @@ import { ProjectRepository } from './project.repository';
 
 /**
  * Module principal pour la gestion des projets
- * 
+ *
  * @public
  */
 @Module({
@@ -37,19 +37,19 @@ import { ProjectRepository } from './project.repository';
     // Fournit : DatabaseService (client Prisma configuré)
     // Inclut : Connection pooling, health checks, migrations
     DatabaseModule,
-    
+
     // Module global pour le cache Redis haute performance
     // Fournit : CacheService (client Redis typé)
     // Inclut : Sérialisation JSON, TTL, invalidation
     CacheModule,
-    
+
     // Module pour la publication d'événements métier
     // Phase 3 : Service stub avec logging
     // Phase 6 : HTTP client + Message queue + Retry logic
     // Fournit : EventsService
     EventsModule,
   ],
-  
+
   // Contrôleurs REST pour l'API publique
   controllers: [
     // API REST complète pour la gestion des projets
@@ -58,27 +58,27 @@ import { ProjectRepository } from './project.repository';
     // Validation : DTOs avec class-validator
     ProjectController,
   ],
-  
+
   // Services et providers du domaine Project
   providers: [
     // Service principal encapsulant la logique métier
     // Orchestration : Repository + Cache + Events
     // Scope : Singleton (performances optimisées)
     ProjectService,
-    
+
     // Repository pour l'accès aux données
-    // Abstraction : Découplage Prisma/métier  
+    // Abstraction : Découplage Prisma/métier
     // Responsabilité : Requêtes et transactions
     ProjectRepository,
   ],
-  
+
   // Services exposés aux autres modules
   exports: [
     // Service principal - API publique du domaine
     // Utilisé par : StatisticsModule, ExportModule, API Gateway
     // Interface stable pour évolution future
     ProjectService,
-    
+
     // Repository - Pour tests d'intégration avancés
     // Accès direct aux données si nécessaire
     // Utilisation : Tests, migrations, administration
@@ -88,16 +88,15 @@ import { ProjectRepository } from './project.repository';
 export class ProjectModule {
   /**
    * Hook de cycle de vie pour validation du module
-   * 
+   *
    * Vérifie que toutes les dépendances sont correctement injectées
    * et que les configurations sont cohérentes.
-   * 
+   *
    * @private
    */
   constructor() {
     // Note: Les validations spécifiques sont déléguées aux services
     // Le module se contente d'orchestrer l'injection de dépendances
-    
     // Future enhancement (Phase 4+):
     // - Validation des configurations inter-modules
     // - Enregistrement des métriques de démarrage
@@ -107,7 +106,7 @@ export class ProjectModule {
 
 /**
  * Types exportés pour utilisation externe
- * 
+ *
  * Ces types permettent aux autres modules d'interagir
  * avec le ProjectModule sans couplage fort.
  */
@@ -148,7 +147,7 @@ export type {
 
 /**
  * Configuration par défaut du module
- * 
+ *
  * Ces constantes définissent le comportement par défaut
  * du ProjectModule et peuvent être surchargées via
  * les variables d'environnement.
@@ -157,20 +156,20 @@ export const PROJECT_MODULE_CONFIG = {
   // Cache configuration
   CACHE_TTL_SECONDS: 300, // 5 minutes
   CACHE_KEY_PREFIX: 'project:',
-  
+
   // Pagination par défaut
   DEFAULT_PAGE_SIZE: 10,
   MAX_PAGE_SIZE: 100,
-  
+
   // Validation des projets
   MAX_PROJECT_NAME_LENGTH: 100,
   MAX_DESCRIPTION_LENGTH: 1000,
   MAX_PROMPT_LENGTH: 5000,
-  
+
   // Événements
   EVENT_TIMEOUT_MS: 5000,
   MAX_RETRY_ATTEMPTS: 3,
-  
+
   // Performance
   SLOW_QUERY_THRESHOLD_MS: 1000,
   CACHE_WARMING_ENABLED: false, // Phase 4+
@@ -178,7 +177,7 @@ export const PROJECT_MODULE_CONFIG = {
 
 /**
  * Métadonnées du module pour introspection
- * 
+ *
  * Ces informations peuvent être utilisées par les outils
  * de monitoring et d'administration.
  */
@@ -187,21 +186,13 @@ export const PROJECT_MODULE_METADATA = {
   version: '1.0.0',
   domain: 'Project Management',
   phase: 3,
-  
+
   // Dépendances requises
-  dependencies: [
-    'DatabaseModule',
-    'CacheModule', 
-    'EventsModule',
-  ],
-  
+  dependencies: ['DatabaseModule', 'CacheModule', 'EventsModule'],
+
   // Services fournis
-  provides: [
-    'ProjectService',
-    'ProjectRepository',
-    'ProjectController',
-  ],
-  
+  provides: ['ProjectService', 'ProjectRepository', 'ProjectController'],
+
   // API exposée
   endpoints: [
     'POST /projects',
@@ -211,28 +202,28 @@ export const PROJECT_MODULE_METADATA = {
     'PUT /projects/:id/archive',
     'DELETE /projects/:id',
   ],
-  
+
   // Événements publiés
   events: [
     'project.created',
-    'project.updated', 
+    'project.updated',
     'project.archived',
     'project.deleted',
   ],
-  
+
   // Métriques exposées
   metrics: [
     'project_operations_total',
     'project_cache_hits_total',
-    'project_cache_misses_total', 
+    'project_cache_misses_total',
     'project_events_published_total',
     'project_response_time_seconds',
   ],
-  
+
   // Prêt pour évolution
   evolutionReadiness: {
     phase4: 'StatisticsModule integration ready',
-    phase5: 'ExportModule integration ready', 
+    phase5: 'ExportModule integration ready',
     phase6: 'Full EventsModule ready',
   },
 } as const;

@@ -1,10 +1,10 @@
 /**
  * Service Project - Logique métier principale du Service de Gestion des Projets (C04)
- * 
+ *
  * Ce service orchestre toutes les opérations métier sur les projets utilisateurs,
  * en coordonnant l'accès aux données, la gestion du cache, les événements métier
  * et les transformations entre entités et DTOs.
- * 
+ *
  * RESPONSABILITÉS PRINCIPALES :
  * - CRUD complet avec validation métier
  * - Gestion des permissions et de l'ownership
@@ -12,36 +12,71 @@
  * - Publication d'événements vers l'orchestrateur
  * - Transformation entre entités domain et DTOs API
  * - Gestion centralisée des erreurs métier
- * 
+ *
  * ARCHITECTURE :
  * - Repository Pattern pour l'accès aux données
  * - Cache-aside Pattern pour les performances
  * - Event-driven Pattern pour la communication inter-services
  * - DTO Pattern pour l'isolation des couches
- * 
+ *
  * SÉCURITÉ :
  * - Validation stricte des permissions (ownership)
  * - Sanitisation des entrées utilisateur
  * - Audit trail des opérations sensibles
  * - Protection contre les attaques par déni de service
- * 
+ *
  * @fileoverview Service métier principal pour la gestion des projets
  * @version 1.0.0
  * @since 2025-01-28
  */
 
-import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException, ConflictException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-import { ProjectRepository, ProjectFilters, ProjectQueryOptions, GeneratedFilesUpdate, ProjectNotFoundError, ProjectOwnershipError, ProjectConstraintError, ProjectOptimisticLockError } from './project.repository';
+import {
+  ProjectRepository,
+  ProjectFilters,
+  ProjectQueryOptions,
+  GeneratedFilesUpdate,
+  ProjectNotFoundError,
+  ProjectOwnershipError,
+  ProjectConstraintError,
+  ProjectOptimisticLockError,
+} from './project.repository';
 import { CacheService } from '../cache/cache.service';
-import { EventsService, ProjectCreatedEventDto, ProjectUpdatedEventDto, ProjectArchivedEventDto, ProjectDeletedEventDto, ProjectFilesUpdatedEventDto } from '../events/events.service';
-import { ProjectEntity, CreateProjectData, UpdateProjectData } from './entities/project.entity';
+import {
+  EventsService,
+  ProjectCreatedEventDto,
+  ProjectUpdatedEventDto,
+  ProjectArchivedEventDto,
+  ProjectDeletedEventDto,
+  ProjectFilesUpdatedEventDto,
+} from '../events/events.service';
+import {
+  ProjectEntity,
+  CreateProjectData,
+  UpdateProjectData,
+} from './entities/project.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { ProjectResponseDto, StatisticsResponseDto } from './dto/project-response.dto';
+import {
+  ProjectResponseDto,
+  StatisticsResponseDto,
+} from './dto/project-response.dto';
 import { ProjectListItemDto } from './dto/project-list.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
-import { PaginatedResult, createPaginatedResult, createEmptyPaginatedResult } from '../common/interfaces/paginated-result.interface';
+import {
+  PaginatedResult,
+  createPaginatedResult,
+  createEmptyPaginatedResult,
+} from '../common/interfaces/paginated-result.interface';
 import { User } from '../common/interfaces/user.interface';
 import { ProjectStatus } from '../common/enums/project-status.enum';
 
@@ -61,7 +96,7 @@ export interface ProjectSearchOptions extends ProjectFilters {
 
 /**
  * Service métier principal pour la gestion des projets
- * 
+ *
  * Coordonne toutes les opérations métier et assure la cohérence
  * des données à travers les différentes couches de l'application.
  */
@@ -72,17 +107,21 @@ export class ProjectService {
   // Clés de cache standardisées
   private readonly CACHE_KEYS = {
     PROJECT: (id: string) => `project:${id}`,
-    PROJECT_LIST: (userId: string, page: number, limit: number, filtersHash: string) => 
-      `projects:${userId}:${page}:${limit}:${filtersHash}`,
-    USER_PROJECTS_COUNT: (userId: string, filtersHash: string) => 
+    PROJECT_LIST: (
+      userId: string,
+      page: number,
+      limit: number,
+      filtersHash: string,
+    ) => `projects:${userId}:${page}:${limit}:${filtersHash}`,
+    USER_PROJECTS_COUNT: (userId: string, filtersHash: string) =>
       `count:projects:${userId}:${filtersHash}`,
   };
 
   // TTL pour les différents types de cache (en secondes)
   private readonly CACHE_TTL = {
-    PROJECT: 300,           // 5 minutes
-    PROJECT_LIST: 60,       // 1 minute  
-    PROJECT_COUNT: 600,     // 10 minutes
+    PROJECT: 300, // 5 minutes
+    PROJECT_LIST: 60, // 1 minute
+    PROJECT_COUNT: 600, // 10 minutes
   };
 
   constructor(
@@ -97,7 +136,7 @@ export class ProjectService {
 
   /**
    * Crée un nouveau projet et déclenche le workflow de génération
-   * 
+   *
    * @param createDto Données de création du projet
    * @param ownerId ID du propriétaire authentifié
    * @returns Projet créé avec toutes les métadonnées
@@ -105,7 +144,10 @@ export class ProjectService {
    * @throws ConflictException si le nom existe déjà (optionnel)
    * @throws InternalServerErrorException en cas d'erreur technique
    */
-  async create(createDto: CreateProjectDto, ownerId: string): Promise<ProjectResponseDto> {
+  async create(
+    createDto: CreateProjectDto,
+    ownerId: string,
+  ): Promise<ProjectResponseDto> {
     this.logger.log(`Creating project for user ${ownerId}`, {
       operation: 'create',
       ownerId,
@@ -127,7 +169,10 @@ export class ProjectService {
       };
 
       // 3. Création via repository avec transaction
-      const createdProject = await this.projectRepository.create(createData, ownerId);
+      const createdProject = await this.projectRepository.create(
+        createData,
+        ownerId,
+      );
 
       // 4. Invalidation du cache des listes utilisateur
       await this.invalidateUserCaches(ownerId);
@@ -145,7 +190,6 @@ export class ProjectService {
 
       // 7. Transformation en DTO de réponse
       return this.transformToResponseDto(createdProject);
-
     } catch (error) {
       this.logger.error(`Failed to create project for user ${ownerId}`, error);
       throw this.handleServiceError(error, 'create');
@@ -154,7 +198,7 @@ export class ProjectService {
 
   /**
    * Récupère un projet spécifique avec vérification des droits
-   * 
+   *
    * @param id UUID du projet
    * @param ownerId ID du propriétaire pour vérification
    * @returns Projet avec statistiques si disponibles
@@ -180,7 +224,7 @@ export class ProjectService {
       if (!project) {
         // 3. Cache miss - récupération depuis la base avec statistiques
         project = await this.projectRepository.findById(id, true);
-        
+
         if (!project) {
           throw new ProjectNotFoundError(id);
         }
@@ -202,16 +246,18 @@ export class ProjectService {
 
       // 7. Transformation en DTO de réponse
       return this.transformToResponseDto(project);
-
     } catch (error) {
-      this.logger.error(`Failed to find project ${id} for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to find project ${id} for user ${ownerId}`,
+        error,
+      );
       throw this.handleServiceError(error, 'findOne');
     }
   }
 
   /**
    * Liste les projets d'un utilisateur avec pagination et filtres
-   * 
+   *
    * @param ownerId ID du propriétaire
    * @param pagination Paramètres de pagination
    * @param filters Filtres optionnels à appliquer
@@ -247,7 +293,10 @@ export class ProjectService {
       );
 
       // 4. Tentative de récupération depuis le cache
-      let result = await this.cacheService.get<PaginatedResult<ProjectListItemDto>>(cacheKey);
+      let result =
+        await this.cacheService.get<PaginatedResult<ProjectListItemDto>>(
+          cacheKey,
+        );
 
       if (!result) {
         // 5. Cache miss - récupération depuis la base
@@ -268,7 +317,9 @@ export class ProjectService {
         );
 
         // 6. Transformation en DTOs de liste optimisés
-        const listItems = projects.data.map(project => this.transformToListItemDto(project));
+        const listItems = projects.data.map((project) =>
+          this.transformToListItemDto(project),
+        );
 
         // 7. Construction du résultat paginé
         result = createPaginatedResult(
@@ -279,7 +330,11 @@ export class ProjectService {
         );
 
         // 8. Mise en cache du résultat
-        await this.cacheService.set(cacheKey, result, this.CACHE_TTL.PROJECT_LIST);
+        await this.cacheService.set(
+          cacheKey,
+          result,
+          this.CACHE_TTL.PROJECT_LIST,
+        );
       }
 
       // 9. Logging de la consultation
@@ -292,7 +347,6 @@ export class ProjectService {
       });
 
       return result;
-
     } catch (error) {
       this.logger.error(`Failed to find projects for user ${ownerId}`, error);
       throw this.handleServiceError(error, 'findAll');
@@ -301,7 +355,7 @@ export class ProjectService {
 
   /**
    * Met à jour les métadonnées d'un projet
-   * 
+   *
    * @param id UUID du projet
    * @param updateDto Données de mise à jour partielles
    * @param ownerId ID du propriétaire pour vérification
@@ -310,7 +364,11 @@ export class ProjectService {
    * @throws ForbiddenException si accès non autorisé
    * @throws BadRequestException si les données sont invalides
    */
-  async update(id: string, updateDto: UpdateProjectDto, ownerId: string): Promise<ProjectResponseDto> {
+  async update(
+    id: string,
+    updateDto: UpdateProjectDto,
+    ownerId: string,
+  ): Promise<ProjectResponseDto> {
     this.logger.log(`Updating project ${id} for user ${ownerId}`, {
       operation: 'update',
       projectId: id,
@@ -343,7 +401,10 @@ export class ProjectService {
       const updateData: UpdateProjectData = updateDto.getDefinedFields();
 
       // 5. Mise à jour via repository
-      const updatedProject = await this.projectRepository.update(id, updateData);
+      const updatedProject = await this.projectRepository.update(
+        id,
+        updateData,
+      );
 
       // 6. Invalidation du cache
       await this.invalidateProjectCache(id, ownerId);
@@ -361,16 +422,18 @@ export class ProjectService {
 
       // 9. Transformation en DTO de réponse
       return this.transformToResponseDto(updatedProject);
-
     } catch (error) {
-      this.logger.error(`Failed to update project ${id} for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to update project ${id} for user ${ownerId}`,
+        error,
+      );
       throw this.handleServiceError(error, 'update');
     }
   }
 
   /**
    * Archive un projet (changement d'état vers ARCHIVED)
-   * 
+   *
    * @param id UUID du projet
    * @param ownerId ID du propriétaire
    * @throws NotFoundException si le projet n'existe pas
@@ -399,11 +462,15 @@ export class ProjectService {
 
       // 3. Validation de la transition d'état
       if (!project.canTransitionTo(ProjectStatus.ARCHIVED)) {
-        throw new ConflictException(`Cannot archive project in status: ${project.status}`);
+        throw new ConflictException(
+          `Cannot archive project in status: ${project.status}`,
+        );
       }
 
       // 4. Mise à jour du statut via repository
-      await this.projectRepository.update(id, { status: ProjectStatus.ARCHIVED });
+      await this.projectRepository.update(id, {
+        status: ProjectStatus.ARCHIVED,
+      });
 
       // 5. Invalidation du cache
       await this.invalidateProjectCache(id, ownerId);
@@ -418,16 +485,18 @@ export class ProjectService {
         ownerId,
         previousStatus: project.status,
       });
-
     } catch (error) {
-      this.logger.error(`Failed to archive project ${id} for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to archive project ${id} for user ${ownerId}`,
+        error,
+      );
       throw this.handleServiceError(error, 'archive');
     }
   }
 
   /**
    * Supprime logiquement un projet (soft delete)
-   * 
+   *
    * @param id UUID du projet
    * @param ownerId ID du propriétaire
    * @throws NotFoundException si le projet n'existe pas
@@ -469,23 +538,29 @@ export class ProjectService {
         ownerId,
         previousStatus: project.status,
       });
-
     } catch (error) {
-      this.logger.error(`Failed to delete project ${id} for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to delete project ${id} for user ${ownerId}`,
+        error,
+      );
       throw this.handleServiceError(error, 'delete');
     }
   }
 
   /**
    * Met à jour les références de fichiers générés (appelé par l'orchestrateur)
-   * 
+   *
    * @param id UUID du projet
    * @param fileIds Liste des nouveaux IDs de fichiers générés
    * @param mode Mode de mise à jour ('append' ou 'replace')
    * @throws NotFoundException si le projet n'existe pas
    * @throws BadRequestException si les IDs de fichiers sont invalides
    */
-  async updateGeneratedFiles(id: string, fileIds: string[], mode: 'append' | 'replace' = 'append'): Promise<void> {
+  async updateGeneratedFiles(
+    id: string,
+    fileIds: string[],
+    mode: 'append' | 'replace' = 'append',
+  ): Promise<void> {
     this.logger.log(`Updating generated files for project ${id}`, {
       operation: 'updateGeneratedFiles',
       projectId: id,
@@ -521,9 +596,11 @@ export class ProjectService {
         newFileCount: fileIds.length,
         mode,
       });
-
     } catch (error) {
-      this.logger.error(`Failed to update generated files for project ${id}`, error);
+      this.logger.error(
+        `Failed to update generated files for project ${id}`,
+        error,
+      );
       throw this.handleServiceError(error, 'updateGeneratedFiles');
     }
   }
@@ -535,7 +612,10 @@ export class ProjectService {
   /**
    * Valide les données de création d'un projet
    */
-  private async validateCreateData(createDto: CreateProjectDto, ownerId: string): Promise<void> {
+  private async validateCreateData(
+    createDto: CreateProjectDto,
+    ownerId: string,
+  ): Promise<void> {
     // Validation de base via DTO déjà effectuée par les décorateurs class-validator
 
     // Validation métier supplémentaire
@@ -547,16 +627,24 @@ export class ProjectService {
     this.validateUUID(ownerId, 'Owner ID');
 
     // Validation de l'unicité du nom par utilisateur
-    const existingProject = await this.projectRepository.findByNameAndOwner(createDto.name, ownerId);
+    const existingProject = await this.projectRepository.findByNameAndOwner(
+      createDto.name,
+      ownerId,
+    );
     if (existingProject) {
-      throw new ConflictException(`A project with the name "${createDto.name}" already exists`);
+      throw new ConflictException(
+        `A project with the name "${createDto.name}" already exists`,
+      );
     }
   }
 
   /**
    * Valide les données de mise à jour d'un projet
    */
-  private async validateUpdateData(updateDto: UpdateProjectDto, existingProject: ProjectEntity): Promise<void> {
+  private async validateUpdateData(
+    updateDto: UpdateProjectDto,
+    existingProject: ProjectEntity,
+  ): Promise<void> {
     // Validation de base via DTO déjà effectuée par les décorateurs class-validator
 
     // Validation métier supplémentaire
@@ -566,7 +654,9 @@ export class ProjectService {
 
     // Validation que le projet peut être modifié
     if (!existingProject.isModifiable()) {
-      throw new ConflictException(`Project cannot be modified in status: ${existingProject.status}`);
+      throw new ConflictException(
+        `Project cannot be modified in status: ${existingProject.status}`,
+      );
     }
   }
 
@@ -575,7 +665,9 @@ export class ProjectService {
    */
   private checkProjectOwnership(project: ProjectEntity, ownerId: string): void {
     if (!project.belongsToUserId(ownerId)) {
-      throw new ForbiddenException('You do not have permission to access this project');
+      throw new ForbiddenException(
+        'You do not have permission to access this project',
+      );
     }
   }
 
@@ -583,8 +675,9 @@ export class ProjectService {
    * Valide qu'une chaîne est un UUID valide
    */
   private validateUUID(value: string, fieldName: string): void {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
     if (!value || typeof value !== 'string' || !uuidRegex.test(value)) {
       throw new BadRequestException(`${fieldName} must be a valid UUID`);
     }
@@ -602,7 +695,9 @@ export class ProjectService {
       try {
         this.validateUUID(fileId, `File ID at index ${index}`);
       } catch (error) {
-        throw new BadRequestException(`Invalid file ID at index ${index}: ${fileId}`);
+        throw new BadRequestException(
+          `Invalid file ID at index ${index}: ${fileId}`,
+        );
       }
     });
   }
@@ -610,7 +705,10 @@ export class ProjectService {
   /**
    * Normalise les paramètres de pagination
    */
-  private normalizePagination(pagination: PaginationDto): { page: number; limit: number } {
+  private normalizePagination(pagination: PaginationDto): {
+    page: number;
+    limit: number;
+  } {
     return {
       page: Math.max(1, Math.floor(pagination.page || 1)),
       limit: Math.max(1, Math.min(100, Math.floor(pagination.limit || 10))),
@@ -620,7 +718,9 @@ export class ProjectService {
   /**
    * Convertit les filtres de recherche en filtres repository
    */
-  private convertToRepositoryFilters(filters?: ProjectSearchOptions): ProjectFilters | undefined {
+  private convertToRepositoryFilters(
+    filters?: ProjectSearchOptions,
+  ): ProjectFilters | undefined {
     if (!filters) return undefined;
 
     return {
@@ -672,7 +772,9 @@ export class ProjectService {
       generatedFileIds: [...project.generatedFileIds],
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
-      statistics: project.statistics ? this.transformStatisticsData(project.statistics) : undefined,
+      statistics: project.statistics
+        ? this.transformStatisticsData(project.statistics)
+        : undefined,
     });
 
     return dto;
@@ -694,7 +796,9 @@ export class ProjectService {
       uploadedFilesCount: fileCount.uploaded,
       generatedFilesCount: fileCount.generated,
       hasStatistics: project.hasStatistics(),
-      totalCost: project.statistics?.costs ? (project.statistics.costs as any).total : undefined,
+      totalCost: project.statistics?.costs
+        ? (project.statistics.costs as any).total
+        : undefined,
     });
 
     return dto;
@@ -705,9 +809,22 @@ export class ProjectService {
    */
   private transformStatisticsData(statistics: any): StatisticsResponseDto {
     return plainToInstance(StatisticsResponseDto, {
-      costs: statistics.costs || { claudeApi: 0, storage: 0, compute: 0, total: 0 },
-      performance: statistics.performance || { generationTime: 0, processingTime: 0, totalTime: 0 },
-      usage: statistics.usage || { documentsGenerated: 0, filesProcessed: 0, tokensUsed: 0 },
+      costs: statistics.costs || {
+        claudeApi: 0,
+        storage: 0,
+        compute: 0,
+        total: 0,
+      },
+      performance: statistics.performance || {
+        generationTime: 0,
+        processingTime: 0,
+        totalTime: 0,
+      },
+      usage: statistics.usage || {
+        documentsGenerated: 0,
+        filesProcessed: 0,
+        tokensUsed: 0,
+      },
       lastUpdated: statistics.lastUpdated || new Date(),
     });
   }
@@ -719,7 +836,10 @@ export class ProjectService {
   /**
    * Invalide le cache d'un projet spécifique et ses listes associées
    */
-  private async invalidateProjectCache(projectId: string, ownerId: string): Promise<void> {
+  private async invalidateProjectCache(
+    projectId: string,
+    ownerId: string,
+  ): Promise<void> {
     try {
       // Invalidation du projet individuel
       const projectKey = this.CACHE_KEYS.PROJECT(projectId);
@@ -735,7 +855,10 @@ export class ProjectService {
       });
     } catch (error) {
       // Log l'erreur mais ne pas faire échouer l'opération principale
-      this.logger.warn(`Failed to invalidate cache for project ${projectId}`, error);
+      this.logger.warn(
+        `Failed to invalidate cache for project ${projectId}`,
+        error,
+      );
     }
   }
 
@@ -752,7 +875,10 @@ export class ProjectService {
       });
     } catch (error) {
       // Log l'erreur mais ne pas faire échouer l'opération principale
-      this.logger.warn(`Failed to invalidate user caches for ${ownerId}`, error);
+      this.logger.warn(
+        `Failed to invalidate user caches for ${ownerId}`,
+        error,
+      );
     }
   }
 
@@ -763,7 +889,9 @@ export class ProjectService {
   /**
    * Publie l'événement de création de projet
    */
-  private async publishProjectCreatedEvent(project: ProjectEntity): Promise<void> {
+  private async publishProjectCreatedEvent(
+    project: ProjectEntity,
+  ): Promise<void> {
     try {
       const event: ProjectCreatedEventDto = {
         projectId: project.id,
@@ -786,14 +914,20 @@ export class ProjectService {
       });
     } catch (error) {
       // Log l'erreur mais ne pas faire échouer l'opération principale
-      this.logger.warn(`Failed to publish project created event for ${project.id}`, error);
+      this.logger.warn(
+        `Failed to publish project created event for ${project.id}`,
+        error,
+      );
     }
   }
 
   /**
    * Publie l'événement de mise à jour de projet
    */
-  private async publishProjectUpdatedEvent(project: ProjectEntity, changes: UpdateProjectData): Promise<void> {
+  private async publishProjectUpdatedEvent(
+    project: ProjectEntity,
+    changes: UpdateProjectData,
+  ): Promise<void> {
     try {
       const event: ProjectUpdatedEventDto = {
         projectId: project.id,
@@ -811,14 +945,19 @@ export class ProjectService {
         eventType: 'project.updated',
       });
     } catch (error) {
-      this.logger.warn(`Failed to publish project updated event for ${project.id}`, error);
+      this.logger.warn(
+        `Failed to publish project updated event for ${project.id}`,
+        error,
+      );
     }
   }
 
   /**
    * Publie l'événement d'archivage de projet
    */
-  private async publishProjectArchivedEvent(project: ProjectEntity): Promise<void> {
+  private async publishProjectArchivedEvent(
+    project: ProjectEntity,
+  ): Promise<void> {
     try {
       const event: ProjectArchivedEventDto = {
         projectId: project.id,
@@ -835,14 +974,19 @@ export class ProjectService {
         eventType: 'project.archived',
       });
     } catch (error) {
-      this.logger.warn(`Failed to publish project archived event for ${project.id}`, error);
+      this.logger.warn(
+        `Failed to publish project archived event for ${project.id}`,
+        error,
+      );
     }
   }
 
   /**
    * Publie l'événement de suppression de projet
    */
-  private async publishProjectDeletedEvent(project: ProjectEntity): Promise<void> {
+  private async publishProjectDeletedEvent(
+    project: ProjectEntity,
+  ): Promise<void> {
     try {
       const event: ProjectDeletedEventDto = {
         projectId: project.id,
@@ -861,23 +1005,33 @@ export class ProjectService {
         eventType: 'project.deleted',
       });
     } catch (error) {
-      this.logger.warn(`Failed to publish project deleted event for ${project.id}`, error);
+      this.logger.warn(
+        `Failed to publish project deleted event for ${project.id}`,
+        error,
+      );
     }
   }
 
   /**
    * Publie l'événement de mise à jour des fichiers générés
    */
-  private async publishProjectFilesUpdatedEvent(project: ProjectEntity, fileIds: string[], mode: string): Promise<void> {
+  private async publishProjectFilesUpdatedEvent(
+    project: ProjectEntity,
+    fileIds: string[],
+    mode: string,
+  ): Promise<void> {
     try {
       const event: ProjectFilesUpdatedEventDto = {
         projectId: project.id,
         ownerId: project.ownerId,
         newFileIds: fileIds,
         updateMode: mode,
-        totalGeneratedFiles: mode === 'append' 
-          ? project.generatedFileIds.length + fileIds.filter(id => !project.generatedFileIds.includes(id)).length
-          : fileIds.length,
+        totalGeneratedFiles:
+          mode === 'append'
+            ? project.generatedFileIds.length +
+              fileIds.filter((id) => !project.generatedFileIds.includes(id))
+                .length
+            : fileIds.length,
         updatedAt: new Date(),
       };
 
@@ -889,7 +1043,10 @@ export class ProjectService {
         eventType: 'project.files.updated',
       });
     } catch (error) {
-      this.logger.warn(`Failed to publish project files updated event for ${project.id}`, error);
+      this.logger.warn(
+        `Failed to publish project files updated event for ${project.id}`,
+        error,
+      );
     }
   }
 
@@ -902,11 +1059,13 @@ export class ProjectService {
    */
   private handleServiceError(error: any, operation: string): Error {
     // Si c'est déjà une erreur HTTP NestJS, la retourner telle quelle
-    if (error instanceof NotFoundException ||
-        error instanceof ForbiddenException ||
-        error instanceof BadRequestException ||
-        error instanceof ConflictException ||
-        error instanceof InternalServerErrorException) {
+    if (
+      error instanceof NotFoundException ||
+      error instanceof ForbiddenException ||
+      error instanceof BadRequestException ||
+      error instanceof ConflictException ||
+      error instanceof InternalServerErrorException
+    ) {
       return error;
     }
 
@@ -928,13 +1087,17 @@ export class ProjectService {
     }
 
     // Erreur générique avec contexte sanitisé
-    const sanitizedMessage = this.sanitizeErrorMessage(error.message || 'Unknown error occurred');
+    const sanitizedMessage = this.sanitizeErrorMessage(
+      error.message || 'Unknown error occurred',
+    );
     this.logger.error(`Unhandled error in operation ${operation}`, {
       operation,
       error: error.stack || error.message,
     });
 
-    return new InternalServerErrorException(`Operation failed: ${sanitizedMessage}`);
+    return new InternalServerErrorException(
+      `Operation failed: ${sanitizedMessage}`,
+    );
   }
 
   /**
@@ -951,7 +1114,7 @@ export class ProjectService {
     ];
 
     let sanitized = message;
-    sensitivePatterns.forEach(pattern => {
+    sensitivePatterns.forEach((pattern) => {
       sanitized = sanitized.replace(pattern, '***');
     });
 
@@ -964,18 +1127,23 @@ export class ProjectService {
 
   /**
    * Compte les projets d'un utilisateur avec filtres optionnels
-   * 
+   *
    * @param ownerId ID du propriétaire
    * @param filters Filtres optionnels
    * @returns Nombre de projets correspondants
    */
-  async countProjects(ownerId: string, filters?: ProjectSearchOptions): Promise<number> {
+  async countProjects(
+    ownerId: string,
+    filters?: ProjectSearchOptions,
+  ): Promise<number> {
     try {
       this.validateUUID(ownerId, 'Owner ID');
 
       const repositoryFilters = this.convertToRepositoryFilters(filters);
-      return await this.projectRepository.countByOwner(ownerId, repositoryFilters);
-
+      return await this.projectRepository.countByOwner(
+        ownerId,
+        repositoryFilters,
+      );
     } catch (error) {
       this.logger.error(`Failed to count projects for user ${ownerId}`, error);
       throw this.handleServiceError(error, 'countProjects');
@@ -984,7 +1152,7 @@ export class ProjectService {
 
   /**
    * Récupère les projets actifs d'un utilisateur
-   * 
+   *
    * @param ownerId ID du propriétaire
    * @returns Liste des projets actifs
    */
@@ -993,37 +1161,47 @@ export class ProjectService {
       this.validateUUID(ownerId, 'Owner ID');
 
       const projects = await this.projectRepository.findActiveByOwner(ownerId);
-      return projects.map(project => this.transformToListItemDto(project));
-
+      return projects.map((project) => this.transformToListItemDto(project));
     } catch (error) {
-      this.logger.error(`Failed to find active projects for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to find active projects for user ${ownerId}`,
+        error,
+      );
       throw this.handleServiceError(error, 'findActiveProjects');
     }
   }
 
   /**
    * Récupère les projets récents d'un utilisateur
-   * 
+   *
    * @param ownerId ID du propriétaire
    * @param days Nombre de jours pour définir "récent" (défaut: 7)
    * @returns Liste des projets récents
    */
-  async findRecentProjects(ownerId: string, days: number = 7): Promise<ProjectListItemDto[]> {
+  async findRecentProjects(
+    ownerId: string,
+    days: number = 7,
+  ): Promise<ProjectListItemDto[]> {
     try {
       this.validateUUID(ownerId, 'Owner ID');
 
-      const projects = await this.projectRepository.findRecentByOwner(ownerId, days);
-      return projects.map(project => this.transformToListItemDto(project));
-
+      const projects = await this.projectRepository.findRecentByOwner(
+        ownerId,
+        days,
+      );
+      return projects.map((project) => this.transformToListItemDto(project));
     } catch (error) {
-      this.logger.error(`Failed to find recent projects for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to find recent projects for user ${ownerId}`,
+        error,
+      );
       throw this.handleServiceError(error, 'findRecentProjects');
     }
   }
 
   /**
    * Vérifie si un projet existe pour un utilisateur donné
-   * 
+   *
    * @param id UUID du projet
    * @param ownerId ID du propriétaire
    * @returns true si le projet existe et appartient à l'utilisateur
@@ -1034,9 +1212,11 @@ export class ProjectService {
       this.validateUUID(ownerId, 'Owner ID');
 
       return await this.projectRepository.existsForOwner(id, ownerId);
-
     } catch (error) {
-      this.logger.error(`Failed to check project existence ${id} for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to check project existence ${id} for user ${ownerId}`,
+        error,
+      );
       return false;
     }
   }

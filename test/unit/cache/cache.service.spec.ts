@@ -7,7 +7,8 @@ import { CACHE_KEYS, CACHE_TTL } from '../../../src/config/cache.config';
 import Redis from 'ioredis';
 
 // Token exact utilisé par @nestjs-modules/ioredis
-const DEFAULT_IOREDIS_MODULE_CONNECTION_TOKEN = 'default_IORedisModuleConnectionToken';
+const DEFAULT_IOREDIS_MODULE_CONNECTION_TOKEN =
+  'default_IORedisModuleConnectionToken';
 
 describe('CacheService', () => {
   let service: CacheService;
@@ -87,16 +88,16 @@ describe('CacheService', () => {
       mockRedis.get.mockResolvedValue('invalid-json-string');
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       const result = await service.get(testKey);
 
       expect(mockRedis.get).toHaveBeenCalledWith(testKey);
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining(`Cache get error for key ${testKey}:`),
-        expect.any(Error)
+        expect.any(Error),
       );
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -106,15 +107,15 @@ describe('CacheService', () => {
       mockRedis.get.mockRejectedValue(error);
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       const result = await service.get(testKey);
 
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining(`Cache get error for key ${testKey}:`),
-        error
+        error,
       );
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -162,7 +163,7 @@ describe('CacheService', () => {
       expect(mockRedis.setex).toHaveBeenCalledWith(
         testKey,
         mockCacheConfig.performance.defaultTtl,
-        JSON.stringify(testValue)
+        JSON.stringify(testValue),
       );
     });
 
@@ -177,7 +178,7 @@ describe('CacheService', () => {
       expect(mockRedis.setex).toHaveBeenCalledWith(
         testKey,
         customTtl,
-        JSON.stringify(testValue)
+        JSON.stringify(testValue),
       );
     });
 
@@ -198,7 +199,7 @@ describe('CacheService', () => {
       expect(mockRedis.setex).toHaveBeenCalledWith(
         testKey,
         mockCacheConfig.performance.defaultTtl,
-        JSON.stringify(testValue)
+        JSON.stringify(testValue),
       );
     });
 
@@ -209,14 +210,14 @@ describe('CacheService', () => {
       mockRedis.setex.mockRejectedValue(error);
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       await service.set(testKey, testValue);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining(`Cache set error for key ${testKey}:`),
-        error
+        error,
       );
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -230,7 +231,7 @@ describe('CacheService', () => {
       expect(mockRedis.setex).toHaveBeenCalledWith(
         testKey,
         mockCacheConfig.performance.defaultTtl,
-        JSON.stringify(testValue)
+        JSON.stringify(testValue),
       );
     });
 
@@ -244,7 +245,7 @@ describe('CacheService', () => {
       expect(mockRedis.setex).toHaveBeenCalledWith(
         testKey,
         0,
-        JSON.stringify(testValue)
+        JSON.stringify(testValue),
       );
     });
   });
@@ -289,14 +290,14 @@ describe('CacheService', () => {
       mockRedis.del.mockRejectedValue(error);
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       await service.del(testKey);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('Cache delete error:'),
-        error
+        error,
       );
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -315,21 +316,28 @@ describe('CacheService', () => {
       it('should invalidate project cache correctly', async () => {
         const projectId = 'project-123';
         const userId = 'user-456';
-        
+
         const expectedKeys = [
           CACHE_KEYS.PROJECT(projectId),
           CACHE_KEYS.PROJECT_STATISTICS(projectId),
           CACHE_KEYS.USER_PROJECTS_COUNT(userId),
         ];
-        
-        const listKeys = ['test:projects:user-456:1:10', 'test:projects:user-456:2:10'];
+
+        const listKeys = [
+          'test:projects:user-456:1:10',
+          'test:projects:user-456:2:10',
+        ];
         mockRedis.keys.mockResolvedValue(listKeys);
         mockRedis.del.mockResolvedValue(expectedKeys.length + listKeys.length);
 
         await service.invalidateProjectCache(projectId, userId);
 
         expect(mockRedis.keys).toHaveBeenCalledWith('test:projects:user-456:*');
-        expect(mockRedis.del).toHaveBeenCalledWith(...expectedKeys, 'projects:user-456:1:10', 'projects:user-456:2:10');
+        expect(mockRedis.del).toHaveBeenCalledWith(
+          ...expectedKeys,
+          'projects:user-456:1:10',
+          'projects:user-456:2:10',
+        );
       });
 
       it('should handle Redis pattern matching errors', async () => {
@@ -339,22 +347,24 @@ describe('CacheService', () => {
         mockRedis.keys.mockRejectedValue(error);
 
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-        
+
         // Cette méthode ne devrait pas lancer d'erreur mais la gérer en interne
-        await expect(service.invalidateProjectCache(projectId, userId)).resolves.not.toThrow();
+        await expect(
+          service.invalidateProjectCache(projectId, userId),
+        ).resolves.not.toThrow();
 
         expect(consoleSpy).toHaveBeenCalledWith(
           expect.stringContaining('Cache delete error:'),
-          error
+          error,
         );
-        
+
         consoleSpy.mockRestore();
       });
 
       it('should handle empty pattern matches', async () => {
         const projectId = 'project-123';
         const userId = 'user-456';
-        
+
         mockRedis.keys.mockResolvedValue([]);
         mockRedis.del.mockResolvedValue(3);
 
@@ -364,7 +374,7 @@ describe('CacheService', () => {
         expect(mockRedis.del).toHaveBeenCalledWith(
           CACHE_KEYS.PROJECT(projectId),
           CACHE_KEYS.PROJECT_STATISTICS(projectId),
-          CACHE_KEYS.USER_PROJECTS_COUNT(userId)
+          CACHE_KEYS.USER_PROJECTS_COUNT(userId),
         );
       });
     });
@@ -377,24 +387,30 @@ describe('CacheService', () => {
           'test:projects:user-456:2:10',
           'test:projects:user-456:1:20',
         ];
-        
+
         mockRedis.keys.mockResolvedValue(projectListKeys);
         mockRedis.del.mockResolvedValue(projectListKeys.length);
 
         await service.invalidateUserProjectsCache(userId);
 
         expect(mockRedis.keys).toHaveBeenCalledWith('test:projects:user-456:*');
-        expect(mockRedis.del).toHaveBeenCalledWith('projects:user-456:1:10', 'projects:user-456:2:10', 'projects:user-456:1:20');
+        expect(mockRedis.del).toHaveBeenCalledWith(
+          'projects:user-456:1:10',
+          'projects:user-456:2:10',
+          'projects:user-456:1:20',
+        );
       });
 
       it('should handle users with no cached projects', async () => {
         const userId = 'user-with-no-cache';
-        
+
         mockRedis.keys.mockResolvedValue([]);
 
         await service.invalidateUserProjectsCache(userId);
 
-        expect(mockRedis.keys).toHaveBeenCalledWith('test:projects:user-with-no-cache:*');
+        expect(mockRedis.keys).toHaveBeenCalledWith(
+          'test:projects:user-with-no-cache:*',
+        );
         expect(mockRedis.del).not.toHaveBeenCalled();
       });
 
@@ -404,15 +420,17 @@ describe('CacheService', () => {
         mockRedis.keys.mockRejectedValue(error);
 
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-        
+
         // Cette méthode ne devrait pas lancer d'erreur mais la gérer en interne
-        await expect(service.invalidateUserProjectsCache(userId)).resolves.not.toThrow();
+        await expect(
+          service.invalidateUserProjectsCache(userId),
+        ).resolves.not.toThrow();
 
         expect(consoleSpy).toHaveBeenCalledWith(
           expect.stringContaining('Cache delete error:'),
-          error
+          error,
         );
-        
+
         consoleSpy.mockRestore();
       });
     });
@@ -462,15 +480,15 @@ describe('CacheService', () => {
         mockRedis.ping.mockRejectedValue(error);
 
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-        
+
         const result = await service.isConnected();
 
         expect(result).toBe(false);
         expect(consoleSpy).toHaveBeenCalledWith(
           'Redis connection check failed:',
-          error
+          error,
         );
-        
+
         consoleSpy.mockRestore();
       });
 
@@ -487,15 +505,15 @@ describe('CacheService', () => {
         mockRedis.ping.mockRejectedValue(timeoutError);
 
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-        
+
         const result = await service.isConnected();
 
         expect(result).toBe(false);
         expect(consoleSpy).toHaveBeenCalledWith(
           'Redis connection check failed:',
-          timeoutError
+          timeoutError,
         );
-        
+
         consoleSpy.mockRestore();
       });
     });
@@ -522,15 +540,12 @@ uptime_in_seconds:123456`;
         mockRedis.info.mockRejectedValue(error);
 
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-        
+
         const result = await service.getInfo();
 
         expect(result).toBe('');
-        expect(consoleSpy).toHaveBeenCalledWith(
-          'Redis info failed:',
-          error
-        );
-        
+        expect(consoleSpy).toHaveBeenCalledWith('Redis info failed:', error);
+
         consoleSpy.mockRestore();
       });
 
@@ -547,13 +562,15 @@ uptime_in_seconds:123456`;
   describe('Edge Cases', () => {
     it('should handle very large JSON objects', async () => {
       const largeObject = {
-        data: Array(1000).fill(0).map((_, i) => ({
-          id: i,
-          name: `item-${i}`,
-          description: `Description for item ${i}`.repeat(10),
-        })),
+        data: Array(1000)
+          .fill(0)
+          .map((_, i) => ({
+            id: i,
+            name: `item-${i}`,
+            description: `Description for item ${i}`.repeat(10),
+          })),
       };
-      
+
       mockRedis.setex.mockResolvedValue('OK');
       mockRedis.get.mockResolvedValue(JSON.stringify(largeObject));
 
@@ -564,9 +581,10 @@ uptime_in_seconds:123456`;
     });
 
     it('should handle special characters in keys', async () => {
-      const specialKey = 'test:key:with:colons:and-dashes_and_underscores.and.dots';
+      const specialKey =
+        'test:key:with:colons:and-dashes_and_underscores.and.dots';
       const testValue = { test: true };
-      
+
       mockRedis.setex.mockResolvedValue('OK');
       mockRedis.get.mockResolvedValue(JSON.stringify(testValue));
 
@@ -576,7 +594,7 @@ uptime_in_seconds:123456`;
       expect(mockRedis.setex).toHaveBeenCalledWith(
         specialKey,
         mockCacheConfig.performance.defaultTtl,
-        JSON.stringify(testValue)
+        JSON.stringify(testValue),
       );
       expect(result).toEqual(testValue);
     });
@@ -588,7 +606,7 @@ uptime_in_seconds:123456`;
         emoji: '🎉🎊🥳',
         special: 'café naïve résumé',
       };
-      
+
       mockRedis.setex.mockResolvedValue('OK');
       mockRedis.get.mockResolvedValue(JSON.stringify(unicodeValue));
 
@@ -604,7 +622,7 @@ uptime_in_seconds:123456`;
         createdAt: new Date('2025-07-31T15:00:00Z'),
         updatedAt: new Date(),
       };
-      
+
       mockRedis.setex.mockResolvedValue('OK');
       // Note: Les dates sont sérialisées en strings par JSON.stringify
       const serializedValue = JSON.parse(JSON.stringify(dateValue));
@@ -627,7 +645,7 @@ uptime_in_seconds:123456`;
         zeroValue: 0,
         falseValue: false,
       };
-      
+
       mockRedis.setex.mockResolvedValue('OK');
       // Note: undefined est ignoré par JSON.stringify
       const expectedValue = JSON.parse(JSON.stringify(nullValue));
@@ -650,21 +668,21 @@ uptime_in_seconds:123456`;
       circularValue.self = circularValue; // Circular reference
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       await service.set(circularKey, circularValue);
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining(`Cache set error for key ${circularKey}:`),
-        expect.any(Error)
+        expect.any(Error),
       );
-      
+
       consoleSpy.mockRestore();
     });
 
     it('should handle very long keys', async () => {
       const longKey = 'test:' + 'a'.repeat(1000);
       const testValue = { test: true };
-      
+
       mockRedis.setex.mockResolvedValue('OK');
       mockRedis.get.mockResolvedValue(JSON.stringify(testValue));
 
@@ -674,7 +692,7 @@ uptime_in_seconds:123456`;
       expect(mockRedis.setex).toHaveBeenCalledWith(
         longKey,
         mockCacheConfig.performance.defaultTtl,
-        JSON.stringify(testValue)
+        JSON.stringify(testValue),
       );
       expect(result).toEqual(testValue);
     });

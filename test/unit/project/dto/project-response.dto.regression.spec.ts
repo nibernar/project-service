@@ -1,7 +1,10 @@
 // test/unit/project/dto/project-response.dto.regression.spec.ts
 
 import { plainToInstance, instanceToPlain } from 'class-transformer';
-import { ProjectResponseDto, StatisticsResponseDto } from '../../../../src/project/dto/project-response.dto';
+import {
+  ProjectResponseDto,
+  StatisticsResponseDto,
+} from '../../../../src/project/dto/project-response.dto';
 import { ProjectStatus } from '../../../../src/common/enums/project-status.enum';
 
 describe('ProjectResponseDto - Tests de Régression', () => {
@@ -47,7 +50,11 @@ describe('ProjectResponseDto - Tests de Régression', () => {
     updatedAt: new Date('2024-08-08T14:30:00Z'),
     statistics: {
       costs: { claudeApi: 0.45, storage: 0.02, compute: 0.01, total: 0.48 },
-      performance: { generationTime: 12500, processingTime: 2300, totalTime: 14800 },
+      performance: {
+        generationTime: 12500,
+        processingTime: 2300,
+        totalTime: 14800,
+      },
       usage: { documentsGenerated: 5, filesProcessed: 3, tokensUsed: 1250 },
       lastUpdated: new Date('2024-08-08T14:30:00Z'),
     },
@@ -62,7 +69,7 @@ describe('ProjectResponseDto - Tests de Régression', () => {
       it('devrait maintenir la compatibilité avec les anciennes données manquant des champs', () => {
         const legacyData = createLegacyProjectData();
         const dto = plainToInstance(ProjectResponseDto, legacyData);
-        
+
         // Les champs doivent être correctement initialisés même s'ils manquent
         expect(dto.name).toBe('Legacy Project');
         expect(dto.status).toBe(ProjectStatus.ACTIVE);
@@ -77,7 +84,7 @@ describe('ProjectResponseDto - Tests de Régression', () => {
       it('devrait gérer les données avec des valeurs null/undefined', () => {
         const intermediateData = createIntermediateProjectData();
         const dto = plainToInstance(ProjectResponseDto, intermediateData);
-        
+
         expect(dto.uploadedFileIds).toEqual([]);
         expect(dto.generatedFileIds).toEqual([]);
         expect(dto.hasUploadedFiles()).toBe(false);
@@ -90,9 +97,9 @@ describe('ProjectResponseDto - Tests de Régression', () => {
           ...createModernProjectData(),
           statistics: undefined,
         };
-        
+
         const dto = plainToInstance(ProjectResponseDto, dataWithoutStats);
-        
+
         expect(dto.hasStatistics()).toBe(false);
         expect(dto.getTotalCost()).toBeNull();
         expect(dto.getDocumentsCount()).toBeNull();
@@ -107,9 +114,9 @@ describe('ProjectResponseDto - Tests de Régression', () => {
             // performance et usage manquants
           },
         };
-        
+
         const dto = plainToInstance(ProjectResponseDto, partialStatsData);
-        
+
         expect(dto.hasStatistics()).toBe(true);
         expect(dto.statistics).toBeInstanceOf(StatisticsResponseDto);
         expect(dto.statistics?.costs.claudeApi).toBe(0.5);
@@ -140,16 +147,20 @@ describe('ProjectResponseDto - Tests de Régression', () => {
           createdAt: '2024-08-08T10:30:00.000Z',
           updatedAt: '2024-08-08T14:30:00.000Z',
         };
-        
+
         const dto = plainToInstance(ProjectResponseDto, stringDateData);
-        
+
         expect(dto.createdAt).toBeInstanceOf(Date);
         expect(dto.updatedAt).toBeInstanceOf(Date);
-        expect(dto.createdAt.getTime()).toBe(new Date('2024-08-08T10:30:00.000Z').getTime());
-        expect(dto.updatedAt.getTime()).toBe(new Date('2024-08-08T14:30:00.000Z').getTime());
+        expect(dto.createdAt.getTime()).toBe(
+          new Date('2024-08-08T10:30:00.000Z').getTime(),
+        );
+        expect(dto.updatedAt.getTime()).toBe(
+          new Date('2024-08-08T14:30:00.000Z').getTime(),
+        );
       });
 
-      it('devrait gérer l\'évolution des formats de tableaux', () => {
+      it("devrait gérer l'évolution des formats de tableaux", () => {
         const evolutionaryFormats = [
           { uploadedFileIds: undefined, generatedFileIds: null },
           { uploadedFileIds: [], generatedFileIds: [] },
@@ -157,10 +168,10 @@ describe('ProjectResponseDto - Tests de Régression', () => {
           { uploadedFileIds: 'single-file', generatedFileIds: 'single-gen' }, // Format invalide ancien
         ];
 
-        evolutionaryFormats.forEach(fileFormats => {
+        evolutionaryFormats.forEach((fileFormats) => {
           const data = { ...createModernProjectData(), ...fileFormats };
           const dto = plainToInstance(ProjectResponseDto, data);
-          
+
           expect(Array.isArray(dto.uploadedFileIds)).toBe(true);
           expect(Array.isArray(dto.generatedFileIds)).toBe(true);
           expect(typeof dto.getTotalFilesCount()).toBe('number');
@@ -180,9 +191,9 @@ describe('ProjectResponseDto - Tests de Régression', () => {
             lastUpdated: new Date(),
           },
         };
-        
+
         const dto = plainToInstance(ProjectResponseDto, oldCostStructure);
-        
+
         expect(dto.hasStatistics()).toBe(true);
         expect(dto.statistics).toBeInstanceOf(StatisticsResponseDto);
         // Les valeurs par défaut doivent être appliquées pour les champs manquants
@@ -202,9 +213,9 @@ describe('ProjectResponseDto - Tests de Régression', () => {
             lastUpdated: new Date(),
           },
         };
-        
+
         const dto = plainToInstance(ProjectResponseDto, mixedFormatData);
-        
+
         // Les nouvelles structures doivent être créées avec des valeurs par défaut
         expect(dto.statistics?.costs.claudeApi).toBe(0);
         expect(dto.statistics?.costs.storage).toBe(0);
@@ -220,7 +231,7 @@ describe('ProjectResponseDto - Tests de Régression', () => {
 
   describe('Stabilité des calculs', () => {
     describe('Cohérence des calculs temporels', () => {
-      it('devrait maintenir la cohérence des calculs d\'âge dans le temps', () => {
+      it("devrait maintenir la cohérence des calculs d'âge dans le temps", () => {
         const fixedDate = new Date('2024-08-08T10:30:00Z');
         const data = {
           ...createModernProjectData(),
@@ -229,11 +240,11 @@ describe('ProjectResponseDto - Tests de Régression', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, data);
-        
+
         // Ces calculs doivent rester stables
         expect(dto.hasBeenModified()).toBe(true);
         expect(dto.getAgeInDays()).toBeGreaterThanOrEqual(0);
-        
+
         // Le calcul d'âge doit être déterministe pour une date fixée
         const age1 = dto.getAgeInDays();
         const age2 = dto.getAgeInDays();
@@ -243,19 +254,27 @@ describe('ProjectResponseDto - Tests de Régression', () => {
       it('devrait maintenir la cohérence des calculs de complexité', () => {
         const testCases = [
           { prompt: 'Simple app', expected: 'low' },
-          { prompt: 'Create a web application with user authentication and basic dashboard features', expected: 'medium' },
-          { prompt: 'Create a comprehensive enterprise resource planning system with multiple modules including inventory management, customer relationship management, financial reporting', expected: 'high' },
+          {
+            prompt:
+              'Create a web application with user authentication and basic dashboard features',
+            expected: 'medium',
+          },
+          {
+            prompt:
+              'Create a comprehensive enterprise resource planning system with multiple modules including inventory management, customer relationship management, financial reporting',
+            expected: 'high',
+          },
         ];
 
         testCases.forEach(({ prompt, expected }) => {
           const data = { ...createModernProjectData(), initialPrompt: prompt };
           const dto = plainToInstance(ProjectResponseDto, data);
-          
+
           expect(dto.getComplexityEstimate()).toBe(expected);
         });
       });
 
-      it('devrait maintenir la cohérence des calculs de niveau d\'activité', () => {
+      it("devrait maintenir la cohérence des calculs de niveau d'activité", () => {
         const today = new Date();
         const testScenarios = [
           {
@@ -263,54 +282,77 @@ describe('ProjectResponseDto - Tests de Régression', () => {
             createdAt: today,
             updatedAt: today,
             generatedFileIds: [],
-            expected: 'new'
+            expected: 'new',
           },
           {
             name: 'projet actif',
             createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // Il y a 2 jours
             updatedAt: today,
             generatedFileIds: ['file1', 'file2'],
-            expected: 'active'
+            expected: 'active',
           },
           {
             name: 'projet mature',
             createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000), // Il y a 60 jours
             updatedAt: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000),
             generatedFileIds: ['file1'],
-            expected: 'mature'
-          }
+            expected: 'mature',
+          },
         ];
 
-        testScenarios.forEach(({ name, createdAt, updatedAt, generatedFileIds, expected }) => {
-          const data = {
-            ...createModernProjectData(),
-            createdAt,
-            updatedAt,
-            generatedFileIds,
-          };
-          const dto = plainToInstance(ProjectResponseDto, data);
-          
-          expect(dto.getActivityLevel()).toBe(expected);
-        });
+        testScenarios.forEach(
+          ({ name, createdAt, updatedAt, generatedFileIds, expected }) => {
+            const data = {
+              ...createModernProjectData(),
+              createdAt,
+              updatedAt,
+              generatedFileIds,
+            };
+            const dto = plainToInstance(ProjectResponseDto, data);
+
+            expect(dto.getActivityLevel()).toBe(expected);
+          },
+        );
       });
     });
 
     describe('Stabilité des calculs de statistiques', () => {
       it('devrait maintenir la cohérence des calculs de coût par document', () => {
         const testCases = [
-          { costs: { total: 1.0 }, usage: { documentsGenerated: 4 }, expected: 0.25 },
-          { costs: { total: 0.0 }, usage: { documentsGenerated: 5 }, expected: 0 },
-          { costs: { total: 2.4 }, usage: { documentsGenerated: 0 }, expected: 0 },
+          {
+            costs: { total: 1.0 },
+            usage: { documentsGenerated: 4 },
+            expected: 0.25,
+          },
+          {
+            costs: { total: 0.0 },
+            usage: { documentsGenerated: 5 },
+            expected: 0,
+          },
+          {
+            costs: { total: 2.4 },
+            usage: { documentsGenerated: 0 },
+            expected: 0,
+          },
         ];
 
         testCases.forEach(({ costs, usage, expected }) => {
           const statsData = {
             costs: { claudeApi: 0, storage: 0, compute: 0, ...costs },
-            performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
-            usage: { documentsGenerated: 0, filesProcessed: 0, tokensUsed: 0, ...usage },
+            performance: {
+              generationTime: 1000,
+              processingTime: 500,
+              totalTime: 1500,
+            },
+            usage: {
+              documentsGenerated: 0,
+              filesProcessed: 0,
+              tokensUsed: 0,
+              ...usage,
+            },
             lastUpdated: new Date(),
           };
-          
+
           const dto = plainToInstance(StatisticsResponseDto, statsData);
           expect(dto.getCostPerDocument()).toBe(expected);
         });
@@ -318,19 +360,41 @@ describe('ProjectResponseDto - Tests de Régression', () => {
 
       it('devrait maintenir la cohérence des calculs de vitesse de traitement', () => {
         const testCases = [
-          { performance: { totalTime: 1000 }, usage: { tokensUsed: 100 }, expected: 100 }, // 100 tokens/s
-          { performance: { totalTime: 2000 }, usage: { tokensUsed: 100 }, expected: 50 },  // 50 tokens/s
-          { performance: { totalTime: 0 }, usage: { tokensUsed: 100 }, expected: 0 },      // Division par zéro
+          {
+            performance: { totalTime: 1000 },
+            usage: { tokensUsed: 100 },
+            expected: 100,
+          }, // 100 tokens/s
+          {
+            performance: { totalTime: 2000 },
+            usage: { tokensUsed: 100 },
+            expected: 50,
+          }, // 50 tokens/s
+          {
+            performance: { totalTime: 0 },
+            usage: { tokensUsed: 100 },
+            expected: 0,
+          }, // Division par zéro
         ];
 
         testCases.forEach(({ performance, usage, expected }) => {
           const statsData = {
             costs: { claudeApi: 0, storage: 0, compute: 0, total: 0 },
-            performance: { generationTime: 0, processingTime: 0, totalTime: 0, ...performance },
-            usage: { documentsGenerated: 0, filesProcessed: 0, tokensUsed: 0, ...usage },
+            performance: {
+              generationTime: 0,
+              processingTime: 0,
+              totalTime: 0,
+              ...performance,
+            },
+            usage: {
+              documentsGenerated: 0,
+              filesProcessed: 0,
+              tokensUsed: 0,
+              ...usage,
+            },
             lastUpdated: new Date(),
           };
-          
+
           const dto = plainToInstance(StatisticsResponseDto, statsData);
           expect(dto.getTokensPerSecond()).toBe(expected);
         });
@@ -348,14 +412,18 @@ describe('ProjectResponseDto - Tests de Régression', () => {
           // Calculer le temps nécessaire pour obtenir le tokensPerSecond souhaité
           const totalTime = 1000; // 1 seconde
           const tokensUsed = tokensPerSecond * (totalTime / 1000);
-          
+
           const statsData = {
             costs: { claudeApi: 0, storage: 0, compute: 0, total: 0 },
-            performance: { generationTime: totalTime, processingTime: 0, totalTime },
+            performance: {
+              generationTime: totalTime,
+              processingTime: 0,
+              totalTime,
+            },
             usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed },
             lastUpdated: new Date(),
           };
-          
+
           const dto = plainToInstance(StatisticsResponseDto, statsData);
           expect(dto.getPerformanceSummary()).toBe(expected);
         });
@@ -389,10 +457,10 @@ describe('ProjectResponseDto - Tests de Régression', () => {
           createModernProjectData(),
         ];
 
-        projects.forEach(data => {
+        projects.forEach((data) => {
           const dto = plainToInstance(ProjectResponseDto, data);
           const result = dto.toString();
-          
+
           // Tous doivent suivre le même pattern
           expect(result).toMatch(/^Project\[.*\]\(.*\)$/);
           expect(result).toContain(data.name);
@@ -432,7 +500,7 @@ describe('ProjectResponseDto - Tests de Régression', () => {
         expect(safeString).toContain('id=550e8400-e29b-41d4-a716-446655440000');
         expect(safeString).toContain('status=ACTIVE');
         expect(safeString).toContain('files=5');
-        
+
         // Aucune donnée sensible ne doit apparaître
         expect(safeString).not.toContain('Super Secret');
         expect(safeString).not.toContain('Confidential');
@@ -445,7 +513,9 @@ describe('ProjectResponseDto - Tests de Régression', () => {
         const safeString = dto.toLogSafeString();
 
         // Le format doit être prévisible et parseable
-        expect(safeString).toMatch(/^Project\[id=[a-f0-9-]+, status=\w+, age=\d+d, files=\d+, stats=(true|false), complexity=\w+\]$/);
+        expect(safeString).toMatch(
+          /^Project\[id=[a-f0-9-]+, status=\w+, age=\d+d, files=\d+, stats=(true|false), complexity=\w+\]$/,
+        );
       });
     });
 
@@ -457,11 +527,16 @@ describe('ProjectResponseDto - Tests de Régression', () => {
 
         // La structure doit rester stable
         const expectedKeys = [
-          'id', 'status', 'ageInDays', 'totalFiles', 
-          'hasStatistics', 'complexity', 'activityLevel'
+          'id',
+          'status',
+          'ageInDays',
+          'totalFiles',
+          'hasStatistics',
+          'complexity',
+          'activityLevel',
         ];
-        
-        expectedKeys.forEach(key => {
+
+        expectedKeys.forEach((key) => {
           expect(metadata).toHaveProperty(key);
         });
 
@@ -550,8 +625,12 @@ describe('ProjectResponseDto - Tests de Régression', () => {
 
       it('devrait maintenir les transformations de recalcul automatique', () => {
         const incompleteStats = {
-          costs: { claudeApi: 0.30, storage: 0.05, compute: 0.02, total: 0 },
-          performance: { generationTime: 8000, processingTime: 1500, totalTime: 0 },
+          costs: { claudeApi: 0.3, storage: 0.05, compute: 0.02, total: 0 },
+          performance: {
+            generationTime: 8000,
+            processingTime: 1500,
+            totalTime: 0,
+          },
           usage: { documentsGenerated: 2, filesProcessed: 1, tokensUsed: 500 },
           lastUpdated: new Date(),
         };
@@ -573,10 +652,10 @@ describe('ProjectResponseDto - Tests de Régression', () => {
           { uploadedFileIds: false, generatedFileIds: {} },
         ];
 
-        scenarios.forEach(scenario => {
+        scenarios.forEach((scenario) => {
           const data = { ...createModernProjectData(), ...scenario };
           const dto = plainToInstance(ProjectResponseDto, data);
-          
+
           expect(dto.uploadedFileIds).toEqual([]);
           expect(dto.generatedFileIds).toEqual([]);
           expect(dto.getTotalFilesCount()).toBe(0);
@@ -594,13 +673,17 @@ describe('ProjectResponseDto - Tests de Régression', () => {
       it('ne devrait pas reintroduire le bug de division par zéro dans getCostPerDocument', () => {
         const zeroDivisorData = {
           costs: { claudeApi: 1.0, storage: 0.5, compute: 0.25, total: 1.75 },
-          performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
+          performance: {
+            generationTime: 1000,
+            processingTime: 500,
+            totalTime: 1500,
+          },
           usage: { documentsGenerated: 0, filesProcessed: 5, tokensUsed: 1000 }, // 0 documents
           lastUpdated: new Date(),
         };
 
         const dto = plainToInstance(StatisticsResponseDto, zeroDivisorData);
-        
+
         // Ne doit pas lever d'exception
         expect(() => dto.getCostPerDocument()).not.toThrow();
         expect(dto.getCostPerDocument()).toBe(0);
@@ -615,7 +698,7 @@ describe('ProjectResponseDto - Tests de Régression', () => {
         };
 
         const dto = plainToInstance(StatisticsResponseDto, zeroTimeData);
-        
+
         // Ne doit pas lever d'exception
         expect(() => dto.getTokensPerSecond()).not.toThrow();
         expect(dto.getTokensPerSecond()).toBe(0);
@@ -629,7 +712,7 @@ describe('ProjectResponseDto - Tests de Régression', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, invalidDatesData);
-        
+
         // Ne doit pas lever d'exception lors des calculs de dates
         expect(() => dto.getAgeInDays()).not.toThrow();
         expect(() => dto.hasBeenModified()).not.toThrow();
@@ -663,17 +746,17 @@ describe('ProjectResponseDto - Tests de Régression', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, corruptionProneData);
-        
+
         // Les tableaux doivent être proprement filtrés
         expect(dto.uploadedFileIds).toEqual(['file1', 'file2', 'file3']);
         expect(dto.generatedFileIds).toEqual(['gen1', 'gen2', 'gen3']);
         expect(dto.getTotalFilesCount()).toBe(6);
-        
+
         // Plusieurs transformations ne doivent pas corrompre les données
         const json1 = instanceToPlain(dto, { excludeExtraneousValues: true });
         const dto2 = plainToInstance(ProjectResponseDto, json1);
         const json2 = instanceToPlain(dto2, { excludeExtraneousValues: true });
-        
+
         expect(dto2.uploadedFileIds).toEqual(['file1', 'file2', 'file3']);
         expect(dto2.generatedFileIds).toEqual(['gen1', 'gen2', 'gen3']);
       });
@@ -683,7 +766,10 @@ describe('ProjectResponseDto - Tests de Régression', () => {
       it('ne devrait pas régresser en performance avec de grandes listes', () => {
         const largeData = {
           ...createModernProjectData(),
-          uploadedFileIds: Array.from({ length: 5000 }, (_, i) => `upload-${i}`),
+          uploadedFileIds: Array.from(
+            { length: 5000 },
+            (_, i) => `upload-${i}`,
+          ),
           generatedFileIds: Array.from({ length: 5000 }, (_, i) => `gen-${i}`),
         };
 
@@ -695,29 +781,29 @@ describe('ProjectResponseDto - Tests de Régression', () => {
         dto.toString();
         dto.toLogSafeString();
         const end = performance.now();
-        
+
         const duration = end - start;
         expect(duration).toBeLessThan(100); // Seuil de régression : 100ms pour 10k fichiers
       });
 
       it('ne devrait pas régresser en mémoire lors de créations répétées', () => {
         const data = createModernProjectData();
-        
+
         // Mesurer la mémoire initiale
         if (global.gc) global.gc();
         const initialMemory = process.memoryUsage().heapUsed;
-        
+
         // Créer et détruire 1000 instances
         for (let i = 0; i < 1000; i++) {
           const dto = plainToInstance(ProjectResponseDto, data);
           dto.getTotalFilesCount();
           dto.hasStatistics();
         }
-        
+
         if (global.gc) global.gc();
         const finalMemory = process.memoryUsage().heapUsed;
         const memoryIncrease = (finalMemory - initialMemory) / 1024 / 1024; // MB
-        
+
         // Pas plus de 5MB d'augmentation pour 1000 créations
         expect(memoryIncrease).toBeLessThan(5);
       });
@@ -726,16 +812,16 @@ describe('ProjectResponseDto - Tests de Régression', () => {
     describe('Stabilité de la sérialisation', () => {
       it('ne devrait pas régresser dans la stabilité de la sérialisation cyclique', () => {
         const data = createModernProjectData();
-        
+
         // Effectuer 10 cycles de sérialisation/désérialisation
         let currentData = data;
         for (let i = 0; i < 10; i++) {
           const dto = plainToInstance(ProjectResponseDto, currentData);
           currentData = instanceToPlain(dto, { excludeExtraneousValues: true });
         }
-        
+
         const finalDto = plainToInstance(ProjectResponseDto, currentData);
-        
+
         // Les données doivent rester cohérentes après 10 cycles
         expect(finalDto.name).toBe(data.name);
         expect(finalDto.getTotalFilesCount()).toBe(5);
@@ -748,7 +834,7 @@ describe('ProjectResponseDto - Tests de Régression', () => {
         const dto1 = plainToInstance(ProjectResponseDto, data);
         const json = instanceToPlain(dto1, { excludeExtraneousValues: true });
         const dto2 = plainToInstance(ProjectResponseDto, json);
-        
+
         // Les types doivent être préservés
         expect(dto2.createdAt).toBeInstanceOf(Date);
         expect(dto2.updatedAt).toBeInstanceOf(Date);

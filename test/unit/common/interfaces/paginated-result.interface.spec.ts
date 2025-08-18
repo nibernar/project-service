@@ -1,6 +1,6 @@
 /**
  * Tests unitaires pour les interfaces et utilitaires de pagination.
- * 
+ *
  * Couvre tous les cas nominaux, edge cases et situations d'erreur
  * pour garantir la robustesse du système de pagination.
  */
@@ -26,7 +26,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     describe('Cas nominaux', () => {
       it('should calculate correct metadata for first page', () => {
         const result = calculatePaginationMeta(1, 10, 42);
-        
+
         expect(result).toEqual({
           page: 1,
           limit: 10,
@@ -39,7 +39,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should calculate correct metadata for middle page', () => {
         const result = calculatePaginationMeta(3, 10, 42);
-        
+
         expect(result).toEqual({
           page: 3,
           limit: 10,
@@ -52,7 +52,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should calculate correct metadata for last page', () => {
         const result = calculatePaginationMeta(5, 10, 42);
-        
+
         expect(result).toEqual({
           page: 5,
           limit: 10,
@@ -65,7 +65,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should handle different limit sizes', () => {
         const result = calculatePaginationMeta(2, 15, 30);
-        
+
         expect(result).toEqual({
           page: 2,
           limit: 15,
@@ -80,7 +80,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     describe('Edge Cases', () => {
       it('should handle zero total correctly', () => {
         const result = calculatePaginationMeta(1, 10, 0);
-        
+
         expect(result).toEqual({
           page: 1,
           limit: 10,
@@ -93,7 +93,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should handle total less than limit', () => {
         const result = calculatePaginationMeta(1, 10, 5);
-        
+
         expect(result).toEqual({
           page: 1,
           limit: 10,
@@ -106,7 +106,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should handle page beyond total pages', () => {
         const result = calculatePaginationMeta(10, 10, 42);
-        
+
         expect(result).toEqual({
           page: 10,
           limit: 10,
@@ -119,7 +119,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should handle single element case', () => {
         const result = calculatePaginationMeta(1, 1, 1);
-        
+
         expect(result).toEqual({
           page: 1,
           limit: 1,
@@ -132,7 +132,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should handle limit greater than total', () => {
         const result = calculatePaginationMeta(1, 50, 42);
-        
+
         expect(result).toEqual({
           page: 1,
           limit: 50,
@@ -147,7 +147,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     describe('Cas limites critiques', () => {
       it('should handle negative total', () => {
         const result = calculatePaginationMeta(1, 10, -1);
-        
+
         expect(result).toEqual({
           page: 1,
           limit: 10,
@@ -160,7 +160,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should handle zero page (should be handled by validation upstream)', () => {
         const result = calculatePaginationMeta(0, 10, 42);
-        
+
         expect(result.page).toBe(0);
         expect(result.offset).toBe(-10);
         expect(result.hasPrevious).toBe(false);
@@ -168,7 +168,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should handle negative page', () => {
         const result = calculatePaginationMeta(-5, 10, 42);
-        
+
         expect(result.page).toBe(-5);
         expect(result.offset).toBe(-60);
         expect(result.hasPrevious).toBe(false);
@@ -176,14 +176,14 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should handle zero limit', () => {
         const result = calculatePaginationMeta(1, 0, 42);
-        
+
         expect(result.totalPages).toBe(Infinity);
         expect(result.offset).toBe(0);
       });
 
       it('should handle negative limit', () => {
         const result = calculatePaginationMeta(1, -10, 42);
-        
+
         expect(result.totalPages).toBe(-5);
         expect(result.offset).toBe(10);
       });
@@ -194,19 +194,19 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     describe('Cas nominaux', () => {
       it('should return valid parameters unchanged', () => {
         const result = validatePaginationParams(1, 10, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 10 });
       });
 
       it('should handle values within limits', () => {
         const result = validatePaginationParams(5, 25, 100);
-        
+
         expect(result).toEqual({ page: 5, limit: 25 });
       });
 
       it('should handle maximum limit', () => {
         const result = validatePaginationParams(1, 100, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 100 });
       });
     });
@@ -214,31 +214,31 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     describe('Normalisation des valeurs', () => {
       it('should normalize page 0 to 1', () => {
         const result = validatePaginationParams(0, 10, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 10 });
       });
 
       it('should normalize negative page', () => {
         const result = validatePaginationParams(-5, 10, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 10 });
       });
 
       it('should normalize zero limit', () => {
         const result = validatePaginationParams(1, 0, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 1 });
       });
 
       it('should normalize negative limit', () => {
         const result = validatePaginationParams(1, -10, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 1 });
       });
 
       it('should enforce maximum limit', () => {
         const result = validatePaginationParams(1, 150, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 100 });
       });
     });
@@ -246,37 +246,37 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     describe('Cas spéciaux', () => {
       it('should handle decimal numbers (floor)', () => {
         const result = validatePaginationParams(1.7, 10.9, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 10 });
       });
 
       it('should handle NaN page', () => {
         const result = validatePaginationParams(NaN, 10, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 10 });
       });
 
       it('should handle NaN limit', () => {
         const result = validatePaginationParams(1, NaN, 100);
-        
+
         expect(result).toEqual({ page: 1, limit: 10 });
       });
 
       it('should handle Infinity', () => {
         const result = validatePaginationParams(Infinity, 10, 100);
-        
+
         expect(result.page).toBe(1); // Infinity floors to a large number, then maxed to reasonable value
       });
 
       it('should handle zero maxLimit', () => {
         const result = validatePaginationParams(1, 10, 0);
-        
+
         expect(result.limit).toBe(1); // Falls back to minimum of 1
       });
 
       it('should use default maxLimit when not provided', () => {
         const result = validatePaginationParams(1, 150);
-        
+
         expect(result).toEqual({ page: 1, limit: 100 });
       });
     });
@@ -288,7 +288,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     describe('Cas nominaux', () => {
       it('should create paginated result with complete data', () => {
         const result = createPaginatedResult(mockData, 1, 10, 42);
-        
+
         expect(result.data).toBe(mockData);
         expect(result.total).toBe(42);
         expect(result.pagination).toEqual({
@@ -303,7 +303,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should use default options when not provided', () => {
         const result = createPaginatedResult(mockData, 1, 10, 42);
-        
+
         expect(result.total).toBe(42); // includeTotalCount: true by default
       });
 
@@ -311,7 +311,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
         const result = createPaginatedResult(mockData, 1, 10, 100, {
           includeTotalCount: false,
         });
-        
+
         expect(result.total).toBe(-1);
       });
 
@@ -319,7 +319,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
         const result = createPaginatedResult(mockData, 1, 150, 42, {
           maxLimit: 50,
         });
-        
+
         expect(result.pagination.limit).toBe(50);
       });
     });
@@ -327,7 +327,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     describe('Gestion des données', () => {
       it('should handle empty array', () => {
         const result = createPaginatedResult([], 1, 10, 0);
-        
+
         expect(result.data).toEqual([]);
         expect(result.total).toBe(0);
         expect(result.pagination.totalPages).toBe(0);
@@ -335,7 +335,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
       it('should handle single element', () => {
         const result = createPaginatedResult(['single'], 1, 10, 1);
-        
+
         expect(result.data).toEqual(['single']);
         expect(result.total).toBe(1);
         expect(result.pagination.totalPages).toBe(1);
@@ -344,7 +344,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
       it('should handle complex objects', () => {
         const complexData = [{ id: 1, name: 'test' }];
         const result = createPaginatedResult(complexData, 1, 10, 1);
-        
+
         expect(result.data).toBe(complexData);
         expect(result.data[0]).toEqual({ id: 1, name: 'test' });
       });
@@ -355,7 +355,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
         const result = createPaginatedResult(mockData, 1, 10, 42, {
           maxLimit: 50, // Only override maxLimit
         });
-        
+
         expect(result.total).toBe(42); // includeTotalCount still true
       });
 
@@ -363,7 +363,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
         const result = createPaginatedResult(mockData, 1, 200, 42, {
           maxLimit: 50,
         });
-        
+
         expect(result.pagination.limit).toBe(50);
       });
     });
@@ -371,14 +371,14 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     describe('Edge cases critiques', () => {
       it('should handle negative total', () => {
         const result = createPaginatedResult(mockData, 1, 10, -5);
-        
+
         expect(result.total).toBe(-5);
         expect(result.pagination.totalPages).toBe(0);
       });
 
       it('should validate invalid page/limit parameters', () => {
         const result = createPaginatedResult(mockData, 0, -5, 42);
-        
+
         expect(result.pagination.page).toBe(1);
         expect(result.pagination.limit).toBe(1);
       });
@@ -388,7 +388,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
   describe('createEmptyPaginatedResult', () => {
     it('should create empty result with correct structure', () => {
       const result = createEmptyPaginatedResult<string>(1, 10);
-      
+
       expect(result.data).toEqual([]);
       expect(result.total).toBe(0);
       expect(result.pagination).toEqual({
@@ -406,9 +406,9 @@ describe('PaginatedResult Interfaces and Utilities', () => {
         id: number;
         name: string;
       }
-      
+
       const result = createEmptyPaginatedResult<TestEntity>(2, 5);
-      
+
       expect(result.data).toEqual([]);
       expect(result.pagination.page).toBe(2);
       expect(result.pagination.limit).toBe(5);
@@ -416,7 +416,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
 
     it('should validate parameters', () => {
       const result = createEmptyPaginatedResult(0, -5);
-      
+
       expect(result.pagination.page).toBe(1);
       expect(result.pagination.limit).toBe(1);
     });
@@ -441,7 +441,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
       it('should transform data while preserving pagination metadata', () => {
         const mapper = (num: number) => num.toString();
         const result = mapPaginatedResult(sourcePaginated, mapper);
-        
+
         expect(result.data).toEqual(['1', '2', '3', '4', '5']);
         expect(result.pagination).toEqual(sourcePaginated.pagination);
         expect(result.total).toBe(sourcePaginated.total);
@@ -450,7 +450,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
       it('should handle complex transformations', () => {
         const mapper = (num: number) => ({ id: num, value: num * 2 });
         const result = mapPaginatedResult(sourcePaginated, mapper);
-        
+
         expect(result.data).toEqual([
           { id: 1, value: 2 },
           { id: 2, value: 4 },
@@ -461,27 +461,33 @@ describe('PaginatedResult Interfaces and Utilities', () => {
       });
 
       it('should handle entity to DTO transformation', () => {
-        interface Entity { id: number; internalField: string; }
-        interface DTO { id: number; publicField: string; }
-        
+        interface Entity {
+          id: number;
+          internalField: string;
+        }
+        interface DTO {
+          id: number;
+          publicField: string;
+        }
+
         const entities: Entity[] = [
           { id: 1, internalField: 'internal1' },
           { id: 2, internalField: 'internal2' },
         ];
-        
+
         const entityPaginated: PaginatedResult<Entity> = {
           data: entities,
           pagination: sourcePaginated.pagination,
           total: 2,
         };
-        
+
         const mapper = (entity: Entity): DTO => ({
           id: entity.id,
           publicField: `public_${entity.internalField}`,
         });
-        
+
         const result = mapPaginatedResult(entityPaginated, mapper);
-        
+
         expect(result.data).toEqual([
           { id: 1, publicField: 'public_internal1' },
           { id: 2, publicField: 'public_internal2' },
@@ -496,9 +502,11 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           pagination: sourcePaginated.pagination,
           total: 0,
         };
-        
-        const result = mapPaginatedResult(emptyPaginated, (num) => num.toString());
-        
+
+        const result = mapPaginatedResult(emptyPaginated, (num) =>
+          num.toString(),
+        );
+
         expect(result.data).toEqual([]);
         expect(result.pagination).toEqual(sourcePaginated.pagination);
       });
@@ -508,16 +516,16 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           if (num === 3) throw new Error('Test error');
           return num.toString();
         };
-        
+
         expect(() => {
           mapPaginatedResult(sourcePaginated, mapper);
         }).toThrow('Test error');
       });
 
       it('should handle mapper returning null/undefined', () => {
-        const mapper = (num: number) => num === 3 ? null : num.toString();
+        const mapper = (num: number) => (num === 3 ? null : num.toString());
         const result = mapPaginatedResult(sourcePaginated, mapper);
-        
+
         expect(result.data).toEqual(['1', '2', null, '4', '5']);
       });
     });
@@ -538,7 +546,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           },
           total: 1,
         };
-        
+
         expect(isPaginatedResult(validResult)).toBe(true);
       });
 
@@ -556,7 +564,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           total: 1,
           extraProperty: 'should be ignored',
         };
-        
+
         expect(isPaginatedResult(objectWithExtra)).toBe(true);
       });
 
@@ -573,7 +581,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           },
           total: 3,
         };
-        
+
         expect(isPaginatedResult(numberResult)).toBe(true);
       });
     });
@@ -592,7 +600,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           pagination: {},
           total: 1,
         };
-        
+
         expect(isPaginatedResult(withoutData)).toBe(false);
       });
 
@@ -601,7 +609,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           data: [],
           total: 1,
         };
-        
+
         expect(isPaginatedResult(withoutPagination)).toBe(false);
       });
 
@@ -610,7 +618,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           data: [],
           pagination: {},
         };
-        
+
         expect(isPaginatedResult(withoutTotal)).toBe(false);
       });
 
@@ -620,7 +628,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           pagination: {},
           total: 1,
         };
-        
+
         expect(isPaginatedResult(dataNotArray)).toBe(false);
       });
 
@@ -630,7 +638,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           pagination: {},
           total: 'not a number',
         };
-        
+
         expect(isPaginatedResult(totalNotNumber)).toBe(false);
       });
 
@@ -640,7 +648,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
           name: 'test',
           value: 42,
         };
-        
+
         expect(isPaginatedResult(differentObject)).toBe(false);
       });
 
@@ -673,7 +681,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     it('should have correct SortDirection type', () => {
       const asc: SortDirection = 'asc';
       const desc: SortDirection = 'desc';
-      
+
       expect(asc).toBe('asc');
       expect(desc).toBe('desc');
     });
@@ -681,7 +689,7 @@ describe('PaginatedResult Interfaces and Utilities', () => {
     it('should have correct PaginationType type', () => {
       const offset: PaginationType = 'offset';
       const cursor: PaginationType = 'cursor';
-      
+
       expect(offset).toBe('offset');
       expect(cursor).toBe('cursor');
     });

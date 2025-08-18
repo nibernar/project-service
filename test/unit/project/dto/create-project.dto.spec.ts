@@ -1,7 +1,10 @@
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 // Import depuis la racine du projet
-import { CreateProjectDto, CREATE_PROJECT_CONSTANTS } from '../../../../src/project/dto/create-project.dto';
+import {
+  CreateProjectDto,
+  CREATE_PROJECT_CONSTANTS,
+} from '../../../../src/project/dto/create-project.dto';
 
 /**
  * Tests unitaires simplifiés pour CreateProjectDto
@@ -46,16 +49,19 @@ describe('CreateProjectDto', () => {
         { value: null, description: 'null value' },
         { value: 123, description: 'number instead of string' },
         { value: undefined, description: 'undefined value' },
-        { value: '<script>alert("xss")</script>', description: 'dangerous characters' },
+        {
+          value: '<script>alert("xss")</script>',
+          description: 'dangerous characters',
+        },
       ];
 
       for (const testCase of invalidCases) {
         dto.name = testCase.value as any;
         const errors = await validate(dto);
-        
+
         expect(errors.length).toBeGreaterThan(0);
-        
-        const nameErrors = errors.filter(e => e.property === 'name');
+
+        const nameErrors = errors.filter((e) => e.property === 'name');
         expect(nameErrors.length).toBeGreaterThan(0);
       }
     });
@@ -90,9 +96,9 @@ describe('CreateProjectDto', () => {
     it('should reject invalid descriptions', async () => {
       dto.description = 'A'.repeat(1001);
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
-      const descErrors = errors.filter(e => e.property === 'description');
+      const descErrors = errors.filter((e) => e.property === 'description');
       expect(descErrors.length).toBeGreaterThan(0);
     });
   });
@@ -126,16 +132,21 @@ describe('CreateProjectDto', () => {
         { value: '', expectedError: 'isNotEmpty' },
         { value: 'Short', expectedError: 'length' },
         { value: 'A'.repeat(5001), expectedError: 'length' },
-        { value: 'Create <script>alert("xss")</script>', expectedError: 'matches' },
+        {
+          value: 'Create <script>alert("xss")</script>',
+          expectedError: 'matches',
+        },
         { value: null, expectedError: 'isString' },
       ];
 
       for (const testCase of invalidCases) {
         dto.initialPrompt = testCase.value as any;
         const errors = await validate(dto);
-        
+
         expect(errors.length).toBeGreaterThan(0);
-        const promptErrors = errors.filter(e => e.property === 'initialPrompt');
+        const promptErrors = errors.filter(
+          (e) => e.property === 'initialPrompt',
+        );
         expect(promptErrors.length).toBeGreaterThan(0);
       }
     });
@@ -144,10 +155,10 @@ describe('CreateProjectDto', () => {
       // Cas spécial: whitespace only
       dto.initialPrompt = '   ';
       const errors = await validate(dto);
-      
+
       // Après transformation, "   " devient "" donc devrait être invalide
       expect(errors.length).toBeGreaterThan(0);
-      const promptErrors = errors.filter(e => e.property === 'initialPrompt');
+      const promptErrors = errors.filter((e) => e.property === 'initialPrompt');
       expect(promptErrors.length).toBeGreaterThan(0);
     });
   });
@@ -180,7 +191,10 @@ describe('CreateProjectDto', () => {
     it('should reject invalid file IDs', async () => {
       const invalidCases = [
         { value: 'not-array', expectedError: 'isArray' },
-        { value: Array(11).fill('550e8400-e29b-41d4-a716-446655440000'), expectedError: 'arrayMaxSize' },
+        {
+          value: Array(11).fill('550e8400-e29b-41d4-a716-446655440000'),
+          expectedError: 'arrayMaxSize',
+        },
         { value: ['invalid-uuid'], expectedError: 'isUuid' },
         { value: [123], expectedError: 'isString' },
       ];
@@ -188,9 +202,11 @@ describe('CreateProjectDto', () => {
       for (const testCase of invalidCases) {
         dto.uploadedFileIds = testCase.value as any;
         const errors = await validate(dto);
-        
+
         expect(errors.length).toBeGreaterThan(0);
-        const fileErrors = errors.filter(e => e.property === 'uploadedFileIds');
+        const fileErrors = errors.filter(
+          (e) => e.property === 'uploadedFileIds',
+        );
         expect(fileErrors.length).toBeGreaterThan(0);
       }
     });
@@ -281,8 +297,9 @@ describe('CreateProjectDto', () => {
         dto.initialPrompt = 'Simple app';
         expect(dto.getPromptComplexity()).toBe('low');
 
-        // Medium complexity: 100-299 chars ou 15-49 mots  
-        dto.initialPrompt = 'Create a comprehensive web application with multiple features, advanced functionality, user authentication, data management, reporting capabilities, and modern UI design';
+        // Medium complexity: 100-299 chars ou 15-49 mots
+        dto.initialPrompt =
+          'Create a comprehensive web application with multiple features, advanced functionality, user authentication, data management, reporting capabilities, and modern UI design';
         expect(dto.getPromptComplexity()).toBe('medium');
 
         // High complexity: 300+ chars ou 50+ mots
@@ -332,7 +349,7 @@ describe('CreateProjectDto', () => {
       const errors = await validate(invalidDto);
 
       expect(errors.length).toBeGreaterThan(1);
-      const properties = errors.map(e => e.property);
+      const properties = errors.map((e) => e.property);
       expect(properties).toContain('name');
       expect(properties).toContain('description');
       expect(properties).toContain('initialPrompt');

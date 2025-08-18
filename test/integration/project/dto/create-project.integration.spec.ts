@@ -54,7 +54,8 @@ describe('CreateProjectDto - Integration Tests', () => {
       const rawDto = {
         name: '  Integration Test Project  ',
         description: '  Test project for integration  ',
-        initialPrompt: '  Create a comprehensive integration test application  ',
+        initialPrompt:
+          '  Create a comprehensive integration test application  ',
         uploadedFileIds: ['550e8400-e29b-41d4-a716-446655440000'],
       };
 
@@ -66,8 +67,12 @@ describe('CreateProjectDto - Integration Tests', () => {
       expect(result).toBeInstanceOf(CreateProjectDto);
       expect(result.name).toBe('Integration Test Project');
       expect(result.description).toBe('Test project for integration');
-      expect(result.initialPrompt).toBe('Create a comprehensive integration test application');
-      expect(result.uploadedFileIds).toEqual(['550e8400-e29b-41d4-a716-446655440000']);
+      expect(result.initialPrompt).toBe(
+        'Create a comprehensive integration test application',
+      );
+      expect(result.uploadedFileIds).toEqual([
+        '550e8400-e29b-41d4-a716-446655440000',
+      ]);
     });
 
     it('should reject invalid DTO through validation pipe', async () => {
@@ -83,7 +88,7 @@ describe('CreateProjectDto - Integration Tests', () => {
         validationPipe.transform(invalidDto, {
           type: 'body',
           metatype: CreateProjectDto,
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -99,7 +104,7 @@ describe('CreateProjectDto - Integration Tests', () => {
         validationPipe.transform(dtoWithExtraFields, {
           type: 'body',
           metatype: CreateProjectDto,
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -183,7 +188,7 @@ describe('CreateProjectDto - Integration Tests', () => {
       expect(mockCacheService.set).toHaveBeenCalledWith(
         cacheKey,
         dto.toString(),
-        3600
+        3600,
       );
     });
 
@@ -198,7 +203,7 @@ describe('CreateProjectDto - Integration Tests', () => {
 
       // Simulate database error
       mockDatabaseService.project.create.mockRejectedValue(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
       await expect(
@@ -207,7 +212,7 @@ describe('CreateProjectDto - Integration Tests', () => {
             name: dto.name,
             initialPrompt: dto.initialPrompt,
           },
-        })
+        }),
       ).rejects.toThrow('Database connection failed');
     });
   });
@@ -226,7 +231,8 @@ describe('CreateProjectDto - Integration Tests', () => {
           '550e8400-e29b-41d4-a716-446655440000',
           '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
         ],
-        metadata: { // This should be stripped
+        metadata: {
+          // This should be stripped
           version: '1.0',
           author: 'test',
         },
@@ -236,7 +242,7 @@ describe('CreateProjectDto - Integration Tests', () => {
         validationPipe.transform(complexInput, {
           type: 'body',
           metatype: CreateProjectDto,
-        })
+        }),
       ).rejects.toThrow(); // Should reject extra fields
     });
 
@@ -278,16 +284,18 @@ describe('CreateProjectDto - Integration Tests', () => {
 
   describe('integration scenarios', () => {
     it('should handle concurrent DTO processing', async () => {
-      const concurrentDtos = Array(10).fill(null).map((_, i) => ({
-        name: `Concurrent Project ${i}`,
-        initialPrompt: `Create concurrent application ${i}`,
-      }));
+      const concurrentDtos = Array(10)
+        .fill(null)
+        .map((_, i) => ({
+          name: `Concurrent Project ${i}`,
+          initialPrompt: `Create concurrent application ${i}`,
+        }));
 
-      const promises = concurrentDtos.map(dto =>
+      const promises = concurrentDtos.map((dto) =>
         validationPipe.transform(dto, {
           type: 'body',
           metatype: CreateProjectDto,
-        })
+        }),
       );
 
       const results = await Promise.all(promises);
@@ -306,7 +314,8 @@ describe('CreateProjectDto - Integration Tests', () => {
         'string instead of object',
         123,
         [],
-        { // Missing required fields
+        {
+          // Missing required fields
           description: 'Only description',
         },
       ];
@@ -316,7 +325,7 @@ describe('CreateProjectDto - Integration Tests', () => {
           validationPipe.transform(input, {
             type: 'body',
             metatype: CreateProjectDto,
-          })
+          }),
         ).rejects.toThrow();
       }
     });
@@ -329,36 +338,47 @@ describe('CreateProjectDto - Integration Tests', () => {
   describe('business validation integration', () => {
     it('should integrate with business rules validation', async () => {
       // Simulate business rules that might be applied after DTO validation
-      const dto = await validationPipe.transform({
-        name: 'Business Rules Test',
-        initialPrompt: 'Create business rules test application',
-        uploadedFileIds: ['550e8400-e29b-41d4-a716-446655440000'],
-      }, {
-        type: 'body',
-        metatype: CreateProjectDto,
-      });
+      const dto = await validationPipe.transform(
+        {
+          name: 'Business Rules Test',
+          initialPrompt: 'Create business rules test application',
+          uploadedFileIds: ['550e8400-e29b-41d4-a716-446655440000'],
+        },
+        {
+          type: 'body',
+          metatype: CreateProjectDto,
+        },
+      );
 
       // Simulate business validation
       const businessValidation = {
-        isValidProjectName: (name: string) => !name.toLowerCase().includes('test'),
+        isValidProjectName: (name: string) =>
+          !name.toLowerCase().includes('test'),
         isValidFileCount: (count: number) => count <= 5,
         isComplexityAllowed: (complexity: string) => complexity !== 'high',
       };
 
       // Business rules should work with validated DTO
       expect(businessValidation.isValidProjectName(dto.name)).toBe(false); // Contains "test"
-      expect(businessValidation.isValidFileCount(dto.getUploadedFilesCount())).toBe(true);
-      expect(businessValidation.isComplexityAllowed(dto.getPromptComplexity())).toBe(true);
+      expect(
+        businessValidation.isValidFileCount(dto.getUploadedFilesCount()),
+      ).toBe(true);
+      expect(
+        businessValidation.isComplexityAllowed(dto.getPromptComplexity()),
+      ).toBe(true);
     });
 
     it('should handle authorization context integration', async () => {
-      const dto = await validationPipe.transform({
-        name: 'Authorization Test',
-        initialPrompt: 'Create authorization test application',
-      }, {
-        type: 'body',
-        metatype: CreateProjectDto,
-      });
+      const dto = await validationPipe.transform(
+        {
+          name: 'Authorization Test',
+          initialPrompt: 'Create authorization test application',
+        },
+        {
+          type: 'body',
+          metatype: CreateProjectDto,
+        },
+      );
 
       // Simulate authorization checks
       const authContext = {
@@ -370,8 +390,12 @@ describe('CreateProjectDto - Integration Tests', () => {
 
       // Authorization should work with validated DTO
       expect(authContext.canCreateProject).toBe(true);
-      expect(dto.name.length).toBeLessThanOrEqual(authContext.maxProjectNameLength);
-      expect(authContext.allowedComplexity).toContain(dto.getPromptComplexity());
+      expect(dto.name.length).toBeLessThanOrEqual(
+        authContext.maxProjectNameLength,
+      );
+      expect(authContext.allowedComplexity).toContain(
+        dto.getPromptComplexity(),
+      );
     });
   });
 
@@ -381,13 +405,16 @@ describe('CreateProjectDto - Integration Tests', () => {
 
   describe('logging and monitoring integration', () => {
     it('should integrate with logging systems', async () => {
-      const dto = await validationPipe.transform({
-        name: 'Logging Test',
-        initialPrompt: 'Create logging test application',
-      }, {
-        type: 'body',
-        metatype: CreateProjectDto,
-      });
+      const dto = await validationPipe.transform(
+        {
+          name: 'Logging Test',
+          initialPrompt: 'Create logging test application',
+        },
+        {
+          type: 'body',
+          metatype: CreateProjectDto,
+        },
+      );
 
       // Simulate logging
       const logEntry = {
@@ -405,15 +432,18 @@ describe('CreateProjectDto - Integration Tests', () => {
 
     it('should integrate with metrics collection', async () => {
       const startTime = Date.now();
-      
-      const dto = await validationPipe.transform({
-        name: 'Metrics Test',
-        initialPrompt: 'Create metrics test application',
-        uploadedFileIds: ['550e8400-e29b-41d4-a716-446655440000'],
-      }, {
-        type: 'body',
-        metatype: CreateProjectDto,
-      });
+
+      const dto = await validationPipe.transform(
+        {
+          name: 'Metrics Test',
+          initialPrompt: 'Create metrics test application',
+          uploadedFileIds: ['550e8400-e29b-41d4-a716-446655440000'],
+        },
+        {
+          type: 'body',
+          metatype: CreateProjectDto,
+        },
+      );
 
       const endTime = Date.now();
 

@@ -116,7 +116,7 @@ export class ConfigurationError extends Error {
   constructor(
     message: string,
     public readonly variable?: string,
-    public readonly value?: any
+    public readonly value?: any,
   ) {
     super(message);
     this.name = 'ConfigurationError';
@@ -128,7 +128,7 @@ export class ValidationError extends ConfigurationError {
     message: string,
     variable: string,
     value: any,
-    public readonly suggestion?: string
+    public readonly suggestion?: string,
   ) {
     super(message, variable, value);
     this.name = 'ValidationError';
@@ -167,11 +167,11 @@ export class AppConfigFactory {
    */
   private static validateEnvironment(): void {
     const requiredVars = ['DATABASE_URL'];
-    const missingVars = requiredVars.filter(varName => !process.env[varName]);
+    const missingVars = requiredVars.filter((varName) => !process.env[varName]);
 
     if (missingVars.length > 0) {
       throw new ConfigurationError(
-        `Missing required environment variables: ${missingVars.join(', ')}`
+        `Missing required environment variables: ${missingVars.join(', ')}`,
       );
     }
 
@@ -179,10 +179,10 @@ export class AppConfigFactory {
     const optionalImportantVars = [
       'REDIS_HOST',
       'AUTH_SERVICE_URL',
-      'ORCHESTRATION_SERVICE_URL'
+      'ORCHESTRATION_SERVICE_URL',
     ];
 
-    optionalImportantVars.forEach(varName => {
+    optionalImportantVars.forEach((varName) => {
       if (!process.env[varName]) {
         console.warn(`⚠️  Optional environment variable not set: ${varName}`);
       }
@@ -194,13 +194,13 @@ export class AppConfigFactory {
    */
   private static createServerConfig(): ServerConfig {
     const port = this.parseInt(process.env.PORT, 3000);
-    
+
     if (port < 1 || port > 65535) {
       throw new ValidationError(
         'Port must be between 1 and 65535',
         'PORT',
         port,
-        'Use a valid port number like 3000'
+        'Use a valid port number like 3000',
       );
     }
 
@@ -210,7 +210,10 @@ export class AppConfigFactory {
       apiPrefix: process.env.API_PREFIX || 'api/v1',
       globalTimeout: this.parseInt(process.env.GLOBAL_TIMEOUT, 30000),
       bodyLimit: process.env.BODY_LIMIT || '10mb',
-      compressionEnabled: this.parseBoolean(process.env.COMPRESSION_ENABLED, true),
+      compressionEnabled: this.parseBoolean(
+        process.env.COMPRESSION_ENABLED,
+        true,
+      ),
     };
   }
 
@@ -219,7 +222,7 @@ export class AppConfigFactory {
    */
   private static createEnvironmentConfig(): EnvironmentConfig {
     const nodeEnv = process.env.NODE_ENV || 'development';
-    
+
     // Validation de l'environnement
     const validEnvs = ['development', 'staging', 'production', 'test'] as const;
     if (!validEnvs.includes(nodeEnv as any)) {
@@ -227,11 +230,15 @@ export class AppConfigFactory {
         `Invalid NODE_ENV value`,
         'NODE_ENV',
         nodeEnv,
-        `Use one of: ${validEnvs.join(', ')}`
+        `Use one of: ${validEnvs.join(', ')}`,
       );
     }
 
-    const typedNodeEnv = nodeEnv as 'development' | 'staging' | 'production' | 'test';
+    const typedNodeEnv = nodeEnv as
+      | 'development'
+      | 'staging'
+      | 'production'
+      | 'test';
 
     return {
       nodeEnv: typedNodeEnv,
@@ -249,7 +256,7 @@ export class AppConfigFactory {
    */
   private static createSecurityConfig(): SecurityConfig {
     const nodeEnv = process.env.NODE_ENV || 'development';
-    
+
     return {
       cors: this.createCorsConfig(nodeEnv),
       rateLimit: this.createRateLimitConfig(nodeEnv),
@@ -263,7 +270,7 @@ export class AppConfigFactory {
    */
   private static createCorsConfig(nodeEnv: string): CorsConfig {
     const corsEnabled = this.parseBoolean(process.env.CORS_ENABLED, true);
-    
+
     let origin: string | string[] | boolean = true;
     if (process.env.CORS_ORIGIN) {
       const origins = this.parseArray(process.env.CORS_ORIGIN);
@@ -274,12 +281,19 @@ export class AppConfigFactory {
 
     // ✅ CORRECTION: Gestion correcte des tableaux vides
     const corsMethodsFromEnv = this.parseArray(process.env.CORS_METHODS, ',');
-    const corsMethods = corsMethodsFromEnv.length > 0 ? corsMethodsFromEnv : 
-                      ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+    const corsMethods =
+      corsMethodsFromEnv.length > 0
+        ? corsMethodsFromEnv
+        : ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
 
-    const corsHeadersFromEnv = this.parseArray(process.env.CORS_ALLOWED_HEADERS, ',');
-    const corsHeaders = corsHeadersFromEnv.length > 0 ? corsHeadersFromEnv :
-                      ['Content-Type', 'Authorization', 'x-api-key'];
+    const corsHeadersFromEnv = this.parseArray(
+      process.env.CORS_ALLOWED_HEADERS,
+      ',',
+    );
+    const corsHeaders =
+      corsHeadersFromEnv.length > 0
+        ? corsHeadersFromEnv
+        : ['Content-Type', 'Authorization', 'x-api-key'];
 
     return {
       enabled: corsEnabled,
@@ -296,12 +310,21 @@ export class AppConfigFactory {
   private static createRateLimitConfig(nodeEnv: string): RateLimitConfig {
     // Rate limiting plus strict en production
     const defaultMaxRequests = nodeEnv === 'production' ? 100 : 1000;
-    
+
     return {
-      enabled: this.parseBoolean(process.env.RATE_LIMIT_ENABLED, nodeEnv !== 'test'),
+      enabled: this.parseBoolean(
+        process.env.RATE_LIMIT_ENABLED,
+        nodeEnv !== 'test',
+      ),
       windowMs: this.parseInt(process.env.RATE_LIMIT_WINDOW_MS, 60000),
-      maxRequests: this.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, defaultMaxRequests),
-      skipSuccessfulRequests: this.parseBoolean(process.env.RATE_LIMIT_SKIP_SUCCESSFUL, false),
+      maxRequests: this.parseInt(
+        process.env.RATE_LIMIT_MAX_REQUESTS,
+        defaultMaxRequests,
+      ),
+      skipSuccessfulRequests: this.parseBoolean(
+        process.env.RATE_LIMIT_SKIP_SUCCESSFUL,
+        false,
+      ),
     };
   }
 
@@ -323,7 +346,7 @@ export class AppConfigFactory {
    */
   private static createServiceConfig(prefix: string): ServiceConfig {
     const baseUrl = process.env[`${prefix}_URL`];
-    
+
     return {
       baseUrl: baseUrl || `http://localhost:3000`, // Fallback pour développement
       timeout: this.parseInt(process.env[`${prefix}_TIMEOUT`], 5000),
@@ -342,10 +365,16 @@ export class AppConfigFactory {
 
     return {
       exportEnabled: this.parseBoolean(process.env.EXPORT_ENABLED, !isTest),
-      statisticsEnabled: this.parseBoolean(process.env.STATISTICS_ENABLED, !isTest),
+      statisticsEnabled: this.parseBoolean(
+        process.env.STATISTICS_ENABLED,
+        !isTest,
+      ),
       cacheEnabled: this.parseBoolean(process.env.CACHE_ENABLED, !isTest),
       eventsEnabled: this.parseBoolean(process.env.EVENTS_ENABLED, !isTest),
-      healthChecksEnabled: this.parseBoolean(process.env.HEALTH_CHECKS_ENABLED, true),
+      healthChecksEnabled: this.parseBoolean(
+        process.env.HEALTH_CHECKS_ENABLED,
+        true,
+      ),
       swaggerEnabled: this.parseBoolean(process.env.SWAGGER_ENABLED, isDev),
       debugMode: this.parseBoolean(process.env.DEBUG_MODE, isDev),
     };
@@ -356,7 +385,7 @@ export class AppConfigFactory {
    */
   private static createObservabilityConfig(): ObservabilityConfig {
     const nodeEnv = process.env.NODE_ENV || 'development';
-    
+
     return {
       logging: this.createLoggingConfig(nodeEnv),
       metrics: this.createMetricsConfig(nodeEnv),
@@ -369,7 +398,7 @@ export class AppConfigFactory {
    */
   private static createLoggingConfig(nodeEnv: string): LoggingConfig {
     let defaultLevel: LoggingConfig['level'];
-    
+
     switch (nodeEnv) {
       case 'production':
         defaultLevel = 'info';
@@ -382,14 +411,19 @@ export class AppConfigFactory {
         defaultLevel = 'debug';
         break;
     }
-    
-    const level = process.env.LOG_LEVEL as LoggingConfig['level'] || defaultLevel;
-    
+
+    const level =
+      (process.env.LOG_LEVEL as LoggingConfig['level']) || defaultLevel;
+
     return {
       level,
-      format: process.env.LOG_FORMAT as 'json' | 'text' || 
-              (nodeEnv === 'production' ? 'json' : 'text'),
-      enableColors: this.parseBoolean(process.env.LOG_COLORS, nodeEnv === 'development'),
+      format:
+        (process.env.LOG_FORMAT as 'json' | 'text') ||
+        (nodeEnv === 'production' ? 'json' : 'text'),
+      enableColors: this.parseBoolean(
+        process.env.LOG_COLORS,
+        nodeEnv === 'development',
+      ),
       timestamp: this.parseBoolean(process.env.LOG_TIMESTAMP, true),
     };
   }
@@ -399,9 +433,12 @@ export class AppConfigFactory {
    */
   private static createMetricsConfig(nodeEnv: string): MetricsConfig {
     const appName = process.env.APP_NAME || 'project-service';
-    
+
     return {
-      enabled: this.parseBoolean(process.env.METRICS_ENABLED, nodeEnv !== 'test'),
+      enabled: this.parseBoolean(
+        process.env.METRICS_ENABLED,
+        nodeEnv !== 'test',
+      ),
       path: process.env.METRICS_PATH || '/metrics',
       defaultLabels: {
         service: appName,
@@ -416,7 +453,7 @@ export class AppConfigFactory {
    */
   private static createTracingConfig(nodeEnv: string): TracingConfig {
     const appName = process.env.APP_NAME || 'project-service';
-    
+
     return {
       enabled: this.parseBoolean(process.env.TRACING_ENABLED, false),
       serviceName: process.env.TRACING_SERVICE_NAME || appName,
@@ -431,57 +468,73 @@ export class AppConfigFactory {
   /**
    * Parse une variable d'environnement booléenne
    */
-  private static parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
+  private static parseBoolean(
+    value: string | undefined,
+    defaultValue: boolean,
+  ): boolean {
     if (value === undefined) return defaultValue;
-    
+
     const lowerValue = value.toLowerCase().trim();
-    
+
     if (['true', '1', 'yes', 'on'].includes(lowerValue)) return true;
     if (['false', '0', 'no', 'off'].includes(lowerValue)) return false;
-    
-    console.warn(`⚠️  Invalid boolean value "${value}", using default: ${defaultValue}`);
+
+    console.warn(
+      `⚠️  Invalid boolean value "${value}", using default: ${defaultValue}`,
+    );
     return defaultValue;
   }
 
   /**
    * Parse une variable d'environnement numérique
    */
-  private static parseInt(value: string | undefined, defaultValue: number): number {
+  private static parseInt(
+    value: string | undefined,
+    defaultValue: number,
+  ): number {
     if (value === undefined) return defaultValue;
-    
+
     const parsed = parseInt(value, 10);
-    
+
     if (isNaN(parsed)) {
-      console.warn(`⚠️  Invalid number value "${value}", using default: ${defaultValue}`);
+      console.warn(
+        `⚠️  Invalid number value "${value}", using default: ${defaultValue}`,
+      );
       return defaultValue;
     }
-    
+
     return parsed;
   }
 
   /**
    * Parse une variable d'environnement en tableau
    */
-  private static parseArray(value: string | undefined, delimiter = ','): string[] {
+  private static parseArray(
+    value: string | undefined,
+    delimiter = ',',
+  ): string[] {
     if (!value) return [];
-    
+
     return value
       .split(delimiter)
-      .map(item => item.trim())
-      .filter(item => item.length > 0);
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
   }
 
   /**
    * Valide et normalise une URL
    */
-  private static parseUrl(value: string | undefined, required = false): string | undefined {
+  private static parseUrl(
+    value: string | undefined,
+    required = false,
+  ): string | undefined {
     if (!value) {
       if (required) {
         throw new ConfigurationError('Required URL is missing');
       }
       return undefined;
     }
-    
+
     try {
       const url = new URL(value);
       // Supprime le slash final pour normaliser
@@ -491,7 +544,7 @@ export class AppConfigFactory {
         'Invalid URL format',
         'URL',
         value,
-        'Use format: http://hostname:port or https://hostname:port'
+        'Use format: http://hostname:port or https://hostname:port',
       );
     }
   }

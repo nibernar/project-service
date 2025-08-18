@@ -2,11 +2,11 @@ import { NotFoundException } from '@nestjs/common';
 
 /**
  * Exception levée quand un projet demandé n'existe pas
- * 
+ *
  * Hérite de NotFoundException (404) pour une réponse HTTP appropriée.
  * Fournit un message d'erreur contextualisé avec l'ID du projet et
  * des informations détaillées pour l'audit et le debugging.
- * 
+ *
  * @example
  * ```typescript
  * throw new ProjectNotFoundException('123e4567-e89b-12d3-a456-426614174000');
@@ -36,21 +36,27 @@ export class ProjectNotFoundException extends NotFoundException {
 
   /**
    * Crée une nouvelle instance de ProjectNotFoundException
-   * 
+   *
    * @param projectId - L'ID du projet non trouvé (ne doit pas être vide)
    * @param additionalContext - Contexte additionnel optionnel pour le debugging
-   * 
+   *
    * @throws {Error} Si projectId est vide ou invalide
    */
   constructor(projectId: string, additionalContext?: string) {
     // Validation de l'ID du projet
-    if (!projectId || typeof projectId !== 'string' || projectId.trim().length === 0) {
-      throw new Error('ProjectId cannot be empty when creating ProjectNotFoundException');
+    if (
+      !projectId ||
+      typeof projectId !== 'string' ||
+      projectId.trim().length === 0
+    ) {
+      throw new Error(
+        'ProjectId cannot be empty when creating ProjectNotFoundException',
+      );
     }
 
     // Génération du message d'erreur approprié
     const baseMessage = `Project with ID "${projectId}" not found`;
-    const fullMessage = additionalContext 
+    const fullMessage = additionalContext
       ? `${baseMessage}: ${additionalContext}`
       : baseMessage;
 
@@ -73,7 +79,7 @@ export class ProjectNotFoundException extends NotFoundException {
 
   /**
    * Retourne les informations d'audit pour logging sécurisé
-   * 
+   *
    * @returns Objet contenant les informations d'audit
    */
   getAuditInfo(): {
@@ -94,7 +100,7 @@ export class ProjectNotFoundException extends NotFoundException {
 
   /**
    * Sérialise l'exception pour les logs JSON
-   * 
+   *
    * @returns Représentation JSON sérialisable
    */
   toJSON(): Record<string, any> {
@@ -112,7 +118,7 @@ export class ProjectNotFoundException extends NotFoundException {
   /**
    * Crée une version sanitisée de l'exception pour l'API publique
    * (sans informations sensibles)
-   * 
+   *
    * @returns Version publique sécurisée
    */
   toPublicError(): {

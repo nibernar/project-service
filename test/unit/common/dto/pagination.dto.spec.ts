@@ -2,7 +2,10 @@
 
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
-import { PaginationDto, PAGINATION_CONSTANTS } from '../../../../src/common/dto/pagination.dto';
+import {
+  PaginationDto,
+  PAGINATION_CONSTANTS,
+} from '../../../../src/common/dto/pagination.dto';
 
 describe('PaginationDto - Unit Tests', () => {
   describe('Default Values', () => {
@@ -27,7 +30,7 @@ describe('PaginationDto - Unit Tests', () => {
     it('should accept valid page and limit values', async () => {
       const dto = plainToClass(PaginationDto, { page: 5, limit: 25 });
       const errors = await validate(dto);
-      
+
       expect(errors).toHaveLength(0);
       expect(dto.page).toBe(5);
       expect(dto.limit).toBe(25);
@@ -36,7 +39,7 @@ describe('PaginationDto - Unit Tests', () => {
     it('should accept page 1 and limit 1 (minimum values)', async () => {
       const dto = plainToClass(PaginationDto, { page: 1, limit: 1 });
       const errors = await validate(dto);
-      
+
       expect(errors).toHaveLength(0);
       expect(dto.page).toBe(1);
       expect(dto.limit).toBe(1);
@@ -45,7 +48,7 @@ describe('PaginationDto - Unit Tests', () => {
     it('should accept limit 100 (maximum value)', async () => {
       const dto = plainToClass(PaginationDto, { page: 1, limit: 100 });
       const errors = await validate(dto);
-      
+
       expect(errors).toHaveLength(0);
       expect(dto.limit).toBe(100);
     });
@@ -54,7 +57,7 @@ describe('PaginationDto - Unit Tests', () => {
   describe('String to Number Transformation', () => {
     it('should transform string page to number', () => {
       const dto = plainToClass(PaginationDto, { page: '3', limit: '20' });
-      
+
       expect(typeof dto.page).toBe('number');
       expect(typeof dto.limit).toBe('number');
       expect(dto.page).toBe(3);
@@ -63,7 +66,7 @@ describe('PaginationDto - Unit Tests', () => {
 
     it('should handle numeric strings with whitespace', () => {
       const dto = plainToClass(PaginationDto, { page: ' 2 ', limit: ' 15 ' });
-      
+
       expect(dto.page).toBe(2);
       expect(dto.limit).toBe(15);
     });
@@ -73,7 +76,7 @@ describe('PaginationDto - Unit Tests', () => {
     it('should reject page less than 1', async () => {
       const dto = plainToClass(PaginationDto, { page: 0 });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].constraints).toHaveProperty('min');
       expect(errors[0].constraints?.min).toContain('page must be at least 1');
@@ -82,7 +85,7 @@ describe('PaginationDto - Unit Tests', () => {
     it('should reject negative page values', async () => {
       const dto = plainToClass(PaginationDto, { page: -1 });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].constraints).toHaveProperty('min');
     });
@@ -90,7 +93,7 @@ describe('PaginationDto - Unit Tests', () => {
     it('should reject limit less than 1', async () => {
       const dto = plainToClass(PaginationDto, { limit: 0 });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].constraints).toHaveProperty('min');
       expect(errors[0].constraints?.min).toContain('limit must be at least 1');
@@ -99,16 +102,18 @@ describe('PaginationDto - Unit Tests', () => {
     it('should reject limit greater than 100', async () => {
       const dto = plainToClass(PaginationDto, { limit: 101 });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].constraints).toHaveProperty('max');
-      expect(errors[0].constraints?.max).toContain('limit must not be greater than 100');
+      expect(errors[0].constraints?.max).toContain(
+        'limit must not be greater than 100',
+      );
     });
 
     it('should reject non-integer page values', async () => {
       const dto = plainToClass(PaginationDto, { page: 1.5 });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].constraints).toHaveProperty('isInt');
       expect(errors[0].constraints?.isInt).toContain('page must be an integer');
@@ -117,10 +122,12 @@ describe('PaginationDto - Unit Tests', () => {
     it('should reject non-integer limit values', async () => {
       const dto = plainToClass(PaginationDto, { limit: 10.7 });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
       expect(errors[0].constraints).toHaveProperty('isInt');
-      expect(errors[0].constraints?.isInt).toContain('limit must be an integer');
+      expect(errors[0].constraints?.isInt).toContain(
+        'limit must be an integer',
+      );
     });
   });
 
@@ -128,7 +135,7 @@ describe('PaginationDto - Unit Tests', () => {
     it('should handle non-numeric string values', async () => {
       const dto = plainToClass(PaginationDto, { page: 'abc', limit: 'xyz' });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
       // La transformation échoue et produit NaN, qui échoue à la validation isInt
     });
@@ -136,21 +143,21 @@ describe('PaginationDto - Unit Tests', () => {
     it('should handle boolean values', async () => {
       const dto = plainToClass(PaginationDto, { page: true, limit: false });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
     });
 
     it('should handle array values', async () => {
       const dto = plainToClass(PaginationDto, { page: [1], limit: [10] });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
     });
 
     it('should handle object values', async () => {
       const dto = plainToClass(PaginationDto, { page: {}, limit: {} });
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
     });
   });
@@ -160,7 +167,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 1;
       dto.limit = 10;
-      
+
       expect(dto.getSkip()).toBe(0);
     });
 
@@ -168,7 +175,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 2;
       dto.limit = 10;
-      
+
       expect(dto.getSkip()).toBe(10);
     });
 
@@ -176,7 +183,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 5;
       dto.limit = 25;
-      
+
       expect(dto.getSkip()).toBe(100); // (5-1) * 25
     });
 
@@ -184,7 +191,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = undefined;
       dto.limit = 20;
-      
+
       expect(dto.getSkip()).toBe(0); // (1-1) * 20
     });
 
@@ -192,7 +199,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 3;
       dto.limit = undefined;
-      
+
       expect(dto.getSkip()).toBe(20); // (3-1) * 10
     });
 
@@ -200,7 +207,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = undefined;
       dto.limit = undefined;
-      
+
       expect(dto.getSkip()).toBe(0); // (1-1) * 10
     });
   });
@@ -209,21 +216,21 @@ describe('PaginationDto - Unit Tests', () => {
     it('should return limit value', () => {
       const dto = new PaginationDto();
       dto.limit = 25;
-      
+
       expect(dto.getTake()).toBe(25);
     });
 
     it('should return default limit when undefined', () => {
       const dto = new PaginationDto();
       dto.limit = undefined;
-      
+
       expect(dto.getTake()).toBe(PAGINATION_CONSTANTS.DEFAULT_LIMIT);
     });
 
     it('should work with various limit values', () => {
       const testCases = [1, 10, 50, 100];
-      
-      testCases.forEach(limit => {
+
+      testCases.forEach((limit) => {
         const dto = new PaginationDto();
         dto.limit = limit;
         expect(dto.getTake()).toBe(limit);
@@ -236,13 +243,13 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 2;
       dto.limit = 25;
-      
+
       expect(dto.isValid()).toBe(true);
     });
 
     it('should return true for default values', () => {
       const dto = new PaginationDto();
-      
+
       expect(dto.isValid()).toBe(true);
     });
 
@@ -250,7 +257,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 0;
       dto.limit = 10;
-      
+
       expect(dto.isValid()).toBe(false);
     });
 
@@ -258,7 +265,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 1;
       dto.limit = 0;
-      
+
       expect(dto.isValid()).toBe(false);
     });
 
@@ -266,7 +273,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 1;
       dto.limit = 101;
-      
+
       expect(dto.isValid()).toBe(false);
     });
 
@@ -274,7 +281,7 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = undefined;
       dto.limit = undefined;
-      
+
       expect(dto.isValid()).toBe(true);
     });
   });
@@ -284,9 +291,9 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 3;
       dto.limit = 20;
-      
+
       const result = dto.toString();
-      
+
       expect(result).toContain('page=3');
       expect(result).toContain('limit=20');
       expect(result).toContain('skip=40');
@@ -294,9 +301,9 @@ describe('PaginationDto - Unit Tests', () => {
 
     it('should handle default values', () => {
       const dto = new PaginationDto();
-      
+
       const result = dto.toString();
-      
+
       expect(result).toContain(`page=${PAGINATION_CONSTANTS.DEFAULT_PAGE}`);
       expect(result).toContain(`limit=${PAGINATION_CONSTANTS.DEFAULT_LIMIT}`);
       expect(result).toContain('skip=0');
@@ -306,9 +313,9 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = undefined;
       dto.limit = undefined;
-      
+
       const result = dto.toString();
-      
+
       expect(result).toContain(`page=${PAGINATION_CONSTANTS.DEFAULT_PAGE}`);
       expect(result).toContain(`limit=${PAGINATION_CONSTANTS.DEFAULT_LIMIT}`);
     });
@@ -319,11 +326,11 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 999999;
       dto.limit = 50;
-      
+
       const start = performance.now();
       const skip = dto.getSkip();
       const end = performance.now();
-      
+
       expect(skip).toBe(49999900); // (999999-1) * 50 = 999998 * 50
       expect(end - start).toBeLessThan(1); // Should be very fast
     });
@@ -332,11 +339,11 @@ describe('PaginationDto - Unit Tests', () => {
       const dto = new PaginationDto();
       dto.page = 1000;
       dto.limit = 100;
-      
+
       const start = performance.now();
       const skip = dto.getSkip();
       const end = performance.now();
-      
+
       expect(skip).toBe(99900); // (1000-1) * 100
       expect(end - start).toBeLessThan(1);
     });
@@ -345,7 +352,7 @@ describe('PaginationDto - Unit Tests', () => {
   describe('Memory and Resource Usage', () => {
     it('should not leak memory with repeated instantiation', () => {
       const instances = [];
-      
+
       // Créer beaucoup d'instances
       for (let i = 0; i < 1000; i++) {
         const dto = new PaginationDto();
@@ -353,7 +360,7 @@ describe('PaginationDto - Unit Tests', () => {
         dto.limit = 10;
         instances.push(dto.getSkip());
       }
-      
+
       expect(instances).toHaveLength(1000);
       expect(instances[999]).toBe(9980); // (999-1) * 10
     });
@@ -371,8 +378,10 @@ describe('PaginationDto - Unit Tests', () => {
     it('should use constants in validation messages', async () => {
       const dto = plainToClass(PaginationDto, { page: 0 });
       const errors = await validate(dto);
-      
-      expect(errors[0].constraints?.min).toContain(PAGINATION_CONSTANTS.MIN_PAGE.toString());
+
+      expect(errors[0].constraints?.min).toContain(
+        PAGINATION_CONSTANTS.MIN_PAGE.toString(),
+      );
     });
   });
 });

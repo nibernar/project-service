@@ -1,12 +1,12 @@
-import { 
-  IsString, 
-  IsNotEmpty, 
-  IsOptional, 
-  Length, 
-  IsArray, 
-  ArrayMaxSize, 
-  IsUUID, 
-  Matches 
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  Length,
+  IsArray,
+  ArrayMaxSize,
+  IsUUID,
+  Matches,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -34,17 +34,17 @@ export const CREATE_PROJECT_CONSTANTS = {
 
 /**
  * DTO pour la création d'un nouveau projet
- * 
+ *
  * Valide et structure toutes les données d'entrée nécessaires à la création
  * d'un projet utilisateur. Applique automatiquement les transformations
  * de nettoyage et les validations métier appropriées.
- * 
+ *
  * SÉCURITÉ RENFORCÉE :
  * - Protection anti-XSS avec regex strictes
  * - Validation de l'ordre des transformations
  * - Blocage des injections JavaScript
  * - Nettoyage sécurisé des entrées
- * 
+ *
  * @example
  * ```typescript
  * @Post()
@@ -59,19 +59,20 @@ export const CREATE_PROJECT_CONSTANTS = {
 export class CreateProjectDto {
   /**
    * Nom du projet
-   * 
+   *
    * Identifiant principal visible par l'utilisateur.
    * Doit être concis mais descriptif pour faciliter la navigation.
-   * 
-   * SÉCURITÉ : 
+   *
+   * SÉCURITÉ :
    * - Validation stricte avant transformation
    * - Nettoyage sécurisé des espaces
    * - Blocage des caractères dangereux
-   * 
+   *
    * @example "Application E-commerce", "Système de Gestion RH"
    */
   @ApiProperty({
-    description: 'Nom du projet - identifiant principal visible par l\'utilisateur',
+    description:
+      "Nom du projet - identifiant principal visible par l'utilisateur",
     example: 'Application E-commerce',
     minLength: CREATE_PROJECT_CONSTANTS.NAME.MIN_LENGTH,
     maxLength: CREATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH,
@@ -85,9 +86,13 @@ export class CreateProjectDto {
     return value;
   })
   @IsNotEmpty({ message: 'name is required and cannot be empty' })
-  @Length(CREATE_PROJECT_CONSTANTS.NAME.MIN_LENGTH, CREATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH, {
-    message: `name must be between ${CREATE_PROJECT_CONSTANTS.NAME.MIN_LENGTH} and ${CREATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH} characters`,
-  })
+  @Length(
+    CREATE_PROJECT_CONSTANTS.NAME.MIN_LENGTH,
+    CREATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH,
+    {
+      message: `name must be between ${CREATE_PROJECT_CONSTANTS.NAME.MIN_LENGTH} and ${CREATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH} characters`,
+    },
+  )
   // SÉCURITÉ : Blocage des caractères potentiellement dangereux
   @Matches(/^[^<>'";&|`${}\\]*$/, {
     message: 'name cannot contain potentially dangerous characters',
@@ -100,17 +105,18 @@ export class CreateProjectDto {
 
   /**
    * Description détaillée du projet (optionnelle)
-   * 
+   *
    * Fournit un contexte supplémentaire sur les objectifs et la portée
    * du projet. Utilisée pour enrichir la génération documentaire.
-   * 
+   *
    * SÉCURITÉ : Nettoyage sécurisé et validation renforcée
-   * 
+   *
    * @example "Plateforme de vente en ligne avec gestion des stocks, paiements et livraisons"
    */
   @ApiPropertyOptional({
     description: 'Description détaillée du projet pour contexte supplémentaire',
-    example: 'Plateforme de vente en ligne avec gestion des stocks, paiements et livraisons',
+    example:
+      'Plateforme de vente en ligne avec gestion des stocks, paiements et livraisons',
     maxLength: CREATE_PROJECT_CONSTANTS.DESCRIPTION.MAX_LENGTH,
     type: 'string',
   })
@@ -128,27 +134,30 @@ export class CreateProjectDto {
   })
   // SÉCURITÉ : Blocage des balises HTML et scripts
   @Matches(/^(?!.*<[^>]*>)(?!.*(?:javascript:|vbscript:|on\w+\s*=)).*$/is, {
-    message: 'description cannot contain HTML tags or potentially dangerous scripts',
+    message:
+      'description cannot contain HTML tags or potentially dangerous scripts',
   })
   description?: string;
 
   /**
    * Prompt initial fourni par l'utilisateur
-   * 
+   *
    * Demande originale qui déclenche le processus de génération.
    * Utilisé par l'agent d'interview pour adapter les questions
    * et par l'agent de génération pour contextualiser les documents.
-   * 
+   *
    * SÉCURITÉ CRITIQUE :
    * - Protection anti-XSS renforcée
    * - Blocage des injections de code
    * - Validation stricte des balises
-   * 
+   *
    * @example "Je souhaite créer une application de gestion des ressources humaines avec planning, congés et évaluations"
    */
   @ApiProperty({
-    description: 'Prompt initial décrivant le projet souhaité - déclenche le processus de génération',
-    example: 'Je souhaite créer une application de gestion des ressources humaines avec planning, congés et évaluations',
+    description:
+      'Prompt initial décrivant le projet souhaité - déclenche le processus de génération',
+    example:
+      'Je souhaite créer une application de gestion des ressources humaines avec planning, congés et évaluations',
     minLength: CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MIN_LENGTH,
     maxLength: CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MAX_LENGTH,
     type: 'string',
@@ -161,9 +170,13 @@ export class CreateProjectDto {
     return value;
   })
   @IsNotEmpty({ message: 'initialPrompt is required and cannot be empty' })
-  @Length(CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MIN_LENGTH, CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MAX_LENGTH, {
-    message: `initialPrompt must be between ${CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MIN_LENGTH} and ${CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MAX_LENGTH} characters`,
-  })
+  @Length(
+    CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MIN_LENGTH,
+    CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MAX_LENGTH,
+    {
+      message: `initialPrompt must be between ${CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MIN_LENGTH} and ${CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MAX_LENGTH} characters`,
+    },
+  )
   // CORRECTIF SÉCURITÉ CRITIQUE : Regex renforcée pour détecter VRAIMENT les balises HTML
   @Matches(/^(?!.*<[^>]*>).*$/s, {
     message: 'initialPrompt cannot contain HTML or XML tags',
@@ -174,24 +187,29 @@ export class CreateProjectDto {
   })
   // SÉCURITÉ : Blocage des gestionnaires d'événements et des expressions dangereuses
   @Matches(/^(?!.*(?:on\w+\s*=|eval\s*\(|expression\s*\(|\$\{)).*$/i, {
-    message: 'initialPrompt cannot contain event handlers or dangerous expressions',
+    message:
+      'initialPrompt cannot contain event handlers or dangerous expressions',
   })
   initialPrompt: string;
 
   /**
    * Identifiants des fichiers uploadés (optionnel)
-   * 
+   *
    * Liste des UUIDs des fichiers fournis par l'utilisateur comme
    * contexte supplémentaire (spécifications, cahiers des charges, etc.).
    * Ces fichiers seront analysés pour enrichir la génération.
-   * 
+   *
    * SÉCURITÉ : Validation stricte des UUIDs pour éviter les injections
-   * 
+   *
    * @example ["550e8400-e29b-41d4-a716-446655440000", "6ba7b810-9dad-11d1-80b4-00c04fd430c8"]
    */
   @ApiPropertyOptional({
-    description: 'Liste des identifiants UUID des fichiers uploadés comme contexte',
-    example: ['550e8400-e29b-41d4-a716-446655440000', '6ba7b810-9dad-11d1-80b4-00c04fd430c8'],
+    description:
+      'Liste des identifiants UUID des fichiers uploadés comme contexte',
+    example: [
+      '550e8400-e29b-41d4-a716-446655440000',
+      '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+    ],
     type: 'array',
     items: {
       type: 'string',
@@ -206,22 +224,25 @@ export class CreateProjectDto {
   })
   @IsString({ each: true, message: 'each uploadedFileId must be a string' })
   // SÉCURITÉ : Validation UUID stricte pour éviter les injections
-  @IsUUID(4, { each: true, message: 'each uploadedFileId must be a valid UUID v4' })
+  @IsUUID(4, {
+    each: true,
+    message: 'each uploadedFileId must be a valid UUID v4',
+  })
   uploadedFileIds?: string[];
 
   /**
    * Valide que le DTO contient les informations minimales requises
-   * 
+   *
    * SÉCURITÉ : Validation supplémentaire côté métier
-   * 
+   *
    * @returns true si le DTO est valide pour la création
-   * 
+   *
    * @example
    * ```typescript
    * const dto = new CreateProjectDto();
    * dto.name = 'Test';
    * dto.initialPrompt = 'Create a simple app';
-   * 
+   *
    * if (dto.isValid()) {
    *   // Procéder à la création
    * }
@@ -230,42 +251,50 @@ export class CreateProjectDto {
   isValid(): boolean {
     // Validation renforcée avec vérifications de sécurité
     if (!this.name || typeof this.name !== 'string') return false;
-    if (!this.initialPrompt || typeof this.initialPrompt !== 'string') return false;
-    
+    if (!this.initialPrompt || typeof this.initialPrompt !== 'string')
+      return false;
+
     const trimmedName = this.name.trim();
     const trimmedPrompt = this.initialPrompt.trim();
-    
+
     // Vérifications de longueur
-    if (trimmedName.length < CREATE_PROJECT_CONSTANTS.NAME.MIN_LENGTH ||
-        trimmedName.length > CREATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH) return false;
-        
-    if (trimmedPrompt.length < CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MIN_LENGTH ||
-        trimmedPrompt.length > CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MAX_LENGTH) return false;
-    
+    if (
+      trimmedName.length < CREATE_PROJECT_CONSTANTS.NAME.MIN_LENGTH ||
+      trimmedName.length > CREATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH
+    )
+      return false;
+
+    if (
+      trimmedPrompt.length <
+        CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MIN_LENGTH ||
+      trimmedPrompt.length > CREATE_PROJECT_CONSTANTS.INITIAL_PROMPT.MAX_LENGTH
+    )
+      return false;
+
     // Vérifications de sécurité supplémentaires
     const dangerousPatterns = [
-      /<[^>]*>/,                    // Balises HTML
-      /javascript:/i,               // Protocole JavaScript
-      /vbscript:/i,                 // Protocole VBScript
-      /on\w+\s*=/i,                // Gestionnaires d'événements
-      /eval\s*\(/i,                // Fonction eval
-      /expression\s*\(/i,          // Expressions CSS
+      /<[^>]*>/, // Balises HTML
+      /javascript:/i, // Protocole JavaScript
+      /vbscript:/i, // Protocole VBScript
+      /on\w+\s*=/i, // Gestionnaires d'événements
+      /eval\s*\(/i, // Fonction eval
+      /expression\s*\(/i, // Expressions CSS
     ];
-    
+
     for (const pattern of dangerousPatterns) {
       if (pattern.test(trimmedName) || pattern.test(trimmedPrompt)) {
         return false;
       }
     }
-    
+
     return true;
   }
 
   /**
    * Retourne le nombre de fichiers uploadés
-   * 
+   *
    * @returns Nombre de fichiers dans uploadedFileIds (0 si non défini)
-   * 
+   *
    * @example
    * ```typescript
    * const dto = new CreateProjectDto();
@@ -279,7 +308,7 @@ export class CreateProjectDto {
 
   /**
    * Vérifie si le projet a des fichiers uploadés
-   * 
+   *
    * @returns true si au moins un fichier est uploadé
    */
   hasUploadedFiles(): boolean {
@@ -288,9 +317,9 @@ export class CreateProjectDto {
 
   /**
    * Estime la complexité du prompt initial
-   * 
+   *
    * @returns Score de complexité basé sur la longueur et le contenu
-   * 
+   *
    * @example
    * ```typescript
    * const dto = new CreateProjectDto();
@@ -300,10 +329,10 @@ export class CreateProjectDto {
    */
   getPromptComplexity(): 'low' | 'medium' | 'high' {
     if (!this.initialPrompt) return 'low';
-    
+
     const length = this.initialPrompt.length;
     const wordCount = this.initialPrompt.split(/\s+/).length;
-    
+
     // Complexité basée sur la longueur et le nombre de mots
     if (length < 100 || wordCount < 15) return 'low';
     if (length < 300 || wordCount < 50) return 'medium';
@@ -312,25 +341,25 @@ export class CreateProjectDto {
 
   /**
    * Génère un résumé du DTO pour le logging
-   * 
+   *
    * SÉCURITÉ : Version non sensible pour les logs
-   * 
+   *
    * @returns Chaîne descriptive du contenu du DTO
    */
   toString(): string {
-    const filesInfo = this.hasUploadedFiles() 
-      ? `, files=${this.getUploadedFilesCount()}` 
+    const filesInfo = this.hasUploadedFiles()
+      ? `, files=${this.getUploadedFilesCount()}`
       : '';
     const descInfo = this.description ? ', with_description=true' : '';
-    
+
     return `CreateProjectDto[name="${this.name}"${descInfo}, prompt_complexity=${this.getPromptComplexity()}${filesInfo}]`;
   }
 
   /**
    * Crée une version sanitisée du DTO pour le logging (sans données sensibles)
-   * 
+   *
    * SÉCURITÉ CRITIQUE : Aucune donnée utilisateur sensible exposée
-   * 
+   *
    * @returns Version sécurisée pour les logs
    */
   toLogSafeString(): string {

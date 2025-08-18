@@ -4,10 +4,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { DatabaseService } from '../../../../src/database/database.service';
-import { 
+import {
   createDatabaseTestingModule,
   createPrismaPromiseMock,
-  expectDatabaseError 
+  expectDatabaseError,
 } from '../../../setup/database-test-setup';
 
 describe('DatabaseService - Utilities Tests', () => {
@@ -51,42 +51,64 @@ describe('DatabaseService - Utilities Tests', () => {
     describe('✅ Test Environment - Allowed Operations', () => {
       beforeEach(async () => {
         module = await createDatabaseTestingModule({
-          'NODE_ENV': 'test',
+          NODE_ENV: 'test',
         });
         service = module.get<DatabaseService>(DatabaseService);
       });
 
       it('should reset database in test environment', async () => {
-        const mockTransaction = jest.spyOn(service, '$transaction').mockImplementation(
-          async (callback) => {
+        const mockTransaction = jest
+          .spyOn(service, '$transaction')
+          .mockImplementation(async (callback) => {
             return await callback({
-              projectStatistics: { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 5 })) },
-              project: { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 10 })) },
+              projectStatistics: {
+                deleteMany: jest
+                  .fn()
+                  .mockImplementation(() =>
+                    createPrismaPromiseMock({ count: 5 }),
+                  ),
+              },
+              project: {
+                deleteMany: jest
+                  .fn()
+                  .mockImplementation(() =>
+                    createPrismaPromiseMock({ count: 10 }),
+                  ),
+              },
             } as any);
-          }
-        );
+          });
         const warnSpy = jest.spyOn(Logger.prototype, 'warn');
         const logSpy = jest.spyOn(Logger.prototype, 'log');
 
         await service.resetDatabase();
 
         expect(mockTransaction).toHaveBeenCalledTimes(1);
-        expect(warnSpy).toHaveBeenCalledWith('Resetting database - TEST ENVIRONMENT ONLY');
+        expect(warnSpy).toHaveBeenCalledWith(
+          'Resetting database - TEST ENVIRONMENT ONLY',
+        );
         expect(logSpy).toHaveBeenCalledWith('Database reset completed');
       });
 
       it('should delete data in correct order (foreign key constraints)', async () => {
-        const mockProjectStatistics = { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 5 })) };
-        const mockProject = { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 10 })) };
-        
-        const mockTransaction = jest.spyOn(service, '$transaction').mockImplementation(
-          async (callback) => {
+        const mockProjectStatistics = {
+          deleteMany: jest
+            .fn()
+            .mockImplementation(() => createPrismaPromiseMock({ count: 5 })),
+        };
+        const mockProject = {
+          deleteMany: jest
+            .fn()
+            .mockImplementation(() => createPrismaPromiseMock({ count: 10 })),
+        };
+
+        const mockTransaction = jest
+          .spyOn(service, '$transaction')
+          .mockImplementation(async (callback) => {
             return await callback({
               projectStatistics: mockProjectStatistics,
               project: mockProject,
             } as any);
-          }
-        );
+          });
 
         await service.resetDatabase();
 
@@ -103,14 +125,26 @@ describe('DatabaseService - Utilities Tests', () => {
       });
 
       it('should handle empty database during reset', async () => {
-        const mockTransaction = jest.spyOn(service, '$transaction').mockImplementation(
-          async (callback) => {
+        const mockTransaction = jest
+          .spyOn(service, '$transaction')
+          .mockImplementation(async (callback) => {
             return await callback({
-              projectStatistics: { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 0 })) },
-              project: { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 0 })) },
+              projectStatistics: {
+                deleteMany: jest
+                  .fn()
+                  .mockImplementation(() =>
+                    createPrismaPromiseMock({ count: 0 }),
+                  ),
+              },
+              project: {
+                deleteMany: jest
+                  .fn()
+                  .mockImplementation(() =>
+                    createPrismaPromiseMock({ count: 0 }),
+                  ),
+              },
             } as any);
-          }
-        );
+          });
 
         await expect(service.resetDatabase()).resolves.toBeUndefined();
         expect(mockTransaction).toHaveBeenCalled();
@@ -120,14 +154,14 @@ describe('DatabaseService - Utilities Tests', () => {
     describe('❌ Production Environment - Forbidden Operations', () => {
       beforeEach(async () => {
         module = await createDatabaseTestingModule({
-          'NODE_ENV': 'production',
+          NODE_ENV: 'production',
         });
         service = module.get<DatabaseService>(DatabaseService);
       });
 
       it('should throw error in production environment', async () => {
         await expect(service.resetDatabase()).rejects.toThrow(
-          'Database reset is only allowed in test environment'
+          'Database reset is only allowed in test environment',
         );
       });
 
@@ -143,14 +177,14 @@ describe('DatabaseService - Utilities Tests', () => {
     describe('❌ Development Environment - Forbidden Operations', () => {
       beforeEach(async () => {
         module = await createDatabaseTestingModule({
-          'NODE_ENV': 'development',
+          NODE_ENV: 'development',
         });
         service = module.get<DatabaseService>(DatabaseService);
       });
 
       it('should throw error in development environment', async () => {
         await expect(service.resetDatabase()).rejects.toThrow(
-          'Database reset is only allowed in test environment'
+          'Database reset is only allowed in test environment',
         );
       });
     });
@@ -158,46 +192,62 @@ describe('DatabaseService - Utilities Tests', () => {
     describe('❌ Edge Cases - resetDatabase', () => {
       beforeEach(async () => {
         module = await createDatabaseTestingModule({
-          'NODE_ENV': 'test',
+          NODE_ENV: 'test',
         });
         service = module.get<DatabaseService>(DatabaseService);
       });
 
       it('should handle foreign key constraint errors', async () => {
         const constraintError = new Error('Foreign key constraint violation');
-        const mockTransaction = jest.spyOn(service, '$transaction').mockRejectedValue(constraintError);
+        const mockTransaction = jest
+          .spyOn(service, '$transaction')
+          .mockRejectedValue(constraintError);
         const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
-        await expect(service.resetDatabase()).rejects.toThrow('Foreign key constraint violation');
+        await expect(service.resetDatabase()).rejects.toThrow(
+          'Foreign key constraint violation',
+        );
 
         expect(mockTransaction).toHaveBeenCalled();
-        expect(errorSpy).toHaveBeenCalledWith('Database reset failed', expect.objectContaining({
-          message: 'Foreign key constraint violation'
-        }));
+        expect(errorSpy).toHaveBeenCalledWith(
+          'Database reset failed',
+          expect.objectContaining({
+            message: 'Foreign key constraint violation',
+          }),
+        );
       });
 
       it('should handle database errors during reset', async () => {
         const dbError = new Error('Database connection lost');
-        const mockTransaction = jest.spyOn(service, '$transaction').mockRejectedValue(dbError);
+        const mockTransaction = jest
+          .spyOn(service, '$transaction')
+          .mockRejectedValue(dbError);
 
-        await expect(service.resetDatabase()).rejects.toThrow('Database connection lost');
+        await expect(service.resetDatabase()).rejects.toThrow(
+          'Database connection lost',
+        );
       });
 
       it('should handle transaction timeout during reset', async () => {
         const timeoutError = new Error('Transaction timeout');
-        const mockTransaction = jest.spyOn(service, '$transaction').mockRejectedValue(timeoutError);
+        const mockTransaction = jest
+          .spyOn(service, '$transaction')
+          .mockRejectedValue(timeoutError);
 
-        await expect(service.resetDatabase()).rejects.toThrow('Transaction timeout');
+        await expect(service.resetDatabase()).rejects.toThrow(
+          'Transaction timeout',
+        );
       });
 
       it('should handle undefined NODE_ENV as non-test', async () => {
         const moduleUndefinedEnv = await createDatabaseTestingModule({
-          'NODE_ENV': undefined,
+          NODE_ENV: undefined,
         });
-        const serviceUndefinedEnv = moduleUndefinedEnv.get<DatabaseService>(DatabaseService);
+        const serviceUndefinedEnv =
+          moduleUndefinedEnv.get<DatabaseService>(DatabaseService);
 
         await expect(serviceUndefinedEnv.resetDatabase()).rejects.toThrow(
-          'Database reset is only allowed in test environment'
+          'Database reset is only allowed in test environment',
         );
 
         await moduleUndefinedEnv.close();
@@ -209,15 +259,17 @@ describe('DatabaseService - Utilities Tests', () => {
     describe('✅ Development Environment - Allowed Operations', () => {
       beforeEach(async () => {
         module = await createDatabaseTestingModule({
-          'NODE_ENV': 'development',
+          NODE_ENV: 'development',
         });
         service = module.get<DatabaseService>(DatabaseService);
       });
 
       it('should seed database in development', async () => {
-        const mockCreateMany = jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
+        const mockCreateMany = jest
+          .fn()
+          .mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
 
         const logSpy = jest.spyOn(Logger.prototype, 'log');
@@ -245,9 +297,11 @@ describe('DatabaseService - Utilities Tests', () => {
       });
 
       it('should skip duplicates during seeding', async () => {
-        const mockCreateMany = jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })); // Un seul créé
+        const mockCreateMany = jest
+          .fn()
+          .mockImplementation(() => createPrismaPromiseMock({ count: 1 })); // Un seul créé
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
 
         await service.seedDatabase();
@@ -255,14 +309,16 @@ describe('DatabaseService - Utilities Tests', () => {
         expect(mockCreateMany).toHaveBeenCalledWith(
           expect.objectContaining({
             skipDuplicates: true,
-          })
+          }),
         );
       });
 
       it('should return count of seeded records', async () => {
-        const mockCreateMany = jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
+        const mockCreateMany = jest
+          .fn()
+          .mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
         const logSpy = jest.spyOn(Logger.prototype, 'log');
 
@@ -275,15 +331,17 @@ describe('DatabaseService - Utilities Tests', () => {
     describe('✅ Test Environment - Allowed Operations', () => {
       beforeEach(async () => {
         module = await createDatabaseTestingModule({
-          'NODE_ENV': 'test',
+          NODE_ENV: 'test',
         });
         service = module.get<DatabaseService>(DatabaseService);
       });
 
       it('should seed database in test environment', async () => {
-        const mockCreateMany = jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
+        const mockCreateMany = jest
+          .fn()
+          .mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
 
         await expect(service.seedDatabase()).resolves.toBeUndefined();
@@ -294,21 +352,21 @@ describe('DatabaseService - Utilities Tests', () => {
     describe('❌ Production Environment - Forbidden Operations', () => {
       beforeEach(async () => {
         module = await createDatabaseTestingModule({
-          'NODE_ENV': 'production',
+          NODE_ENV: 'production',
         });
         service = module.get<DatabaseService>(DatabaseService);
       });
 
       it('should throw error in production', async () => {
         await expect(service.seedDatabase()).rejects.toThrow(
-          'Database seeding is only allowed in development and test environments'
+          'Database seeding is only allowed in development and test environments',
         );
       });
 
       it('should not execute any database operations in production', async () => {
         const mockCreateMany = jest.fn();
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
 
         await expect(service.seedDatabase()).rejects.toThrow();
@@ -320,7 +378,7 @@ describe('DatabaseService - Utilities Tests', () => {
     describe('❌ Edge Cases - seedDatabase', () => {
       beforeEach(async () => {
         module = await createDatabaseTestingModule({
-          'NODE_ENV': 'development',
+          NODE_ENV: 'development',
         });
         service = module.get<DatabaseService>(DatabaseService);
       });
@@ -329,31 +387,40 @@ describe('DatabaseService - Utilities Tests', () => {
         const constraintError = new Error('Unique constraint violation');
         const mockCreateMany = jest.fn().mockRejectedValue(constraintError);
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
         const errorSpy = jest.spyOn(Logger.prototype, 'error');
 
-        await expect(service.seedDatabase()).rejects.toThrow('Unique constraint violation');
+        await expect(service.seedDatabase()).rejects.toThrow(
+          'Unique constraint violation',
+        );
 
-        expect(errorSpy).toHaveBeenCalledWith('Database seeding failed', expect.objectContaining({
-          message: 'Unique constraint violation'
-        }));
+        expect(errorSpy).toHaveBeenCalledWith(
+          'Database seeding failed',
+          expect.objectContaining({
+            message: 'Unique constraint violation',
+          }),
+        );
       });
 
       it('should handle database errors during seed', async () => {
         const dbError = new Error('Database connection lost');
         const mockCreateMany = jest.fn().mockRejectedValue(dbError);
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
 
-        await expect(service.seedDatabase()).rejects.toThrow('Database connection lost');
+        await expect(service.seedDatabase()).rejects.toThrow(
+          'Database connection lost',
+        );
       });
 
       it('should handle zero records created', async () => {
-        const mockCreateMany = jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 0 }));
+        const mockCreateMany = jest
+          .fn()
+          .mockImplementation(() => createPrismaPromiseMock({ count: 0 }));
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
         const logSpy = jest.spyOn(Logger.prototype, 'log');
 
@@ -363,21 +430,25 @@ describe('DatabaseService - Utilities Tests', () => {
       });
 
       it('should handle malformed seed data', async () => {
-        const mockCreateMany = jest.fn().mockRejectedValue(
-          new Error('Invalid data format')
-        );
+        const mockCreateMany = jest
+          .fn()
+          .mockRejectedValue(new Error('Invalid data format'));
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
 
-        await expect(service.seedDatabase()).rejects.toThrow('Invalid data format');
+        await expect(service.seedDatabase()).rejects.toThrow(
+          'Invalid data format',
+        );
       });
 
       it('should handle partial seed success', async () => {
         // Simuler un succès partiel (certains records créés, d'autres en échec)
-        const mockCreateMany = jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 1 })); // Un seul créé au lieu de 2
+        const mockCreateMany = jest
+          .fn()
+          .mockImplementation(() => createPrismaPromiseMock({ count: 1 })); // Un seul créé au lieu de 2
         Object.assign(service, {
-          project: { createMany: mockCreateMany }
+          project: { createMany: mockCreateMany },
         });
         const logSpy = jest.spyOn(Logger.prototype, 'log');
 
@@ -391,16 +462,17 @@ describe('DatabaseService - Utilities Tests', () => {
   describe('Environment Detection Edge Cases', () => {
     it('should handle undefined NODE_ENV', async () => {
       const moduleNullEnv = await createDatabaseTestingModule({
-        'NODE_ENV': undefined, // Changed from null to undefined
+        NODE_ENV: undefined, // Changed from null to undefined
       });
-      const serviceNullEnv = moduleNullEnv.get<DatabaseService>(DatabaseService);
+      const serviceNullEnv =
+        moduleNullEnv.get<DatabaseService>(DatabaseService);
 
       await expect(serviceNullEnv.resetDatabase()).rejects.toThrow(
-        'Database reset is only allowed in test environment'
+        'Database reset is only allowed in test environment',
       );
 
       await expect(serviceNullEnv.seedDatabase()).rejects.toThrow(
-        'Database seeding is only allowed in development and test environments'
+        'Database seeding is only allowed in development and test environments',
       );
 
       await moduleNullEnv.close();
@@ -408,9 +480,10 @@ describe('DatabaseService - Utilities Tests', () => {
 
     it('should handle empty string NODE_ENV', async () => {
       const moduleEmptyEnv = await createDatabaseTestingModule({
-        'NODE_ENV': '',
+        NODE_ENV: '',
       });
-      const serviceEmptyEnv = moduleEmptyEnv.get<DatabaseService>(DatabaseService);
+      const serviceEmptyEnv =
+        moduleEmptyEnv.get<DatabaseService>(DatabaseService);
 
       await expect(serviceEmptyEnv.resetDatabase()).rejects.toThrow();
       await expect(serviceEmptyEnv.seedDatabase()).rejects.toThrow();
@@ -420,9 +493,10 @@ describe('DatabaseService - Utilities Tests', () => {
 
     it('should handle case-sensitive environment names', async () => {
       const moduleUpperCase = await createDatabaseTestingModule({
-        'NODE_ENV': 'TEST', // Uppercase
+        NODE_ENV: 'TEST', // Uppercase
       });
-      const serviceUpperCase = moduleUpperCase.get<DatabaseService>(DatabaseService);
+      const serviceUpperCase =
+        moduleUpperCase.get<DatabaseService>(DatabaseService);
 
       // Devrait être traité comme non-test car case-sensitive
       await expect(serviceUpperCase.resetDatabase()).rejects.toThrow();
@@ -432,9 +506,10 @@ describe('DatabaseService - Utilities Tests', () => {
 
     it('should handle invalid environment names', async () => {
       const moduleInvalidEnv = await createDatabaseTestingModule({
-        'NODE_ENV': 'staging',
+        NODE_ENV: 'staging',
       });
-      const serviceInvalidEnv = moduleInvalidEnv.get<DatabaseService>(DatabaseService);
+      const serviceInvalidEnv =
+        moduleInvalidEnv.get<DatabaseService>(DatabaseService);
 
       await expect(serviceInvalidEnv.resetDatabase()).rejects.toThrow();
       await expect(serviceInvalidEnv.seedDatabase()).rejects.toThrow();
@@ -446,26 +521,40 @@ describe('DatabaseService - Utilities Tests', () => {
   describe('Utilities Integration', () => {
     beforeEach(async () => {
       module = await createDatabaseTestingModule({
-        'NODE_ENV': 'test',
+        NODE_ENV: 'test',
       });
       service = module.get<DatabaseService>(DatabaseService);
     });
 
     it('should handle reset followed by seed', async () => {
       // Mock reset
-      const mockTransaction = jest.spyOn(service, '$transaction').mockImplementation(
-        async (callback) => {
+      const mockTransaction = jest
+        .spyOn(service, '$transaction')
+        .mockImplementation(async (callback) => {
           return await callback({
-            projectStatistics: { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 0 })) },
-            project: { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 0 })) },
+            projectStatistics: {
+              deleteMany: jest
+                .fn()
+                .mockImplementation(() =>
+                  createPrismaPromiseMock({ count: 0 }),
+                ),
+            },
+            project: {
+              deleteMany: jest
+                .fn()
+                .mockImplementation(() =>
+                  createPrismaPromiseMock({ count: 0 }),
+                ),
+            },
           } as any);
-        }
-      );
+        });
 
       // Mock seed
-      const mockCreateMany = jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
+      const mockCreateMany = jest
+        .fn()
+        .mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
       Object.assign(service, {
-        project: { createMany: mockCreateMany }
+        project: { createMany: mockCreateMany },
       });
 
       // Test sequence
@@ -477,25 +566,36 @@ describe('DatabaseService - Utilities Tests', () => {
     });
 
     it('should handle concurrent utility operations', async () => {
-      const mockTransaction = jest.spyOn(service, '$transaction').mockImplementation(
-        async (callback) => {
+      const mockTransaction = jest
+        .spyOn(service, '$transaction')
+        .mockImplementation(async (callback) => {
           return await callback({
-            projectStatistics: { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 0 })) },
-            project: { deleteMany: jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 0 })) },
+            projectStatistics: {
+              deleteMany: jest
+                .fn()
+                .mockImplementation(() =>
+                  createPrismaPromiseMock({ count: 0 }),
+                ),
+            },
+            project: {
+              deleteMany: jest
+                .fn()
+                .mockImplementation(() =>
+                  createPrismaPromiseMock({ count: 0 }),
+                ),
+            },
           } as any);
-        }
-      );
+        });
 
-      const mockCreateMany = jest.fn().mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
+      const mockCreateMany = jest
+        .fn()
+        .mockImplementation(() => createPrismaPromiseMock({ count: 2 }));
       Object.assign(service, {
-        project: { createMany: mockCreateMany }
+        project: { createMany: mockCreateMany },
       });
 
       // Lancer en parallèle (ne devrait pas être fait en pratique)
-      const promises = [
-        service.resetDatabase(),
-        service.seedDatabase(),
-      ];
+      const promises = [service.resetDatabase(), service.seedDatabase()];
 
       await Promise.allSettled(promises);
 

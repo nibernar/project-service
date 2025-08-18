@@ -35,7 +35,7 @@ class MockProjectService {
         uploadedFilesCount: 5,
         generatedFilesCount: 12,
         hasStatistics: true,
-        totalCost: 78.90,
+        totalCost: 78.9,
       },
       {
         id: '550e8400-e29b-41d4-a716-446655440003',
@@ -78,37 +78,38 @@ class MockProjectService {
 
   async findAll(pagination: any = {}): Promise<any> {
     let filtered = [...this.projects];
-    
+
     // Apply status filter
     if (pagination.status) {
-      filtered = filtered.filter(p => p.status === pagination.status);
+      filtered = filtered.filter((p) => p.status === pagination.status);
     }
-    
+
     // Apply search filter
     if (pagination.search) {
       const searchLower = pagination.search.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.name.toLowerCase().includes(searchLower) ||
-        (p.description && p.description.toLowerCase().includes(searchLower))
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchLower) ||
+          (p.description && p.description.toLowerCase().includes(searchLower)),
       );
     }
-    
+
     // Apply date range filter
     if (pagination.createdAfter) {
       const afterDate = new Date(pagination.createdAfter);
-      filtered = filtered.filter(p => p.createdAt >= afterDate);
+      filtered = filtered.filter((p) => p.createdAt >= afterDate);
     }
-    
+
     if (pagination.createdBefore) {
       const beforeDate = new Date(pagination.createdBefore);
-      filtered = filtered.filter(p => p.createdAt <= beforeDate);
+      filtered = filtered.filter((p) => p.createdAt <= beforeDate);
     }
-    
+
     // Apply sorting
     if (pagination.sortBy) {
       filtered.sort((a, b) => {
         let aValue, bValue;
-        
+
         switch (pagination.sortBy) {
           case 'name':
             aValue = a.name.toLowerCase();
@@ -129,7 +130,7 @@ class MockProjectService {
           default:
             return 0;
         }
-        
+
         if (pagination.sortOrder === 'desc') {
           return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
         } else {
@@ -137,15 +138,15 @@ class MockProjectService {
         }
       });
     }
-    
+
     const page = Math.max(0, pagination.page || 0);
     const limit = Math.min(100, Math.max(1, pagination.limit || 10));
-    
+
     // Handle invalid page numbers by treating them as valid pages
     const total = filtered.length;
     const startIndex = page * limit;
     const endIndex = Math.min(startIndex + limit, total);
-    
+
     let paginatedData;
     if (startIndex >= total && total > 0) {
       // If page is beyond data, return empty but valid response
@@ -153,9 +154,9 @@ class MockProjectService {
     } else {
       paginatedData = filtered.slice(startIndex, endIndex);
     }
-    
+
     return {
-      data: paginatedData.map(p => plainToInstance(ProjectListItemDto, p)),
+      data: paginatedData.map((p) => plainToInstance(ProjectListItemDto, p)),
       meta: {
         page,
         limit,
@@ -167,15 +168,20 @@ class MockProjectService {
 
   // Méthode helper pour les tests
   async getProjectMetrics(): Promise<any> {
-    const projects = this.projects.map(p => plainToInstance(ProjectListItemDto, p));
-    
+    const projects = this.projects.map((p) =>
+      plainToInstance(ProjectListItemDto, p),
+    );
+
     return {
       totalProjects: projects.length,
-      activeProjects: projects.filter(p => p.status === ProjectStatus.ACTIVE).length,
-      productiveProjects: projects.filter(p => p.isProductive()).length,
+      activeProjects: projects.filter((p) => p.status === ProjectStatus.ACTIVE)
+        .length,
+      productiveProjects: projects.filter((p) => p.isProductive()).length,
       totalFiles: projects.reduce((sum, p) => sum + p.getTotalFilesCount(), 0),
       totalCost: projects.reduce((sum, p) => sum + (p.totalCost || 0), 0),
-      averageAge: projects.reduce((sum, p) => sum + p.getAgeInDays(), 0) / projects.length,
+      averageAge:
+        projects.reduce((sum, p) => sum + p.getAgeInDays(), 0) /
+        projects.length,
     };
   }
 }
@@ -199,10 +205,12 @@ describe('ProjectListItemDto - E2E Tests', () => {
 
   describe('Scénarios de pagination réels', () => {
     it('should handle basic pagination for project listing', async () => {
-      const result = await projectService.findAll(createTestPagination({
-        page: 0,
-        limit: 3,
-      }));
+      const result = await projectService.findAll(
+        createTestPagination({
+          page: 0,
+          limit: 3,
+        }),
+      );
 
       expect(result.data).toHaveLength(3);
       expect(result.meta.page).toBe(0);
@@ -221,28 +229,34 @@ describe('ProjectListItemDto - E2E Tests', () => {
 
     it('should handle multi-page scenarios', async () => {
       // First page
-      const page1 = await projectService.findAll(createTestPagination({
-        page: 0,
-        limit: 2,
-      }));
+      const page1 = await projectService.findAll(
+        createTestPagination({
+          page: 0,
+          limit: 2,
+        }),
+      );
 
       expect(page1.data).toHaveLength(2);
       expect(page1.meta.page).toBe(0);
 
       // Second page
-      const page2 = await projectService.findAll(createTestPagination({
-        page: 1,
-        limit: 2,
-      }));
+      const page2 = await projectService.findAll(
+        createTestPagination({
+          page: 1,
+          limit: 2,
+        }),
+      );
 
       expect(page2.data).toHaveLength(2);
       expect(page2.meta.page).toBe(1);
 
       // Third page (partial)
-      const page3 = await projectService.findAll(createTestPagination({
-        page: 2,
-        limit: 2,
-      }));
+      const page3 = await projectService.findAll(
+        createTestPagination({
+          page: 2,
+          limit: 2,
+        }),
+      );
 
       expect(page3.data).toHaveLength(1);
       expect(page3.meta.page).toBe(2);
@@ -253,17 +267,19 @@ describe('ProjectListItemDto - E2E Tests', () => {
         ...page2.data.map((d: ProjectListItemDto) => d.id),
         ...page3.data.map((d: ProjectListItemDto) => d.id),
       ];
-      
+
       const uniqueIds = new Set(allIds);
       expect(uniqueIds.size).toBe(allIds.length);
     });
 
     it('should handle sorting by different fields', async () => {
       // Sort by name ascending - CORRECTION: Utiliser les vrais noms des projets de test
-      const byName = await projectService.findAll(createTestPagination({
-        sortBy: 'name',
-        sortOrder: 'asc',
-      }));
+      const byName = await projectService.findAll(
+        createTestPagination({
+          sortBy: 'name',
+          sortOrder: 'asc',
+        }),
+      );
 
       const names = byName.data.map((dto: ProjectListItemDto) => dto.name);
       expect(names[0]).toBe('AI Chat Assistant'); // Alphabetically first
@@ -271,32 +287,42 @@ describe('ProjectListItemDto - E2E Tests', () => {
       expect(names[2]).toBe('E-commerce Platform'); // Third
 
       // Sort by total cost descending
-      const byCost = await projectService.findAll(createTestPagination({
-        sortBy: 'totalCost',
-        sortOrder: 'desc',
-      }));
+      const byCost = await projectService.findAll(
+        createTestPagination({
+          sortBy: 'totalCost',
+          sortOrder: 'desc',
+        }),
+      );
 
-      const costs = byCost.data.map((dto: ProjectListItemDto) => dto.totalCost || 0);
+      const costs = byCost.data.map(
+        (dto: ProjectListItemDto) => dto.totalCost || 0,
+      );
       expect(costs[0]).toBeGreaterThanOrEqual(costs[1]);
       expect(costs[1]).toBeGreaterThanOrEqual(costs[2]);
 
       // Sort by total files count
-      const byFiles = await projectService.findAll(createTestPagination({
-        sortBy: 'totalFiles',
-        sortOrder: 'desc',
-      }));
+      const byFiles = await projectService.findAll(
+        createTestPagination({
+          sortBy: 'totalFiles',
+          sortOrder: 'desc',
+        }),
+      );
 
-      const fileCounts = byFiles.data.map((dto: ProjectListItemDto) => dto.getTotalFilesCount());
+      const fileCounts = byFiles.data.map((dto: ProjectListItemDto) =>
+        dto.getTotalFilesCount(),
+      );
       expect(fileCounts[0]).toBeGreaterThanOrEqual(fileCounts[1]);
     });
   });
 
   describe('Scénarios de filtrage avancés', () => {
     it('should filter projects by status with pagination', async () => {
-      const activeProjects = await projectService.findAll(createTestPagination({
-        status: ProjectStatus.ACTIVE,
-        limit: 10,
-      }));
+      const activeProjects = await projectService.findAll(
+        createTestPagination({
+          status: ProjectStatus.ACTIVE,
+          limit: 10,
+        }),
+      );
 
       expect(activeProjects.data.length).toBeGreaterThan(0);
       activeProjects.data.forEach((dto: ProjectListItemDto) => {
@@ -304,9 +330,11 @@ describe('ProjectListItemDto - E2E Tests', () => {
         expect(dto.isAccessible()).toBe(true);
       });
 
-      const archivedProjects = await projectService.findAll(createTestPagination({
-        status: ProjectStatus.ARCHIVED,
-      }));
+      const archivedProjects = await projectService.findAll(
+        createTestPagination({
+          status: ProjectStatus.ARCHIVED,
+        }),
+      );
 
       archivedProjects.data.forEach((dto: ProjectListItemDto) => {
         expect(dto.status).toBe(ProjectStatus.ARCHIVED);
@@ -315,43 +343,50 @@ describe('ProjectListItemDto - E2E Tests', () => {
     });
 
     it('should handle search across multiple pages', async () => {
-      const searchResults = await projectService.findAll(createTestPagination({
-        search: 'platform',
-        limit: 5,
-      }));
+      const searchResults = await projectService.findAll(
+        createTestPagination({
+          search: 'platform',
+          limit: 5,
+        }),
+      );
 
       expect(searchResults.data.length).toBeGreaterThan(0);
       searchResults.data.forEach((dto: ProjectListItemDto) => {
         const matchesName = dto.name.toLowerCase().includes('platform');
-        const matchesDesc = dto.description && dto.description.toLowerCase().includes('platform');
+        const matchesDesc =
+          dto.description && dto.description.toLowerCase().includes('platform');
         expect(matchesName || matchesDesc).toBe(true);
       });
     });
 
     it('should handle complex pagination scenarios', async () => {
       // Test with multiple filters and pagination
-      const complexFilter = await projectService.findAll(createTestPagination({
-        status: ProjectStatus.ACTIVE,
-        createdAfter: '2024-06-01T00:00:00Z',
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
-        page: 0,
-        limit: 2,
-      }));
+      const complexFilter = await projectService.findAll(
+        createTestPagination({
+          status: ProjectStatus.ACTIVE,
+          createdAfter: '2024-06-01T00:00:00Z',
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          page: 0,
+          limit: 2,
+        }),
+      );
 
       expect(complexFilter.data.length).toBeGreaterThan(0);
       expect(complexFilter.data.length).toBeLessThanOrEqual(2);
-      
+
       complexFilter.data.forEach((dto: ProjectListItemDto) => {
         expect(dto.status).toBe(ProjectStatus.ACTIVE);
-        expect(dto.createdAt.getTime()).toBeGreaterThanOrEqual(new Date('2024-06-01T00:00:00Z').getTime());
+        expect(dto.createdAt.getTime()).toBeGreaterThanOrEqual(
+          new Date('2024-06-01T00:00:00Z').getTime(),
+        );
       });
 
       // Verify sorting
       if (complexFilter.data.length > 1) {
-        expect(complexFilter.data[0].createdAt.getTime()).toBeGreaterThanOrEqual(
-          complexFilter.data[1].createdAt.getTime()
-        );
+        expect(
+          complexFilter.data[0].createdAt.getTime(),
+        ).toBeGreaterThanOrEqual(complexFilter.data[1].createdAt.getTime());
       }
     });
   });
@@ -359,18 +394,20 @@ describe('ProjectListItemDto - E2E Tests', () => {
   describe('Performance et optimisation', () => {
     it('should handle large pagination efficiently', async () => {
       const start = performance.now();
-      
-      const result = await projectService.findAll(createTestPagination({
-        page: 0,
-        limit: 100,
-      }));
-      
+
+      const result = await projectService.findAll(
+        createTestPagination({
+          page: 0,
+          limit: 100,
+        }),
+      );
+
       const end = performance.now();
       const duration = end - start;
 
       expect(duration).toBeLessThan(50); // Should be very fast for small dataset
       expect(result.data).toHaveLength(5); // All test projects
-      
+
       result.data.forEach((dto: ProjectListItemDto) => {
         expect(dto).toBeInstanceOf(ProjectListItemDto);
         expect(() => dto.getTooltipSummary()).not.toThrow();
@@ -382,21 +419,25 @@ describe('ProjectListItemDto - E2E Tests', () => {
       const promises = [
         projectService.findAll(createTestPagination({ page: 0, limit: 2 })),
         projectService.findAll(createTestPagination({ page: 1, limit: 2 })),
-        projectService.findAll(createTestPagination({ status: ProjectStatus.ACTIVE })),
-        projectService.findAll(createTestPagination({ sortBy: 'name', sortOrder: 'asc' })),
+        projectService.findAll(
+          createTestPagination({ status: ProjectStatus.ACTIVE }),
+        ),
+        projectService.findAll(
+          createTestPagination({ sortBy: 'name', sortOrder: 'asc' }),
+        ),
       ];
 
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(4);
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.data).toBeDefined();
         expect(result.meta).toBeDefined();
         expect(Array.isArray(result.data)).toBe(true);
       });
 
       // Verify each result contains proper DTOs
-      results.forEach(result => {
+      results.forEach((result) => {
         result.data.forEach((dto: ProjectListItemDto) => {
           expect(dto).toBeInstanceOf(ProjectListItemDto);
           expect(typeof dto.getTotalFilesCount()).toBe('number');
@@ -407,9 +448,11 @@ describe('ProjectListItemDto - E2E Tests', () => {
 
   describe('Scénarios edge case', () => {
     it('should handle empty result sets gracefully', async () => {
-      const emptyResult = await projectService.findAll(createTestPagination({
-        status: 'NONEXISTENT' as ProjectStatus,
-      }));
+      const emptyResult = await projectService.findAll(
+        createTestPagination({
+          status: 'NONEXISTENT' as ProjectStatus,
+        }),
+      );
 
       expect(emptyResult.data).toHaveLength(0);
       expect(emptyResult.meta.total).toBe(0);
@@ -420,19 +463,23 @@ describe('ProjectListItemDto - E2E Tests', () => {
     it('should handle invalid page numbers gracefully', async () => {
       // CORRECTION: Ajuster les attentes selon le comportement réel du service
       // Page 0 (traité comme page valide)
-      const page0Result = await projectService.findAll(createTestPagination({
-        page: 0,
-        limit: 5,
-      }));
+      const page0Result = await projectService.findAll(
+        createTestPagination({
+          page: 0,
+          limit: 5,
+        }),
+      );
 
       expect(page0Result.data).toHaveLength(5); // All projects
       expect(page0Result.meta.page).toBe(0); // Preserves original page number
 
       // Very high page number - should return empty data but valid structure
-      const highPageResult = await projectService.findAll(createTestPagination({
-        page: 999,
-        limit: 5,
-      }));
+      const highPageResult = await projectService.findAll(
+        createTestPagination({
+          page: 999,
+          limit: 5,
+        }),
+      );
 
       expect(highPageResult.data).toHaveLength(0); // No data beyond available pages
       expect(highPageResult.meta.page).toBe(999); // Preserves requested page number
@@ -440,10 +487,12 @@ describe('ProjectListItemDto - E2E Tests', () => {
       expect(Array.isArray(highPageResult.data)).toBe(true);
 
       // Negative page number (normalized to 0)
-      const negativePageResult = await projectService.findAll(createTestPagination({
-        page: -5,
-        limit: 3,
-      }));
+      const negativePageResult = await projectService.findAll(
+        createTestPagination({
+          page: -5,
+          limit: 3,
+        }),
+      );
 
       expect(negativePageResult.data).toHaveLength(3);
       expect(negativePageResult.meta.page).toBe(0); // Normalized to 0
@@ -451,37 +500,47 @@ describe('ProjectListItemDto - E2E Tests', () => {
 
     it('should handle date range filtering edge cases', async () => {
       // Future date range (should return empty)
-      const futureResult = await projectService.findAll(createTestPagination({
-        createdAfter: '2025-01-01T00:00:00Z',
-      }));
+      const futureResult = await projectService.findAll(
+        createTestPagination({
+          createdAfter: '2025-01-01T00:00:00Z',
+        }),
+      );
 
       expect(futureResult.data).toHaveLength(0);
 
       // Very old date range (should return all)
-      const oldResult = await projectService.findAll(createTestPagination({
-        createdAfter: '2020-01-01T00:00:00Z',
-      }));
+      const oldResult = await projectService.findAll(
+        createTestPagination({
+          createdAfter: '2020-01-01T00:00:00Z',
+        }),
+      );
 
       expect(oldResult.data.length).toBeGreaterThan(0);
 
       // Same start and end date
-      const sameDateResult = await projectService.findAll(createTestPagination({
-        createdAfter: '2024-08-01T00:00:00Z',
-        createdBefore: '2024-08-01T23:59:59Z',
-      }));
+      const sameDateResult = await projectService.findAll(
+        createTestPagination({
+          createdAfter: '2024-08-01T00:00:00Z',
+          createdBefore: '2024-08-01T23:59:59Z',
+        }),
+      );
 
       sameDateResult.data.forEach((dto: ProjectListItemDto) => {
         const createdDate = new Date(dto.createdAt);
-        expect(createdDate.toDateString()).toBe(new Date('2024-08-01').toDateString());
+        expect(createdDate.toDateString()).toBe(
+          new Date('2024-08-01').toDateString(),
+        );
       });
     });
   });
 
   describe('Intégration avec les méthodes utilitaires du DTO', () => {
     it('should verify DTO methods work correctly in paginated results', async () => {
-      const result = await projectService.findAll(createTestPagination({
-        limit: 5,
-      }));
+      const result = await projectService.findAll(
+        createTestPagination({
+          limit: 5,
+        }),
+      );
 
       expect(result.data.length).toBeGreaterThan(0);
 
@@ -493,7 +552,9 @@ describe('ProjectListItemDto - E2E Tests', () => {
         expect(typeof dto.getAgeInDays()).toBe('number');
         expect(typeof dto.getRelativeAge()).toBe('string');
         expect(typeof dto.hasBeenModified()).toBe('boolean');
-        expect(['nouveau', 'récent', 'actif', 'ancien']).toContain(dto.getActivityIndicator());
+        expect(['nouveau', 'récent', 'actif', 'ancien']).toContain(
+          dto.getActivityIndicator(),
+        );
         expect(typeof dto.isAccessible()).toBe('boolean');
         expect(typeof dto.getStatusColor()).toBe('string');
         expect(typeof dto.getStatusLabel()).toBe('string');
@@ -524,8 +585,12 @@ describe('ProjectListItemDto - E2E Tests', () => {
       expect(commonIds.length).toBeGreaterThan(0);
 
       commonIds.forEach((id: string) => {
-        const dto1 = result1.data.find((dto: ProjectListItemDto) => dto.id === id);
-        const dto2 = result2.data.find((dto: ProjectListItemDto) => dto.id === id);
+        const dto1 = result1.data.find(
+          (dto: ProjectListItemDto) => dto.id === id,
+        );
+        const dto2 = result2.data.find(
+          (dto: ProjectListItemDto) => dto.id === id,
+        );
 
         expect(dto1).toBeDefined();
         expect(dto2).toBeDefined();
@@ -553,13 +618,18 @@ describe('ProjectListItemDto - E2E Tests', () => {
 
       // Verify metrics make sense
       expect(metrics.activeProjects).toBeLessThanOrEqual(metrics.totalProjects);
-      expect(metrics.productiveProjects).toBeLessThanOrEqual(metrics.totalProjects);
+      expect(metrics.productiveProjects).toBeLessThanOrEqual(
+        metrics.totalProjects,
+      );
 
       // Test consistency with individual DTO methods
-      const allProjects = await projectService.findAll(createTestPagination({ limit: 100 }));
+      const allProjects = await projectService.findAll(
+        createTestPagination({ limit: 100 }),
+      );
       const calculatedTotal = allProjects.data.reduce(
-        (sum: number, dto: ProjectListItemDto) => sum + dto.getTotalFilesCount(),
-        0
+        (sum: number, dto: ProjectListItemDto) =>
+          sum + dto.getTotalFilesCount(),
+        0,
       );
       expect(calculatedTotal).toBe(metrics.totalFiles);
     });
@@ -569,33 +639,43 @@ describe('ProjectListItemDto - E2E Tests', () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const recentProjects = await projectService.findAll(createTestPagination({
-        createdAfter: thirtyDaysAgo.toISOString(),
-      }));
+      const recentProjects = await projectService.findAll(
+        createTestPagination({
+          createdAfter: thirtyDaysAgo.toISOString(),
+        }),
+      );
 
       // Older projects
-      const olderProjects = await projectService.findAll(createTestPagination({
-        createdBefore: thirtyDaysAgo.toISOString(),
-      }));
+      const olderProjects = await projectService.findAll(
+        createTestPagination({
+          createdBefore: thirtyDaysAgo.toISOString(),
+        }),
+      );
 
-      const recentProductivity = recentProjects.data.filter((dto: ProjectListItemDto) => 
-        dto.isProductive()
+      const recentProductivity = recentProjects.data.filter(
+        (dto: ProjectListItemDto) => dto.isProductive(),
       ).length;
 
-      const olderProductivity = olderProjects.data.filter((dto: ProjectListItemDto) => 
-        dto.isProductive()
+      const olderProductivity = olderProjects.data.filter(
+        (dto: ProjectListItemDto) => dto.isProductive(),
       ).length;
 
       // Both time periods should be analyzable
-      expect(recentProjects.data.length + olderProjects.data.length).toBeGreaterThan(0);
+      expect(
+        recentProjects.data.length + olderProjects.data.length,
+      ).toBeGreaterThan(0);
       expect(typeof recentProductivity).toBe('number');
       expect(typeof olderProductivity).toBe('number');
 
       // Analytics should work on both time periods
-      [...recentProjects.data, ...olderProjects.data].forEach((dto: ProjectListItemDto) => {
-        expect(dto.getActivityIndicator()).toMatch(/^(nouveau|récent|actif|ancien)$/);
-        expect(dto.getAgeInDays()).toBeGreaterThanOrEqual(0);
-      });
+      [...recentProjects.data, ...olderProjects.data].forEach(
+        (dto: ProjectListItemDto) => {
+          expect(dto.getActivityIndicator()).toMatch(
+            /^(nouveau|récent|actif|ancien)$/,
+          );
+          expect(dto.getAgeInDays()).toBeGreaterThanOrEqual(0);
+        },
+      );
     });
   });
 });

@@ -13,7 +13,9 @@ interface ExtendedUserForTesting extends User {
 
 // Extension de global pour les métriques de performance
 declare global {
-  var recordPerformanceMetric: ((name: string, value: any, metadata?: any) => void) | undefined;
+  var recordPerformanceMetric:
+    | ((name: string, value: any, metadata?: any) => void)
+    | undefined;
 }
 
 describe('CurrentUser Decorator - Regression Tests', () => {
@@ -24,11 +26,13 @@ describe('CurrentUser Decorator - Regression Tests', () => {
   const extractUserFunction = (data: unknown, ctx: ExecutionContext): User => {
     const request = ctx.switchToHttp().getRequest<FastifyRequest>();
     const user = (request as any).user;
-    
+
     if (!user) {
-      throw new Error('User not found in request context. Make sure AuthGuard is applied.');
+      throw new Error(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     }
-    
+
     return user;
   };
 
@@ -36,27 +40,30 @@ describe('CurrentUser Decorator - Regression Tests', () => {
   // HELPERS DE TEST LOCAUX
   // ============================================================================
 
-  const createTestUser = (overrides: Partial<ExtendedUserForTesting> = {}): ExtendedUserForTesting => ({
+  const createTestUser = (
+    overrides: Partial<ExtendedUserForTesting> = {},
+  ): ExtendedUserForTesting => ({
     id: 'regression-test-user',
     email: 'regression@example.com',
     roles: ['user'],
     ...overrides,
   });
 
-  const createMockExecutionContext = (request: any): ExecutionContext => ({
-    switchToHttp: () => ({
-      getRequest: () => request as any,
-      getResponse: jest.fn(),
-      getNext: jest.fn(),
-    }),
-    switchToRpc: jest.fn(),
-    switchToWs: jest.fn(),
-    getType: () => 'http',
-    getClass: jest.fn(),
-    getHandler: jest.fn(),
-    getArgs: jest.fn(),
-    getArgByIndex: jest.fn(),
-  } as ExecutionContext);
+  const createMockExecutionContext = (request: any): ExecutionContext =>
+    ({
+      switchToHttp: () => ({
+        getRequest: () => request as any,
+        getResponse: jest.fn(),
+        getNext: jest.fn(),
+      }),
+      switchToRpc: jest.fn(),
+      switchToWs: jest.fn(),
+      getType: () => 'http',
+      getClass: jest.fn(),
+      getHandler: jest.fn(),
+      getArgs: jest.fn(),
+      getArgByIndex: jest.fn(),
+    }) as ExecutionContext;
 
   const measureExecutionTime = (fn: () => void): number => {
     const startTime = process.hrtime.bigint();
@@ -75,21 +82,24 @@ describe('CurrentUser Decorator - Regression Tests', () => {
     };
   };
 
-  const benchmarkFunction = (fn: () => void, options: { iterations: number; warmup: number }) => {
+  const benchmarkFunction = (
+    fn: () => void,
+    options: { iterations: number; warmup: number },
+  ) => {
     // Warmup
     for (let i = 0; i < options.warmup; i++) {
       fn();
     }
-    
+
     // Measure
     const startTime = process.hrtime.bigint();
     for (let i = 0; i < options.iterations; i++) {
       fn();
     }
     const endTime = process.hrtime.bigint();
-    
+
     return {
-      averageTime: Number(endTime - startTime) / 1000000 / options.iterations
+      averageTime: Number(endTime - startTime) / 1000000 / options.iterations,
     };
   };
 
@@ -146,22 +156,32 @@ describe('CurrentUser Decorator - Regression Tests', () => {
       // Act & Assert
       const metrics = benchmarkFunction(
         () => extractUserFunction(undefined, mockContext),
-        { iterations: 1000, warmup: 100 }
+        { iterations: 1000, warmup: 100 },
       );
 
       // Vérification de la régression
-      expect(metrics.averageTime).toBeLessThan(PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME);
-      
+      expect(metrics.averageTime).toBeLessThan(
+        PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME,
+      );
+
       // Enregistrement pour le monitoring
       if (global.recordPerformanceMetric) {
-        global.recordPerformanceMetric('regression-single-extraction', metrics.averageTime, {
-          baseline: PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME,
-          passed: metrics.averageTime < PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME,
-        });
+        global.recordPerformanceMetric(
+          'regression-single-extraction',
+          metrics.averageTime,
+          {
+            baseline: PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME,
+            passed:
+              metrics.averageTime <
+              PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME,
+          },
+        );
       }
 
       // Log pour tracking des performances dans le temps
-      console.log(`📊 Regression - Single extraction: ${metrics.averageTime.toFixed(6)}ms (baseline: ${PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME}ms)`);
+      console.log(
+        `📊 Regression - Single extraction: ${metrics.averageTime.toFixed(6)}ms (baseline: ${PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME}ms)`,
+      );
     });
 
     it('should maintain burst extraction performance', () => {
@@ -179,19 +199,29 @@ describe('CurrentUser Decorator - Regression Tests', () => {
       const avgBurstTime = burstTime / 1000;
 
       // Assert
-      expect(avgBurstTime).toBeLessThan(PERFORMANCE_BASELINES.BURST_EXTRACTION_AVG_TIME);
-      expect(burstTime).toBeLessThan(PERFORMANCE_BASELINES.STRESS_TEST_MAX_TIME);
+      expect(avgBurstTime).toBeLessThan(
+        PERFORMANCE_BASELINES.BURST_EXTRACTION_AVG_TIME,
+      );
+      expect(burstTime).toBeLessThan(
+        PERFORMANCE_BASELINES.STRESS_TEST_MAX_TIME,
+      );
 
       // Enregistrement pour monitoring
       if (global.recordPerformanceMetric) {
-        global.recordPerformanceMetric('regression-burst-extraction', avgBurstTime, {
-          baseline: PERFORMANCE_BASELINES.BURST_EXTRACTION_AVG_TIME,
-          totalTime: burstTime,
-          iterations: 1000,
-        });
+        global.recordPerformanceMetric(
+          'regression-burst-extraction',
+          avgBurstTime,
+          {
+            baseline: PERFORMANCE_BASELINES.BURST_EXTRACTION_AVG_TIME,
+            totalTime: burstTime,
+            iterations: 1000,
+          },
+        );
       }
 
-      console.log(`📊 Regression - Burst extraction: ${avgBurstTime.toFixed(6)}ms/call (baseline: ${PERFORMANCE_BASELINES.BURST_EXTRACTION_AVG_TIME}ms)`);
+      console.log(
+        `📊 Regression - Burst extraction: ${avgBurstTime.toFixed(6)}ms/call (baseline: ${PERFORMANCE_BASELINES.BURST_EXTRACTION_AVG_TIME}ms)`,
+      );
     });
 
     it('should handle large user objects within baseline', () => {
@@ -201,13 +231,16 @@ describe('CurrentUser Decorator - Regression Tests', () => {
         metadata: Array.from({ length: 500 }, (_, i) => ({
           key: `meta-${i}`,
           value: 'x'.repeat(100), // 100 char strings
-          nested: { level: i, data: Array.from({ length: 10 }, (_, j) => `data-${j}`) }
+          nested: {
+            level: i,
+            data: Array.from({ length: 10 }, (_, j) => `data-${j}`),
+          },
         })),
         permissions: Array.from({ length: 200 }, (_, i) => ({
           resource: `resource-${i}`,
           actions: ['read', 'write', 'delete'],
-          conditions: { department: `dept-${i % 10}` }
-        }))
+          conditions: { department: `dept-${i % 10}` },
+        })),
       });
 
       const mockContext = createMockExecutionContext({ user: largeUser });
@@ -218,9 +251,13 @@ describe('CurrentUser Decorator - Regression Tests', () => {
         expect(result).toEqual(largeUser);
       });
 
-      expect(executionTime).toBeLessThan(PERFORMANCE_BASELINES.LARGE_OBJECT_MAX_TIME);
+      expect(executionTime).toBeLessThan(
+        PERFORMANCE_BASELINES.LARGE_OBJECT_MAX_TIME,
+      );
 
-      console.log(`📊 Regression - Large object: ${executionTime.toFixed(6)}ms (baseline: ${PERFORMANCE_BASELINES.LARGE_OBJECT_MAX_TIME}ms)`);
+      console.log(
+        `📊 Regression - Large object: ${executionTime.toFixed(6)}ms (baseline: ${PERFORMANCE_BASELINES.LARGE_OBJECT_MAX_TIME}ms)`,
+      );
     });
 
     it('should not cause memory regression', () => {
@@ -238,9 +275,13 @@ describe('CurrentUser Decorator - Regression Tests', () => {
 
       // Assert - Le décorateur ne devrait pas allouer de mémoire supplémentaire
       const memoryOverhead = Math.abs(memoryUsage.heapUsed);
-      expect(memoryOverhead).toBeLessThan(PERFORMANCE_BASELINES.MEMORY_OVERHEAD_MAX);
+      expect(memoryOverhead).toBeLessThan(
+        PERFORMANCE_BASELINES.MEMORY_OVERHEAD_MAX,
+      );
 
-      console.log(`📊 Regression - Memory overhead: ${memoryOverhead} bytes (baseline: ${PERFORMANCE_BASELINES.MEMORY_OVERHEAD_MAX} bytes)`);
+      console.log(
+        `📊 Regression - Memory overhead: ${memoryOverhead} bytes (baseline: ${PERFORMANCE_BASELINES.MEMORY_OVERHEAD_MAX} bytes)`,
+      );
     });
   });
 
@@ -283,7 +324,7 @@ describe('CurrentUser Decorator - Regression Tests', () => {
     it('should work with current NestJS decorators pattern', () => {
       // Vérification que le pattern createParamDecorator est toujours supporté
       expect(typeof decoratorFactory).toBe('function');
-      
+
       // Test de la signature du décorateur - le décorateur lui-même est la fonction
       const testUser = createTestUser();
       const mockContext = createMockExecutionContext({ user: testUser });
@@ -299,11 +340,11 @@ describe('CurrentUser Decorator - Regression Tests', () => {
     it('should handle ExecutionContext interface changes', () => {
       // Test de robustesse face aux changements potentiels d'ExecutionContext
       const testUser = createTestUser();
-      
+
       // Créer un contexte qui implémente seulement les méthodes essentielles
       const minimalContext = {
         switchToHttp: () => ({
-          getRequest: () => ({ user: testUser } as any), // Cast en any pour éviter l'erreur TypeScript
+          getRequest: () => ({ user: testUser }) as any, // Cast en any pour éviter l'erreur TypeScript
           getResponse: jest.fn(),
           getNext: jest.fn(),
         }),
@@ -328,9 +369,9 @@ describe('CurrentUser Decorator - Regression Tests', () => {
 
       Object.entries(userVariants).forEach(([variantName, user]) => {
         const mockContext = createMockExecutionContext({ user });
-        
+
         const result = extractUserFunction(undefined, mockContext);
-        
+
         // Le résultat doit être identique à l'entrée
         expect(result).toEqual(user);
         expect(result === user).toBe(true); // Même référence
@@ -349,10 +390,12 @@ describe('CurrentUser Decorator - Regression Tests', () => {
 
       errorCases.forEach(({ user, name }) => {
         const mockContext = createMockExecutionContext({ user });
-        
+
         expect(() => {
           extractUserFunction(undefined, mockContext);
-        }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+        }).toThrow(
+          'User not found in request context. Make sure AuthGuard is applied.',
+        );
       });
     });
 
@@ -366,9 +409,9 @@ describe('CurrentUser Decorator - Regression Tests', () => {
         nested: {
           level1: {
             level2: {
-              data: 'deep-data'
-            }
-          }
+              data: 'deep-data',
+            },
+          },
         },
         array: [1, 2, 3, { nested: 'value' }],
         date: new Date('2025-01-01'),
@@ -381,7 +424,10 @@ describe('CurrentUser Decorator - Regression Tests', () => {
       };
 
       const mockContext = createMockExecutionContext({ user: complexUser });
-      const result = extractUserFunction(undefined, mockContext) as ExtendedUserForTesting;
+      const result = extractUserFunction(
+        undefined,
+        mockContext,
+      ) as ExtendedUserForTesting;
 
       // Vérification propriété par propriété
       expect(result).toEqual(complexUser);
@@ -409,10 +455,10 @@ describe('CurrentUser Decorator - Regression Tests', () => {
       const result1 = extractUserFunction(undefined, mockContext);
 
       // Modification du request (simulation d'attaque)
-      (mockRequest as any).user = { 
-        id: 'hacked', 
-        email: 'hacker@evil.com', 
-        roles: ['admin', 'super-admin'] 
+      (mockRequest as any).user = {
+        id: 'hacked',
+        email: 'hacker@evil.com',
+        roles: ['admin', 'super-admin'],
       };
 
       // Deuxième extraction - devrait refléter la nouvelle valeur
@@ -444,8 +490,8 @@ describe('CurrentUser Decorator - Regression Tests', () => {
       expect(result.id).toBe(testUser.id);
       expect(result.email).toBe(testUser.email);
       expect(result.roles).toEqual(testUser.roles);
-      
-      // Note: La pollution de prototype peut affecter l'objet retourné car c'est 
+
+      // Note: La pollution de prototype peut affecter l'objet retourné car c'est
       // un comportement JavaScript normal. La protection doit se faire au niveau
       // de l'environnement d'exécution, pas au niveau du décorateur.
     });
@@ -456,7 +502,7 @@ describe('CurrentUser Decorator - Regression Tests', () => {
 
       Object.entries(maliciousUsers).forEach(([type, maliciousUser]) => {
         const mockContext = createMockExecutionContext({ user: maliciousUser });
-        
+
         // Doit extraire sans erreur
         expect(() => {
           const result = extractUserFunction(undefined, mockContext);
@@ -489,20 +535,28 @@ describe('CurrentUser Decorator - Regression Tests', () => {
           singleExtraction: measureExecutionTime(() => {
             extractUserFunction(undefined, mockContext);
           }),
-          burstExtraction: measureExecutionTime(() => {
-            for (let i = 0; i < 100; i++) {
-              extractUserFunction(undefined, mockContext);
-            }
-          }) / 100,
+          burstExtraction:
+            measureExecutionTime(() => {
+              for (let i = 0; i < 100; i++) {
+                extractUserFunction(undefined, mockContext);
+              }
+            }) / 100,
         },
       };
 
       // Validation que les mesures actuelles respectent les baselines
-      expect(regressionReport.currentMeasurements.singleExtraction).toBeLessThan(PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME);
-      expect(regressionReport.currentMeasurements.burstExtraction).toBeLessThan(PERFORMANCE_BASELINES.BURST_EXTRACTION_AVG_TIME);
+      expect(
+        regressionReport.currentMeasurements.singleExtraction,
+      ).toBeLessThan(PERFORMANCE_BASELINES.SINGLE_EXTRACTION_MAX_TIME);
+      expect(regressionReport.currentMeasurements.burstExtraction).toBeLessThan(
+        PERFORMANCE_BASELINES.BURST_EXTRACTION_AVG_TIME,
+      );
 
       // Log du rapport pour tracking
-      console.log('📋 Regression Report:', JSON.stringify(regressionReport, null, 2));
+      console.log(
+        '📋 Regression Report:',
+        JSON.stringify(regressionReport, null, 2),
+      );
 
       // Enregistrement pour le monitoring
       if (global.recordPerformanceMetric) {

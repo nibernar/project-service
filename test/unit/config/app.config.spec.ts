@@ -13,12 +13,14 @@ import {
 
 // Mock fs pour les tests du package.json
 jest.mock('fs');
-const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
+const mockReadFileSync = readFileSync as jest.MockedFunction<
+  typeof readFileSync
+>;
 
 describe('AppConfig', () => {
   // Sauvegarde de l'environnement original
   const originalEnv = process.env;
-  
+
   // Mock console.warn et console.error pour éviter les logs dans les tests
   const originalConsoleWarn = console.warn;
   const originalConsoleError = console.error;
@@ -28,7 +30,7 @@ describe('AppConfig', () => {
     jest.resetModules();
     process.env = { ...originalEnv };
     mockReadFileSync.mockClear();
-    
+
     // Mock console pour éviter le spam dans les tests
     console.warn = jest.fn();
     console.error = jest.fn();
@@ -77,7 +79,7 @@ describe('AppConfig', () => {
       // Act & Assert
       expect(() => AppConfigFactory.create()).toThrow(ConfigurationError);
       expect(() => AppConfigFactory.create()).toThrow(
-        'Missing required environment variables: DATABASE_URL'
+        'Missing required environment variables: DATABASE_URL',
       );
     });
 
@@ -119,7 +121,8 @@ describe('AppConfig', () => {
 
   describe('Server Configuration', () => {
     beforeEach(() => {
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       mockReadFileSync.mockReturnValue('{"version": "1.0.0"}');
     });
 
@@ -163,7 +166,9 @@ describe('AppConfig', () => {
 
       // Act & Assert
       expect(() => AppConfigFactory.create()).toThrow(ValidationError);
-      expect(() => AppConfigFactory.create()).toThrow('Port must be between 1 and 65535');
+      expect(() => AppConfigFactory.create()).toThrow(
+        'Port must be between 1 and 65535',
+      );
     });
 
     it('should handle negative port', () => {
@@ -181,7 +186,8 @@ describe('AppConfig', () => {
 
   describe('Environment Configuration', () => {
     beforeEach(() => {
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       mockReadFileSync.mockReturnValue('{"version": "2.1.0"}');
     });
 
@@ -277,7 +283,8 @@ describe('AppConfig', () => {
 
   describe('Security Configuration', () => {
     beforeEach(() => {
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       mockReadFileSync.mockReturnValue('{"version": "1.0.0"}');
     });
 
@@ -297,8 +304,19 @@ describe('AppConfig', () => {
         expect(config.security.cors.origin).toBe(true);
         expect(config.security.cors.credentials).toBe(true);
         // Les méthodes par défaut sont définies quand CORS_METHODS n'est pas défini
-        expect(config.security.cors.methods).toEqual(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']);
-        expect(config.security.cors.allowedHeaders).toEqual(['Content-Type', 'Authorization', 'x-api-key']);
+        expect(config.security.cors.methods).toEqual([
+          'GET',
+          'POST',
+          'PUT',
+          'PATCH',
+          'DELETE',
+          'OPTIONS',
+        ]);
+        expect(config.security.cors.allowedHeaders).toEqual([
+          'Content-Type',
+          'Authorization',
+          'x-api-key',
+        ]);
       });
 
       it('should configure CORS origin from environment', () => {
@@ -309,7 +327,10 @@ describe('AppConfig', () => {
         const config = AppConfigFactory.create();
 
         // Assert
-        expect(config.security.cors.origin).toEqual(['https://example.com', 'https://test.com']);
+        expect(config.security.cors.origin).toEqual([
+          'https://example.com',
+          'https://test.com',
+        ]);
       });
 
       it('should handle single CORS origin', () => {
@@ -342,7 +363,10 @@ describe('AppConfig', () => {
         const config = AppConfigFactory.create();
 
         // Assert
-        expect(config.security.cors.allowedHeaders).toEqual(['Content-Type', 'X-Custom-Header']);
+        expect(config.security.cors.allowedHeaders).toEqual([
+          'Content-Type',
+          'X-Custom-Header',
+        ]);
       });
 
       it('should restrict CORS origin in production', () => {
@@ -402,7 +426,11 @@ describe('AppConfig', () => {
       const config = AppConfigFactory.create();
 
       // Assert
-      expect(config.security.trustedProxies).toEqual(['127.0.0.1', '10.0.0.1', '::1']);
+      expect(config.security.trustedProxies).toEqual([
+        '127.0.0.1',
+        '10.0.0.1',
+        '::1',
+      ]);
     });
   });
 
@@ -412,7 +440,8 @@ describe('AppConfig', () => {
 
   describe('Features Configuration', () => {
     beforeEach(() => {
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       mockReadFileSync.mockReturnValue('{"version": "1.0.0"}');
     });
 
@@ -466,7 +495,8 @@ describe('AppConfig', () => {
 
   describe('Utility Methods', () => {
     beforeEach(() => {
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       mockReadFileSync.mockReturnValue('{"version": "1.0.0"}');
     });
 
@@ -599,7 +629,11 @@ describe('AppConfig', () => {
         const config = AppConfigFactory.create();
 
         // Assert
-        expect(config.security.trustedProxies).toEqual(['proxy1', 'proxy2', 'proxy3']);
+        expect(config.security.trustedProxies).toEqual([
+          'proxy1',
+          'proxy2',
+          'proxy3',
+        ]);
       });
 
       it('should trim whitespace', () => {
@@ -610,7 +644,11 @@ describe('AppConfig', () => {
         const config = AppConfigFactory.create();
 
         // Assert
-        expect(config.security.trustedProxies).toEqual(['proxy1', 'proxy2', 'proxy3']);
+        expect(config.security.trustedProxies).toEqual([
+          'proxy1',
+          'proxy2',
+          'proxy3',
+        ]);
       });
 
       it('should filter empty values', () => {
@@ -661,7 +699,7 @@ describe('AppConfig', () => {
         // Arrange
         process.env.CORS_METHODS = 'GET;POST,PUT';
 
-        // Act  
+        // Act
         const config = AppConfigFactory.create();
 
         // Assert
@@ -681,7 +719,8 @@ describe('AppConfig', () => {
 
     it('should handle extremely large numbers', () => {
       // Arrange
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       process.env.GLOBAL_TIMEOUT = '999999999';
 
       // Act
@@ -693,7 +732,8 @@ describe('AppConfig', () => {
 
     it('should handle special characters in configuration', () => {
       // Arrange
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       process.env.APP_NAME = 'My App! @#$%^&*()';
 
       // Act
@@ -705,7 +745,8 @@ describe('AppConfig', () => {
 
     it('should handle empty environment variables', () => {
       // Arrange
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       process.env.API_PREFIX = '';
 
       // Act
@@ -736,7 +777,8 @@ describe('AppConfig', () => {
 
   describe('Observability Configuration', () => {
     beforeEach(() => {
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       mockReadFileSync.mockReturnValue('{"version": "1.0.0"}');
     });
 
@@ -790,7 +832,9 @@ describe('AppConfig', () => {
         // Assert
         expect(config.observability.metrics.enabled).toBe(true);
         expect(config.observability.metrics.path).toBe('/metrics');
-        expect(config.observability.metrics.defaultLabels.service).toBe('project-service');
+        expect(config.observability.metrics.defaultLabels.service).toBe(
+          'project-service',
+        );
       });
 
       it('should disable metrics in test environment', () => {
@@ -812,7 +856,9 @@ describe('AppConfig', () => {
 
         // Assert
         expect(config.observability.tracing.enabled).toBe(false);
-        expect(config.observability.tracing.serviceName).toBe('project-service');
+        expect(config.observability.tracing.serviceName).toBe(
+          'project-service',
+        );
         expect(config.observability.tracing.sampleRate).toBe(0.1);
       });
 
@@ -837,7 +883,8 @@ describe('AppConfig', () => {
 
   describe('NestJS Integration', () => {
     beforeEach(() => {
-      process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+      process.env.DATABASE_URL =
+        'postgresql://test:test@localhost:5432/test_db';
       mockReadFileSync.mockReturnValue('{"version": "1.0.0"}');
     });
 
@@ -861,11 +908,13 @@ describe('AppConfig', () => {
       expect(config1.features).toEqual(config2.features);
       expect(config1.externalServices).toEqual(config2.externalServices);
       expect(config1.observability).toEqual(config2.observability);
-      
+
       // Vérification spécifique de l'environnement (sans buildTimestamp auto-généré)
       expect(config1.environment.nodeEnv).toEqual(config2.environment.nodeEnv);
       expect(config1.environment.appName).toEqual(config2.environment.appName);
-      expect(config1.environment.appVersion).toEqual(config2.environment.appVersion);
+      expect(config1.environment.appVersion).toEqual(
+        config2.environment.appVersion,
+      );
     });
 
     it('should provide TypeScript types', () => {

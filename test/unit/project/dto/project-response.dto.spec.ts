@@ -1,7 +1,10 @@
 // test/unit/project/dto/project-response.dto.spec.ts
 
 import { plainToInstance, instanceToPlain } from 'class-transformer';
-import { ProjectResponseDto, StatisticsResponseDto } from '../../../../src/project/dto/project-response.dto';
+import {
+  ProjectResponseDto,
+  StatisticsResponseDto,
+} from '../../../../src/project/dto/project-response.dto';
 import { ProjectStatus } from '../../../../src/common/enums/project-status.enum';
 
 describe('ProjectResponseDto - Tests de Base', () => {
@@ -96,12 +99,16 @@ describe('ProjectResponseDto - Tests de Base', () => {
       it('devrait recalculer le total des coûts si manquant ou incohérent', () => {
         const dataWithoutTotal = {
           costs: {
-            claudeApi: 0.30,
+            claudeApi: 0.3,
             storage: 0.05,
             compute: 0.02,
             total: 0, // Total manquant
           },
-          performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
+          performance: {
+            generationTime: 1000,
+            processingTime: 500,
+            totalTime: 1500,
+          },
           usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 100 },
           lastUpdated: new Date(),
         };
@@ -122,7 +129,10 @@ describe('ProjectResponseDto - Tests de Base', () => {
           lastUpdated: new Date(),
         };
 
-        const dto = plainToInstance(StatisticsResponseDto, dataWithoutTotalTime);
+        const dto = plainToInstance(
+          StatisticsResponseDto,
+          dataWithoutTotalTime,
+        );
         expect(dto.performance.totalTime).toBe(9500); // 8000 + 1500
       });
     });
@@ -131,7 +141,10 @@ describe('ProjectResponseDto - Tests de Base', () => {
       let validDto: StatisticsResponseDto;
 
       beforeEach(() => {
-        validDto = plainToInstance(StatisticsResponseDto, createValidStatisticsData());
+        validDto = plainToInstance(
+          StatisticsResponseDto,
+          createValidStatisticsData(),
+        );
       });
 
       it('getCostPerDocument() devrait calculer le coût par document', () => {
@@ -139,7 +152,10 @@ describe('ProjectResponseDto - Tests de Base', () => {
       });
 
       it('getCostPerDocument() devrait retourner 0 si aucun document généré', () => {
-        const noDocsData = { ...createValidStatisticsData(), usage: { documentsGenerated: 0, filesProcessed: 0, tokensUsed: 0 } };
+        const noDocsData = {
+          ...createValidStatisticsData(),
+          usage: { documentsGenerated: 0, filesProcessed: 0, tokensUsed: 0 },
+        };
         const dto = plainToInstance(StatisticsResponseDto, noDocsData);
         expect(dto.getCostPerDocument()).toBe(0);
       });
@@ -150,16 +166,19 @@ describe('ProjectResponseDto - Tests de Base', () => {
       });
 
       it('getTokensPerSecond() devrait retourner 0 si temps total est 0', () => {
-        const noTimeData = { 
-          ...createValidStatisticsData(), 
-          performance: { generationTime: 0, processingTime: 0, totalTime: 0 } 
+        const noTimeData = {
+          ...createValidStatisticsData(),
+          performance: { generationTime: 0, processingTime: 0, totalTime: 0 },
         };
         const dto = plainToInstance(StatisticsResponseDto, noTimeData);
         expect(dto.getTokensPerSecond()).toBe(0);
       });
 
       it('isDataFresh() devrait retourner true pour données récentes', () => {
-        const recentData = { ...createValidStatisticsData(), lastUpdated: new Date() };
+        const recentData = {
+          ...createValidStatisticsData(),
+          lastUpdated: new Date(),
+        };
         const dto = plainToInstance(StatisticsResponseDto, recentData);
         expect(dto.isDataFresh()).toBe(true);
       });
@@ -167,41 +186,63 @@ describe('ProjectResponseDto - Tests de Base', () => {
       it('isDataFresh() devrait retourner false pour données anciennes', () => {
         const oldDate = new Date();
         oldDate.setDate(oldDate.getDate() - 2); // Il y a 2 jours
-        const oldData = { ...createValidStatisticsData(), lastUpdated: oldDate };
+        const oldData = {
+          ...createValidStatisticsData(),
+          lastUpdated: oldDate,
+        };
         const dto = plainToInstance(StatisticsResponseDto, oldData);
         expect(dto.isDataFresh()).toBe(false);
       });
 
       it('getPerformanceSummary() devrait retourner les bonnes évaluations', () => {
         // Test avec différentes vitesses
-        const excellentData = { 
-          ...createValidStatisticsData(), 
-          performance: { generationTime: 1000, processingTime: 0, totalTime: 1000 },
-          usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 150 } // 150 tokens/s
+        const excellentData = {
+          ...createValidStatisticsData(),
+          performance: {
+            generationTime: 1000,
+            processingTime: 0,
+            totalTime: 1000,
+          },
+          usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 150 }, // 150 tokens/s
         };
-        const excellentDto = plainToInstance(StatisticsResponseDto, excellentData);
+        const excellentDto = plainToInstance(
+          StatisticsResponseDto,
+          excellentData,
+        );
         expect(excellentDto.getPerformanceSummary()).toBe('excellent');
 
-        const goodData = { 
-          ...createValidStatisticsData(), 
-          performance: { generationTime: 1000, processingTime: 0, totalTime: 1000 },
-          usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 75 } // 75 tokens/s
+        const goodData = {
+          ...createValidStatisticsData(),
+          performance: {
+            generationTime: 1000,
+            processingTime: 0,
+            totalTime: 1000,
+          },
+          usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 75 }, // 75 tokens/s
         };
         const goodDto = plainToInstance(StatisticsResponseDto, goodData);
         expect(goodDto.getPerformanceSummary()).toBe('good');
 
-        const averageData = { 
-          ...createValidStatisticsData(), 
-          performance: { generationTime: 1000, processingTime: 0, totalTime: 1000 },
-          usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 30 } // 30 tokens/s
+        const averageData = {
+          ...createValidStatisticsData(),
+          performance: {
+            generationTime: 1000,
+            processingTime: 0,
+            totalTime: 1000,
+          },
+          usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 30 }, // 30 tokens/s
         };
         const averageDto = plainToInstance(StatisticsResponseDto, averageData);
         expect(averageDto.getPerformanceSummary()).toBe('average');
 
-        const slowData = { 
-          ...createValidStatisticsData(), 
-          performance: { generationTime: 1000, processingTime: 0, totalTime: 1000 },
-          usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 10 } // 10 tokens/s
+        const slowData = {
+          ...createValidStatisticsData(),
+          performance: {
+            generationTime: 1000,
+            processingTime: 0,
+            totalTime: 1000,
+          },
+          usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 10 }, // 10 tokens/s
         };
         const slowDto = plainToInstance(StatisticsResponseDto, slowData);
         expect(slowDto.getPerformanceSummary()).toBe('slow');
@@ -223,10 +264,16 @@ describe('ProjectResponseDto - Tests de Base', () => {
         expect(dto.id).toBe('550e8400-e29b-41d4-a716-446655440000');
         expect(dto.name).toBe('Test Project');
         expect(dto.description).toBe('A test project description');
-        expect(dto.initialPrompt).toBe('Create a simple web application with user authentication');
+        expect(dto.initialPrompt).toBe(
+          'Create a simple web application with user authentication',
+        );
         expect(dto.status).toBe(ProjectStatus.ACTIVE);
         expect(dto.uploadedFileIds).toEqual(['file1-uuid', 'file2-uuid']);
-        expect(dto.generatedFileIds).toEqual(['gen1-uuid', 'gen2-uuid', 'gen3-uuid']);
+        expect(dto.generatedFileIds).toEqual([
+          'gen1-uuid',
+          'gen2-uuid',
+          'gen3-uuid',
+        ]);
         expect(dto.createdAt).toEqual(new Date('2024-08-08T10:30:00Z'));
         expect(dto.updatedAt).toEqual(new Date('2024-08-08T14:30:00Z'));
         expect(dto.statistics).toBeInstanceOf(StatisticsResponseDto);
@@ -312,8 +359,16 @@ describe('ProjectResponseDto - Tests de Base', () => {
           updatedAt: '2024-08-08T14:30:00.000Z',
           statistics: {
             costs: { claudeApi: 0.5, storage: 0.1, compute: 0.05, total: 0.65 },
-            performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
-            usage: { documentsGenerated: 3, filesProcessed: 2, tokensUsed: 750 },
+            performance: {
+              generationTime: 1000,
+              processingTime: 500,
+              totalTime: 1500,
+            },
+            usage: {
+              documentsGenerated: 3,
+              filesProcessed: 2,
+              tokensUsed: 750,
+            },
             lastUpdated: '2024-08-08T15:00:00.000Z',
           },
         };
@@ -329,24 +384,42 @@ describe('ProjectResponseDto - Tests de Base', () => {
 
     describe('Méthodes utilitaires - Fichiers', () => {
       it('hasUploadedFiles() devrait retourner true/false correctement', () => {
-        const withFiles = plainToInstance(ProjectResponseDto, createValidProjectData());
-        const withoutFiles = plainToInstance(ProjectResponseDto, createMinimalProjectData());
+        const withFiles = plainToInstance(
+          ProjectResponseDto,
+          createValidProjectData(),
+        );
+        const withoutFiles = plainToInstance(
+          ProjectResponseDto,
+          createMinimalProjectData(),
+        );
 
         expect(withFiles.hasUploadedFiles()).toBe(true);
         expect(withoutFiles.hasUploadedFiles()).toBe(false);
       });
 
       it('hasGeneratedFiles() devrait retourner true/false correctement', () => {
-        const withFiles = plainToInstance(ProjectResponseDto, createValidProjectData());
-        const withoutFiles = plainToInstance(ProjectResponseDto, createMinimalProjectData());
+        const withFiles = plainToInstance(
+          ProjectResponseDto,
+          createValidProjectData(),
+        );
+        const withoutFiles = plainToInstance(
+          ProjectResponseDto,
+          createMinimalProjectData(),
+        );
 
         expect(withFiles.hasGeneratedFiles()).toBe(true);
         expect(withoutFiles.hasGeneratedFiles()).toBe(false);
       });
 
       it('getTotalFilesCount() devrait compter tous les fichiers', () => {
-        const withFiles = plainToInstance(ProjectResponseDto, createValidProjectData());
-        const withoutFiles = plainToInstance(ProjectResponseDto, createMinimalProjectData());
+        const withFiles = plainToInstance(
+          ProjectResponseDto,
+          createValidProjectData(),
+        );
+        const withoutFiles = plainToInstance(
+          ProjectResponseDto,
+          createMinimalProjectData(),
+        );
 
         expect(withFiles.getTotalFilesCount()).toBe(5); // 2 uploaded + 3 generated
         expect(withoutFiles.getTotalFilesCount()).toBe(0);
@@ -355,24 +428,42 @@ describe('ProjectResponseDto - Tests de Base', () => {
 
     describe('Méthodes utilitaires - Statistiques', () => {
       it('hasStatistics() devrait détecter la présence de statistiques', () => {
-        const withStats = plainToInstance(ProjectResponseDto, createValidProjectData());
-        const withoutStats = plainToInstance(ProjectResponseDto, createMinimalProjectData());
+        const withStats = plainToInstance(
+          ProjectResponseDto,
+          createValidProjectData(),
+        );
+        const withoutStats = plainToInstance(
+          ProjectResponseDto,
+          createMinimalProjectData(),
+        );
 
         expect(withStats.hasStatistics()).toBe(true);
         expect(withoutStats.hasStatistics()).toBe(false);
       });
 
       it('getTotalCost() devrait retourner le coût ou null', () => {
-        const withStats = plainToInstance(ProjectResponseDto, createValidProjectData());
-        const withoutStats = plainToInstance(ProjectResponseDto, createMinimalProjectData());
+        const withStats = plainToInstance(
+          ProjectResponseDto,
+          createValidProjectData(),
+        );
+        const withoutStats = plainToInstance(
+          ProjectResponseDto,
+          createMinimalProjectData(),
+        );
 
         expect(withStats.getTotalCost()).toBe(0.48);
         expect(withoutStats.getTotalCost()).toBeNull();
       });
 
       it('getDocumentsCount() devrait retourner le nombre de documents ou null', () => {
-        const withStats = plainToInstance(ProjectResponseDto, createValidProjectData());
-        const withoutStats = plainToInstance(ProjectResponseDto, createMinimalProjectData());
+        const withStats = plainToInstance(
+          ProjectResponseDto,
+          createValidProjectData(),
+        );
+        const withoutStats = plainToInstance(
+          ProjectResponseDto,
+          createMinimalProjectData(),
+        );
 
         expect(withStats.getDocumentsCount()).toBe(5);
         expect(withoutStats.getDocumentsCount()).toBeNull();
@@ -380,17 +471,17 @@ describe('ProjectResponseDto - Tests de Base', () => {
     });
 
     describe('Méthodes utilitaires - Dates et âge', () => {
-      it('getAgeInDays() devrait calculer l\'âge en jours', () => {
+      it("getAgeInDays() devrait calculer l'âge en jours", () => {
         // Créer un projet vieux de 5 jours
         const oldDate = new Date();
         oldDate.setDate(oldDate.getDate() - 5);
-        
+
         const oldProjectData = {
           ...createMinimalProjectData(),
           createdAt: oldDate,
         };
         const dto = plainToInstance(ProjectResponseDto, oldProjectData);
-        
+
         expect(dto.getAgeInDays()).toBe(5);
       });
 
@@ -407,7 +498,10 @@ describe('ProjectResponseDto - Tests de Base', () => {
         };
 
         const modifiedDto = plainToInstance(ProjectResponseDto, modifiedData);
-        const unmodifiedDto = plainToInstance(ProjectResponseDto, unmodifiedData);
+        const unmodifiedDto = plainToInstance(
+          ProjectResponseDto,
+          unmodifiedData,
+        );
 
         expect(modifiedDto.hasBeenModified()).toBe(true);
         expect(unmodifiedDto.hasBeenModified()).toBe(false);
@@ -433,9 +527,18 @@ describe('ProjectResponseDto - Tests de Base', () => {
 
     describe('Méthodes utilitaires - Statut et accessibilité', () => {
       it('isAccessible() devrait retourner true pour ACTIVE et ARCHIVED', () => {
-        const activeData = { ...createMinimalProjectData(), status: ProjectStatus.ACTIVE };
-        const archivedData = { ...createMinimalProjectData(), status: ProjectStatus.ARCHIVED };
-        const deletedData = { ...createMinimalProjectData(), status: ProjectStatus.DELETED };
+        const activeData = {
+          ...createMinimalProjectData(),
+          status: ProjectStatus.ACTIVE,
+        };
+        const archivedData = {
+          ...createMinimalProjectData(),
+          status: ProjectStatus.ARCHIVED,
+        };
+        const deletedData = {
+          ...createMinimalProjectData(),
+          status: ProjectStatus.DELETED,
+        };
 
         const activeDto = plainToInstance(ProjectResponseDto, activeData);
         const archivedDto = plainToInstance(ProjectResponseDto, archivedData);
@@ -446,9 +549,9 @@ describe('ProjectResponseDto - Tests de Base', () => {
         expect(deletedDto.isAccessible()).toBe(false);
       });
 
-      it('getActivityLevel() devrait classifier l\'activité correctement', () => {
+      it("getActivityLevel() devrait classifier l'activité correctement", () => {
         const today = new Date();
-        
+
         // Nouveau projet (aujourd'hui, pas de fichiers)
         const newData = {
           ...createMinimalProjectData(),
@@ -497,15 +600,20 @@ describe('ProjectResponseDto - Tests de Base', () => {
         };
         const mediumComplexityData = {
           ...createMinimalProjectData(),
-          initialPrompt: 'Create a web application with user authentication and basic dashboard features', // 87 caractères, 12 mots
+          initialPrompt:
+            'Create a web application with user authentication and basic dashboard features', // 87 caractères, 12 mots
         };
         const highComplexityData = {
           ...createMinimalProjectData(),
-          initialPrompt: 'Create a comprehensive enterprise resource planning system with multiple modules including inventory management, customer relationship management, financial reporting, human resources management, supply chain optimization, real-time analytics, role-based access control, multi-tenant architecture, API integration capabilities, and mobile application support', // Plus de 200 caractères et 35 mots
+          initialPrompt:
+            'Create a comprehensive enterprise resource planning system with multiple modules including inventory management, customer relationship management, financial reporting, human resources management, supply chain optimization, real-time analytics, role-based access control, multi-tenant architecture, API integration capabilities, and mobile application support', // Plus de 200 caractères et 35 mots
         };
 
         const lowDto = plainToInstance(ProjectResponseDto, lowComplexityData);
-        const mediumDto = plainToInstance(ProjectResponseDto, mediumComplexityData);
+        const mediumDto = plainToInstance(
+          ProjectResponseDto,
+          mediumComplexityData,
+        );
         const highDto = plainToInstance(ProjectResponseDto, highComplexityData);
 
         expect(lowDto.getComplexityEstimate()).toBe('low');
@@ -556,7 +664,7 @@ describe('ProjectResponseDto - Tests de Base', () => {
         expect(safeString).toContain('ACTIVE');
         expect(safeString).toContain('files=5');
         expect(safeString).toContain('stats=true');
-        
+
         // Vérifier qu'aucune donnée sensible n'est présente
         expect(safeString).not.toContain('Test Project');
         expect(safeString).not.toContain('test project description');
@@ -586,13 +694,20 @@ describe('ProjectResponseDto - Tests de Base', () => {
 
       it('devrait gérer description optionnelle', () => {
         const withDesc = createValidProjectData();
-        const withoutDesc = { ...createMinimalProjectData(), description: undefined };
+        const withoutDesc = {
+          ...createMinimalProjectData(),
+          description: undefined,
+        };
 
         const dtoWith = plainToInstance(ProjectResponseDto, withDesc);
         const dtoWithout = plainToInstance(ProjectResponseDto, withoutDesc);
 
-        const jsonWith = instanceToPlain(dtoWith, { excludeExtraneousValues: true });
-        const jsonWithout = instanceToPlain(dtoWithout, { excludeExtraneousValues: true });
+        const jsonWith = instanceToPlain(dtoWith, {
+          excludeExtraneousValues: true,
+        });
+        const jsonWithout = instanceToPlain(dtoWithout, {
+          excludeExtraneousValues: true,
+        });
 
         expect(jsonWith.description).toBe('A test project description');
         expect(jsonWithout.description).toBeUndefined();
@@ -602,12 +717,12 @@ describe('ProjectResponseDto - Tests de Base', () => {
     describe('Cycles de sérialisation/désérialisation', () => {
       it('devrait préserver toutes les données à travers plusieurs cycles', () => {
         const originalData = createValidProjectData();
-        
+
         // Cycle 1: Data -> DTO -> JSON -> DTO
         const dto1 = plainToInstance(ProjectResponseDto, originalData);
         const json1 = instanceToPlain(dto1, { excludeExtraneousValues: true });
         const dto2 = plainToInstance(ProjectResponseDto, json1);
-        
+
         // Cycle 2: DTO -> JSON -> DTO
         const json2 = instanceToPlain(dto2, { excludeExtraneousValues: true });
         const dto3 = plainToInstance(ProjectResponseDto, json2);
@@ -622,7 +737,7 @@ describe('ProjectResponseDto - Tests de Base', () => {
 
       it('devrait maintenir la cohérence des méthodes utilitaires', () => {
         const data = createValidProjectData();
-        
+
         // Transformer plusieurs fois
         const dto1 = plainToInstance(ProjectResponseDto, data);
         const json = instanceToPlain(dto1, { excludeExtraneousValues: true });

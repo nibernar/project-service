@@ -1,7 +1,10 @@
 // test/unit/project/dto/project-response.dto.performance.spec.ts
 
 import { plainToInstance, instanceToPlain } from 'class-transformer';
-import { ProjectResponseDto, StatisticsResponseDto } from '../../../../src/project/dto/project-response.dto';
+import {
+  ProjectResponseDto,
+  StatisticsResponseDto,
+} from '../../../../src/project/dto/project-response.dto';
 import { ProjectStatus } from '../../../../src/common/enums/project-status.enum';
 
 describe('ProjectResponseDto - Tests de Performance', () => {
@@ -9,14 +12,19 @@ describe('ProjectResponseDto - Tests de Performance', () => {
   // UTILITIES DE PERFORMANCE
   // ========================================================================
 
-  const measureExecutionTime = async <T>(fn: () => T | Promise<T>): Promise<{ result: T; duration: number }> => {
+  const measureExecutionTime = async <T>(
+    fn: () => T | Promise<T>,
+  ): Promise<{ result: T; duration: number }> => {
     const start = performance.now();
     const result = await fn();
     const end = performance.now();
     return { result, duration: end - start };
   };
 
-  const createLargeArray = <T>(size: number, generator: (index: number) => T): T[] => {
+  const createLargeArray = <T>(
+    size: number,
+    generator: (index: number) => T,
+  ): T[] => {
     return Array.from({ length: size }, (_, index) => generator(index));
   };
 
@@ -26,8 +34,14 @@ describe('ProjectResponseDto - Tests de Performance', () => {
     description: 'A'.repeat(1000), // Description de 1000 caractères
     initialPrompt: 'B'.repeat(2000), // Prompt de 2000 caractères
     status: ProjectStatus.ACTIVE,
-    uploadedFileIds: createLargeArray(fileCount / 2, i => `uploaded-file-${i}-uuid`),
-    generatedFileIds: createLargeArray(fileCount / 2, i => `generated-file-${i}-uuid`),
+    uploadedFileIds: createLargeArray(
+      fileCount / 2,
+      (i) => `uploaded-file-${i}-uuid`,
+    ),
+    generatedFileIds: createLargeArray(
+      fileCount / 2,
+      (i) => `generated-file-${i}-uuid`,
+    ),
     createdAt: new Date('2024-08-08T10:30:00Z'),
     updatedAt: new Date('2024-08-08T14:30:00Z'),
     statistics: {
@@ -35,7 +49,7 @@ describe('ProjectResponseDto - Tests de Performance', () => {
         claudeApi: 125.67,
         storage: 45.32,
         compute: 78.91,
-        total: 249.90,
+        total: 249.9,
       },
       performance: {
         generationTime: 125000,
@@ -56,10 +70,10 @@ describe('ProjectResponseDto - Tests de Performance', () => {
   // ========================================================================
 
   describe('Performance des opérations de base', () => {
-    describe('Création d\'instances', () => {
+    describe("Création d'instances", () => {
       it('devrait créer une instance rapidement avec des données normales', async () => {
         const data = createPerformanceTestData(100);
-        
+
         const { duration } = await measureExecutionTime(() => {
           return plainToInstance(ProjectResponseDto, data);
         });
@@ -69,7 +83,7 @@ describe('ProjectResponseDto - Tests de Performance', () => {
 
       it('devrait créer une instance rapidement avec de grandes listes de fichiers', async () => {
         const data = createPerformanceTestData(1000);
-        
+
         const { result, duration } = await measureExecutionTime(() => {
           return plainToInstance(ProjectResponseDto, data);
         });
@@ -80,7 +94,7 @@ describe('ProjectResponseDto - Tests de Performance', () => {
 
       it('devrait créer une instance avec de très grandes listes', async () => {
         const data = createPerformanceTestData(10000);
-        
+
         const { result, duration } = await measureExecutionTime(() => {
           return plainToInstance(ProjectResponseDto, data);
         });
@@ -91,23 +105,25 @@ describe('ProjectResponseDto - Tests de Performance', () => {
 
       it('devrait créer plusieurs instances en parallèle efficacement', async () => {
         const data = createPerformanceTestData(500);
-        
+
         const { result, duration } = await measureExecutionTime(async () => {
-          const promises = createLargeArray(100, () => 
-            Promise.resolve(plainToInstance(ProjectResponseDto, data))
+          const promises = createLargeArray(100, () =>
+            Promise.resolve(plainToInstance(ProjectResponseDto, data)),
           );
           return Promise.all(promises);
         });
 
         expect(result).toHaveLength(100);
-        expect(result.every(dto => dto instanceof ProjectResponseDto)).toBe(true);
+        expect(result.every((dto) => dto instanceof ProjectResponseDto)).toBe(
+          true,
+        );
         expect(duration).toBeLessThan(500); // Moins de 500ms pour 100 instances
       });
 
       it('devrait gérer la création en série sans dégradation', async () => {
         const data = createPerformanceTestData(200);
         const durations: number[] = [];
-        
+
         for (let i = 0; i < 10; i++) {
           const { duration } = await measureExecutionTime(() => {
             return plainToInstance(ProjectResponseDto, data);
@@ -119,7 +135,7 @@ describe('ProjectResponseDto - Tests de Performance', () => {
         const firstDuration = durations[0];
         const lastDuration = durations[durations.length - 1];
         const degradationRatio = lastDuration / firstDuration;
-        
+
         expect(degradationRatio).toBeLessThan(3); // Pas plus de 3x plus lent
       });
     });
@@ -256,7 +272,7 @@ describe('ProjectResponseDto - Tests de Performance', () => {
       it('devrait sérialiser rapidement de grandes structures', async () => {
         const data = createPerformanceTestData(2000);
         const dto = plainToInstance(ProjectResponseDto, data);
-        
+
         const { result, duration } = await measureExecutionTime(() => {
           return instanceToPlain(dto, { excludeExtraneousValues: true });
         });
@@ -272,14 +288,25 @@ describe('ProjectResponseDto - Tests de Performance', () => {
           name: 'Large JSON Project',
           initialPrompt: 'Large prompt from JSON',
           status: 'ACTIVE',
-          uploadedFileIds: createLargeArray(1000, i => `json-upload-${i}`),
-          generatedFileIds: createLargeArray(1000, i => `json-generated-${i}`),
+          uploadedFileIds: createLargeArray(1000, (i) => `json-upload-${i}`),
+          generatedFileIds: createLargeArray(
+            1000,
+            (i) => `json-generated-${i}`,
+          ),
           createdAt: '2024-08-08T10:30:00.000Z',
           updatedAt: '2024-08-08T14:30:00.000Z',
           statistics: {
             costs: { claudeApi: 0.5, storage: 0.1, compute: 0.05, total: 0.65 },
-            performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
-            usage: { documentsGenerated: 3, filesProcessed: 2, tokensUsed: 750 },
+            performance: {
+              generationTime: 1000,
+              processingTime: 500,
+              totalTime: 1500,
+            },
+            usage: {
+              documentsGenerated: 3,
+              filesProcessed: 2,
+              tokensUsed: 750,
+            },
             lastUpdated: '2024-08-08T15:00:00.000Z',
           },
         };
@@ -294,17 +321,21 @@ describe('ProjectResponseDto - Tests de Performance', () => {
 
       it('devrait gérer des cycles de transformation multiples efficacement', async () => {
         const data = createPerformanceTestData(500);
-        
+
         const { result, duration } = await measureExecutionTime(() => {
           // Cycle 1: Data -> DTO -> JSON -> DTO
           const dto1 = plainToInstance(ProjectResponseDto, data);
-          const json1 = instanceToPlain(dto1, { excludeExtraneousValues: true });
+          const json1 = instanceToPlain(dto1, {
+            excludeExtraneousValues: true,
+          });
           const dto2 = plainToInstance(ProjectResponseDto, json1);
-          
+
           // Cycle 2: DTO -> JSON -> DTO
-          const json2 = instanceToPlain(dto2, { excludeExtraneousValues: true });
+          const json2 = instanceToPlain(dto2, {
+            excludeExtraneousValues: true,
+          });
           const dto3 = plainToInstance(ProjectResponseDto, json2);
-          
+
           return dto3;
         });
 
@@ -313,14 +344,16 @@ describe('ProjectResponseDto - Tests de Performance', () => {
       });
 
       it('devrait sérialiser en parallèle efficacement', async () => {
-        const instances = createLargeArray(50, i => {
+        const instances = createLargeArray(50, (i) => {
           const data = createPerformanceTestData(100);
           return plainToInstance(ProjectResponseDto, data);
         });
 
         const { result, duration } = await measureExecutionTime(async () => {
-          const promises = instances.map(dto => 
-            Promise.resolve(instanceToPlain(dto, { excludeExtraneousValues: true }))
+          const promises = instances.map((dto) =>
+            Promise.resolve(
+              instanceToPlain(dto, { excludeExtraneousValues: true }),
+            ),
           );
           return Promise.all(promises);
         });
@@ -335,17 +368,17 @@ describe('ProjectResponseDto - Tests de Performance', () => {
         const malformedData = {
           ...createPerformanceTestData(1000),
           uploadedFileIds: [
-            ...createLargeArray(500, i => `valid-file-${i}`),
+            ...createLargeArray(500, (i) => `valid-file-${i}`),
             ...createLargeArray(100, () => null),
             ...createLargeArray(100, () => 123),
             ...createLargeArray(100, () => ''),
-            ...createLargeArray(200, i => `another-valid-${i}`),
+            ...createLargeArray(200, (i) => `another-valid-${i}`),
           ],
           generatedFileIds: [
-            ...createLargeArray(400, i => `valid-gen-${i}`),
+            ...createLargeArray(400, (i) => `valid-gen-${i}`),
             ...createLargeArray(200, () => undefined),
             ...createLargeArray(200, () => false),
-            ...createLargeArray(200, i => `final-valid-${i}`),
+            ...createLargeArray(200, (i) => `final-valid-${i}`),
           ],
         };
 
@@ -358,17 +391,17 @@ describe('ProjectResponseDto - Tests de Performance', () => {
         expect(duration).toBeLessThan(50); // Moins de 50ms pour le filtrage
       });
 
-      it('devrait gérer efficacement des tableaux avec des milliers d\'éléments invalides', async () => {
+      it("devrait gérer efficacement des tableaux avec des milliers d'éléments invalides", async () => {
         const massiveInvalidData = {
           ...createPerformanceTestData(100),
           uploadedFileIds: [
             ...createLargeArray(10000, () => null),
-            ...createLargeArray(1000, i => `valid-${i}`),
+            ...createLargeArray(1000, (i) => `valid-${i}`),
             ...createLargeArray(10000, () => ''),
           ],
           generatedFileIds: [
             ...createLargeArray(5000, () => undefined),
-            ...createLargeArray(1000, i => `gen-${i}`),
+            ...createLargeArray(1000, (i) => `gen-${i}`),
             ...createLargeArray(5000, () => 42),
           ],
         };
@@ -389,11 +422,15 @@ describe('ProjectResponseDto - Tests de Performance', () => {
   // ========================================================================
 
   describe('Performance des statistiques', () => {
-    describe('Création d\'instances StatisticsResponseDto', () => {
+    describe("Création d'instances StatisticsResponseDto", () => {
       it('devrait créer rapidement des instances de statistiques simples', async () => {
         const simpleStatsData = {
           costs: { claudeApi: 0.5, storage: 0.1, compute: 0.05, total: 0.65 },
-          performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
+          performance: {
+            generationTime: 1000,
+            processingTime: 500,
+            totalTime: 1500,
+          },
           usage: { documentsGenerated: 3, filesProcessed: 2, tokensUsed: 750 },
           lastUpdated: new Date(),
         };
@@ -408,14 +445,29 @@ describe('ProjectResponseDto - Tests de Performance', () => {
 
       it('devrait créer rapidement plusieurs instances de statistiques', async () => {
         const statsData = {
-          costs: { claudeApi: 125.67, storage: 45.32, compute: 78.91, total: 249.90 },
-          performance: { generationTime: 125000, processingTime: 23000, totalTime: 148000 },
-          usage: { documentsGenerated: 150, filesProcessed: 89, tokensUsed: 125000 },
+          costs: {
+            claudeApi: 125.67,
+            storage: 45.32,
+            compute: 78.91,
+            total: 249.9,
+          },
+          performance: {
+            generationTime: 125000,
+            processingTime: 23000,
+            totalTime: 148000,
+          },
+          usage: {
+            documentsGenerated: 150,
+            filesProcessed: 89,
+            tokensUsed: 125000,
+          },
           lastUpdated: new Date(),
         };
 
         const { result, duration } = await measureExecutionTime(() => {
-          return createLargeArray(1000, () => plainToInstance(StatisticsResponseDto, statsData));
+          return createLargeArray(1000, () =>
+            plainToInstance(StatisticsResponseDto, statsData),
+          );
         });
 
         expect(result).toHaveLength(1000);
@@ -428,9 +480,22 @@ describe('ProjectResponseDto - Tests de Performance', () => {
 
       beforeEach(() => {
         const largeStatsData = {
-          costs: { claudeApi: 999.99, storage: 123.45, compute: 456.78, total: 1580.22 },
-          performance: { generationTime: 999999, processingTime: 123456, totalTime: 1123455 },
-          usage: { documentsGenerated: 9999, filesProcessed: 5555, tokensUsed: 999999 },
+          costs: {
+            claudeApi: 999.99,
+            storage: 123.45,
+            compute: 456.78,
+            total: 1580.22,
+          },
+          performance: {
+            generationTime: 999999,
+            processingTime: 123456,
+            totalTime: 1123455,
+          },
+          usage: {
+            documentsGenerated: 9999,
+            filesProcessed: 5555,
+            tokensUsed: 999999,
+          },
           lastUpdated: new Date(),
         };
         statsDto = plainToInstance(StatisticsResponseDto, largeStatsData);
@@ -496,11 +561,11 @@ describe('ProjectResponseDto - Tests de Performance', () => {
   // ========================================================================
 
   describe('Gestion mémoire et optimisations', () => {
-    describe('Création répétée d\'instances', () => {
+    describe("Création répétée d'instances", () => {
       it('ne devrait pas fuiter de mémoire avec des créations répétées', async () => {
         const data = createPerformanceTestData(500);
         const initialMemory = process.memoryUsage().heapUsed;
-        
+
         // Créer et détruire 1000 instances
         for (let i = 0; i < 1000; i++) {
           const dto = plainToInstance(ProjectResponseDto, data);
@@ -509,23 +574,23 @@ describe('ProjectResponseDto - Tests de Performance', () => {
           dto.toString();
           // Les objets devraient être garbage collectés automatiquement
         }
-        
+
         // Forcer le garbage collection si disponible
         if (global.gc) {
           global.gc();
         }
-        
+
         const finalMemory = process.memoryUsage().heapUsed;
         const memoryIncrease = finalMemory - initialMemory;
         const memoryIncreaseKB = memoryIncrease / 1024;
-        
+
         // L'augmentation de mémoire ne devrait pas être excessive
         expect(memoryIncreaseKB).toBeLessThan(10000); // Moins de 10MB d'augmentation
       });
 
       it('devrait réutiliser efficacement les transformations', async () => {
         const data = createPerformanceTestData(200);
-        
+
         const { duration } = await measureExecutionTime(() => {
           // Créer plusieurs instances avec les mêmes données
           for (let i = 0; i < 100; i++) {
@@ -562,7 +627,7 @@ describe('ProjectResponseDto - Tests de Performance', () => {
       });
 
       it('devrait optimiser les opérations sur des chaînes répétitives', async () => {
-        const repetitiveData = createLargeArray(10, i => ({
+        const repetitiveData = createLargeArray(10, (i) => ({
           ...createPerformanceTestData(100),
           name: `Project ${i}`,
           description: 'Same description '.repeat(1000),
@@ -570,7 +635,7 @@ describe('ProjectResponseDto - Tests de Performance', () => {
         }));
 
         const { result, duration } = await measureExecutionTime(() => {
-          return repetitiveData.map(data => {
+          return repetitiveData.map((data) => {
             const dto = plainToInstance(ProjectResponseDto, data);
             dto.getComplexityEstimate();
             return dto;
@@ -605,12 +670,28 @@ describe('ProjectResponseDto - Tests de Performance', () => {
         const complexStatsData = {
           ...createPerformanceTestData(1000),
           statistics: {
-            costs: createLargeArray(100, i => ({ [`metric${i}`]: Math.random() * 100 }))
-              .reduce((acc, obj) => ({ ...acc, ...obj }), { claudeApi: 100, storage: 50, compute: 25, total: 175 }),
-            performance: createLargeArray(50, i => ({ [`perf${i}`]: Math.random() * 10000 }))
-              .reduce((acc, obj) => ({ ...acc, ...obj }), { generationTime: 10000, processingTime: 5000, totalTime: 15000 }),
-            usage: createLargeArray(75, i => ({ [`usage${i}`]: Math.floor(Math.random() * 1000) }))
-              .reduce((acc, obj) => ({ ...acc, ...obj }), { documentsGenerated: 100, filesProcessed: 50, tokensUsed: 50000 }),
+            costs: createLargeArray(100, (i) => ({
+              [`metric${i}`]: Math.random() * 100,
+            })).reduce((acc, obj) => ({ ...acc, ...obj }), {
+              claudeApi: 100,
+              storage: 50,
+              compute: 25,
+              total: 175,
+            }),
+            performance: createLargeArray(50, (i) => ({
+              [`perf${i}`]: Math.random() * 10000,
+            })).reduce((acc, obj) => ({ ...acc, ...obj }), {
+              generationTime: 10000,
+              processingTime: 5000,
+              totalTime: 15000,
+            }),
+            usage: createLargeArray(75, (i) => ({
+              [`usage${i}`]: Math.floor(Math.random() * 1000),
+            })).reduce((acc, obj) => ({ ...acc, ...obj }), {
+              documentsGenerated: 100,
+              filesProcessed: 50,
+              tokensUsed: 50000,
+            }),
             lastUpdated: new Date(),
           },
         };
@@ -633,17 +714,23 @@ describe('ProjectResponseDto - Tests de Performance', () => {
         const normalData = createPerformanceTestData(1000);
         const optimizedData = {
           ...normalData,
-          uploadedFileIds: normalData.uploadedFileIds.filter(id => id.length > 0),
-          generatedFileIds: normalData.generatedFileIds.filter(id => id.length > 0),
+          uploadedFileIds: normalData.uploadedFileIds.filter(
+            (id) => id.length > 0,
+          ),
+          generatedFileIds: normalData.generatedFileIds.filter(
+            (id) => id.length > 0,
+          ),
         };
 
         const { duration: normalDuration } = await measureExecutionTime(() => {
           return plainToInstance(ProjectResponseDto, normalData);
         });
 
-        const { duration: optimizedDuration } = await measureExecutionTime(() => {
-          return plainToInstance(ProjectResponseDto, optimizedData);
-        });
+        const { duration: optimizedDuration } = await measureExecutionTime(
+          () => {
+            return plainToInstance(ProjectResponseDto, optimizedData);
+          },
+        );
 
         // Les données optimisées devraient être au moins aussi rapides
         expect(optimizedDuration).toBeLessThanOrEqual(normalDuration * 1.1); // 10% de tolérance
@@ -726,7 +813,7 @@ describe('ProjectResponseDto - Tests de Performance', () => {
         expect(duration).toBeLessThan(50); // Moins de 50ms pour 5000 opérations
       });
 
-      it('devrait maintenir les performances lors d\'appels imbriqués', async () => {
+      it("devrait maintenir les performances lors d'appels imbriqués", async () => {
         const data = createPerformanceTestData(1000);
 
         const { duration } = await measureExecutionTime(() => {
@@ -735,7 +822,7 @@ describe('ProjectResponseDto - Tests de Performance', () => {
             const metadata = dto.getMetadata();
             const toString = dto.toString();
             const logSafe = dto.toLogSafeString();
-            
+
             // Utiliser les résultats pour éviter l'optimisation du compilateur
             expect(metadata.totalFiles).toBe(1000);
             expect(toString.length).toBeGreaterThan(0);
@@ -768,14 +855,18 @@ describe('ProjectResponseDto - Tests de Performance', () => {
         expect(duration).toBeLessThan(100); // Moins de 100ms pour 50 accès concurrents
       });
 
-      it('devrait éviter les goulots d\'étranglement lors de transformations multiples', async () => {
-        const datasets = createLargeArray(20, i => createPerformanceTestData(500 + i * 50));
+      it("devrait éviter les goulots d'étranglement lors de transformations multiples", async () => {
+        const datasets = createLargeArray(20, (i) =>
+          createPerformanceTestData(500 + i * 50),
+        );
 
         const { result, duration } = await measureExecutionTime(async () => {
           const transformPromises = datasets.map(async (data, index) => {
-            await new Promise(resolve => setTimeout(resolve, index)); // Léger délai décalé
+            await new Promise((resolve) => setTimeout(resolve, index)); // Léger délai décalé
             const dto = plainToInstance(ProjectResponseDto, data);
-            const json = instanceToPlain(dto, { excludeExtraneousValues: true });
+            const json = instanceToPlain(dto, {
+              excludeExtraneousValues: true,
+            });
             return plainToInstance(ProjectResponseDto, json);
           });
 

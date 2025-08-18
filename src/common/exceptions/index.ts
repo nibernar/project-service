@@ -1,13 +1,13 @@
 /**
  * Index centralisé des exceptions communes du service
- * 
+ *
  * Facilite l'import des exceptions personnalisées à travers l'application
  * et maintient une organisation claire des types d'erreurs.
- * 
+ *
  * Les exceptions enrichies fournissent des informations détaillées pour
  * l'audit, le debugging et la sécurité tout en maintenant des messages
  * publics appropriés.
- * 
+ *
  * @fileoverview Export centralisé des exceptions enrichies
  * @version 2.0.0
  */

@@ -1,6 +1,6 @@
 /**
  * Tests unitaires principaux pour l'interface User
- * 
+ *
  * @fileoverview Tests des fonctionnalités principales de l'interface utilisateur
  * @version 1.0.0
  * @since 2025-01-28
@@ -94,7 +94,7 @@ describe('User Interface - Tests Principaux', () => {
       expect(UserRole.PREMIUM === 'premium').toBe(true);
     });
 
-    it('devrait être utilisable comme clé d\'objet', () => {
+    it("devrait être utilisable comme clé d'objet", () => {
       const permissions = {
         [UserRole.USER]: ['read'],
         [UserRole.ADMIN]: ['read', 'write', 'delete'],
@@ -122,12 +122,12 @@ describe('User Interface - Tests Principaux', () => {
       };
     });
 
-    it('devrait retourner true si l\'utilisateur a le rôle', () => {
+    it("devrait retourner true si l'utilisateur a le rôle", () => {
       expect(hasRole(user, UserRole.USER)).toBe(true);
       expect(hasRole(user, UserRole.PREMIUM)).toBe(true);
     });
 
-    it('devrait retourner false si l\'utilisateur n\'a pas le rôle', () => {
+    it("devrait retourner false si l'utilisateur n'a pas le rôle", () => {
       expect(hasRole(user, UserRole.ADMIN)).toBe(false);
     });
 
@@ -153,13 +153,13 @@ describe('User Interface - Tests Principaux', () => {
       };
     });
 
-    it('devrait retourner true si l\'utilisateur a au moins un des rôles', () => {
+    it("devrait retourner true si l'utilisateur a au moins un des rôles", () => {
       expect(hasAnyRole(user, [UserRole.USER, UserRole.ADMIN])).toBe(true);
       expect(hasAnyRole(user, [UserRole.PREMIUM, UserRole.ADMIN])).toBe(true);
       expect(hasAnyRole(user, [UserRole.USER, UserRole.PREMIUM])).toBe(true);
     });
 
-    it('devrait retourner false si l\'utilisateur n\'a aucun des rôles', () => {
+    it("devrait retourner false si l'utilisateur n'a aucun des rôles", () => {
       expect(hasAnyRole(user, [UserRole.ADMIN])).toBe(false);
     });
 
@@ -184,19 +184,27 @@ describe('User Interface - Tests Principaux', () => {
       };
     });
 
-    it('devrait retourner true si l\'utilisateur a tous les rôles requis', () => {
+    it("devrait retourner true si l'utilisateur a tous les rôles requis", () => {
       expect(hasAllRoles(user, [UserRole.USER, UserRole.PREMIUM])).toBe(true);
       expect(hasAllRoles(user, [UserRole.USER])).toBe(true);
-      expect(hasAllRoles(user, [UserRole.USER, UserRole.PREMIUM, UserRole.ADMIN])).toBe(true);
+      expect(
+        hasAllRoles(user, [UserRole.USER, UserRole.PREMIUM, UserRole.ADMIN]),
+      ).toBe(true);
     });
 
-    it('devrait retourner false si l\'utilisateur n\'a pas tous les rôles requis', () => {
+    it("devrait retourner false si l'utilisateur n'a pas tous les rôles requis", () => {
       const partialUser = {
         ...user,
         roles: ['user', 'premium'],
       };
 
-      expect(hasAllRoles(partialUser, [UserRole.USER, UserRole.PREMIUM, UserRole.ADMIN])).toBe(false);
+      expect(
+        hasAllRoles(partialUser, [
+          UserRole.USER,
+          UserRole.PREMIUM,
+          UserRole.ADMIN,
+        ]),
+      ).toBe(false);
     });
 
     it('devrait retourner true pour un tableau de rôles vide', () => {
@@ -204,7 +212,9 @@ describe('User Interface - Tests Principaux', () => {
     });
 
     it('devrait gérer les doublons dans les rôles requis', () => {
-      expect(hasAllRoles(user, [UserRole.USER, UserRole.USER, UserRole.PREMIUM])).toBe(true);
+      expect(
+        hasAllRoles(user, [UserRole.USER, UserRole.USER, UserRole.PREMIUM]),
+      ).toBe(true);
     });
   });
 
@@ -283,7 +293,10 @@ describe('User Interface - Tests Principaux', () => {
     });
 
     it('devrait créer un utilisateur avec des rôles additionnels', () => {
-      const user = createUser('123', 'admin@example.com', [UserRole.ADMIN, UserRole.PREMIUM]);
+      const user = createUser('123', 'admin@example.com', [
+        UserRole.ADMIN,
+        UserRole.PREMIUM,
+      ]);
 
       expect(user.roles).toContain('user'); // Rôle par défaut ajouté
       expect(user.roles).toContain('admin');
@@ -291,17 +304,24 @@ describe('User Interface - Tests Principaux', () => {
     });
 
     it('devrait dédupliquer les rôles', () => {
-      const user = createUser('123', 'user@example.com', [UserRole.USER, UserRole.PREMIUM, UserRole.USER]);
+      const user = createUser('123', 'user@example.com', [
+        UserRole.USER,
+        UserRole.PREMIUM,
+        UserRole.USER,
+      ]);
 
       expect(user.roles).toEqual(['user', 'premium']);
       expect(user.roles).toHaveLength(2);
     });
 
-    it('devrait ajouter le rôle user même s\'il est déjà présent', () => {
-      const user = createUser('123', 'user@example.com', [UserRole.USER, UserRole.PREMIUM]);
+    it("devrait ajouter le rôle user même s'il est déjà présent", () => {
+      const user = createUser('123', 'user@example.com', [
+        UserRole.USER,
+        UserRole.PREMIUM,
+      ]);
 
       expect(user.roles).toEqual(['user', 'premium']);
-      expect(user.roles.filter(role => role === 'user')).toHaveLength(1);
+      expect(user.roles.filter((role) => role === 'user')).toHaveLength(1);
     });
 
     it('devrait gérer un tableau de rôles vide', () => {
@@ -555,17 +575,23 @@ describe('User Interface - Tests Principaux', () => {
 
   describe('hasVerifiedEmail()', () => {
     it('devrait retourner true pour un utilisateur avec email vérifié', () => {
-      const verifiedUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        emailVerified: true,
-      });
+      const verifiedUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          emailVerified: true,
+        },
+      );
 
       expect(hasVerifiedEmail(verifiedUser)).toBe(true);
     });
 
     it('devrait retourner false pour un utilisateur avec email non vérifié', () => {
-      const unverifiedUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        emailVerified: false,
-      });
+      const unverifiedUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          emailVerified: false,
+        },
+      );
 
       expect(hasVerifiedEmail(unverifiedUser)).toBe(false);
     });
@@ -577,9 +603,12 @@ describe('User Interface - Tests Principaux', () => {
     });
 
     it('devrait retourner false pour un ExtendedUser sans propriété emailVerified', () => {
-      const extendedUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        name: 'John Doe',
-      });
+      const extendedUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          name: 'John Doe',
+        },
+      );
 
       expect(hasVerifiedEmail(extendedUser)).toBe(false);
     });
@@ -587,25 +616,34 @@ describe('User Interface - Tests Principaux', () => {
 
   describe('isActiveUser()', () => {
     it('devrait retourner true pour un utilisateur avec statut active', () => {
-      const activeUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        status: 'active',
-      });
+      const activeUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          status: 'active',
+        },
+      );
 
       expect(isActiveUser(activeUser)).toBe(true);
     });
 
     it('devrait retourner false pour un utilisateur suspendu', () => {
-      const suspendedUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        status: 'suspended',
-      });
+      const suspendedUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          status: 'suspended',
+        },
+      );
 
       expect(isActiveUser(suspendedUser)).toBe(false);
     });
 
     it('devrait retourner false pour un utilisateur en attente de vérification', () => {
-      const pendingUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        status: 'pending_verification',
-      });
+      const pendingUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          status: 'pending_verification',
+        },
+      );
 
       expect(isActiveUser(pendingUser)).toBe(false);
     });
@@ -617,9 +655,12 @@ describe('User Interface - Tests Principaux', () => {
     });
 
     it('devrait retourner true pour un ExtendedUser sans statut (undefined)', () => {
-      const extendedUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        name: 'John Doe',
-      });
+      const extendedUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          name: 'John Doe',
+        },
+      );
 
       expect(isActiveUser(extendedUser)).toBe(true);
     });
@@ -631,39 +672,51 @@ describe('User Interface - Tests Principaux', () => {
 
   describe('getDisplayName()', () => {
     it('devrait retourner le nom pour un ExtendedUser avec nom', () => {
-      const namedUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        name: 'John Doe',
-      });
+      const namedUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          name: 'John Doe',
+        },
+      );
 
       expect(getDisplayName(namedUser)).toBe('John Doe');
     });
 
-    it('devrait retourner l\'email pour un ExtendedUser sans nom', () => {
-      const unnamedUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        avatar: 'https://example.com/avatar.jpg',
-      });
+    it("devrait retourner l'email pour un ExtendedUser sans nom", () => {
+      const unnamedUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          avatar: 'https://example.com/avatar.jpg',
+        },
+      );
 
       expect(getDisplayName(unnamedUser)).toBe('user@example.com');
     });
 
-    it('devrait retourner l\'email pour un utilisateur de base', () => {
+    it("devrait retourner l'email pour un utilisateur de base", () => {
       const baseUser = createUser('123', 'user@example.com');
 
       expect(getDisplayName(baseUser)).toBe('user@example.com');
     });
 
     it('devrait gérer un nom vide', () => {
-      const emptyNameUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        name: '',
-      });
+      const emptyNameUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          name: '',
+        },
+      );
 
       expect(getDisplayName(emptyNameUser)).toBe('user@example.com');
     });
 
     it('devrait gérer un nom avec seulement des espaces', () => {
-      const spacesNameUser = createExtendedUser(createUser('123', 'user@example.com'), {
-        name: '   ',
-      });
+      const spacesNameUser = createExtendedUser(
+        createUser('123', 'user@example.com'),
+        {
+          name: '   ',
+        },
+      );
 
       expect(getDisplayName(spacesNameUser)).toBe('user@example.com');
     });

@@ -1,6 +1,10 @@
 // test/unit/common/guards/auth.guard.regression.spec.ts
 
-import { ExecutionContext, UnauthorizedException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  UnauthorizedException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -44,7 +48,9 @@ describe('AuthGuard - Regression Tests', () => {
     roles: ['user'],
   });
 
-  const createValidAuthResponse = (user: User = createValidUser()): AxiosResponse => ({
+  const createValidAuthResponse = (
+    user: User = createValidUser(),
+  ): AxiosResponse => ({
     data: {
       valid: true,
       user: {
@@ -141,21 +147,21 @@ describe('AuthGuard - Regression Tests', () => {
 
       // Act - Exécuter plusieurs fois pour vérifier les fuites
       const initialMemory = process.memoryUsage().heapUsed;
-      
+
       for (let i = 0; i < 100; i++) {
         const request = { headers: { authorization: `Bearer ${token}` } };
         const context = createMockExecutionContext(request);
-        
+
         const result = await authGuard.canActivate(context);
         expect(result).toBe(true);
-        
+
         // Clean up request reference to enable GC
         delete (request as any).user;
       }
 
       // Force GC if available
       if (global.gc) global.gc();
-      
+
       const finalMemory = process.memoryUsage().heapUsed;
       const memoryGrowth = finalMemory - initialMemory;
 
@@ -172,10 +178,10 @@ describe('AuthGuard - Regression Tests', () => {
       // Arrange
       const token = createRegressionToken('race-condition-fix');
       const user = createValidUser();
-      
+
       let authServiceCallCount = 0;
       cacheService.get.mockResolvedValue(null); // Always cache miss for this test
-      
+
       httpService.post.mockImplementation(() => {
         authServiceCallCount++;
         // Simulate some processing time with Observable
@@ -202,8 +208,8 @@ describe('AuthGuard - Regression Tests', () => {
       const results = await Promise.all(promises);
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
-      
+      expect(results.every((result) => result === true)).toBe(true);
+
       // Note: Without proper deduplication, this will still call the service 50 times
       // This test documents the current behavior and will catch changes
       expect(authServiceCallCount).toBe(50);
@@ -238,13 +244,17 @@ describe('AuthGuard - Regression Tests', () => {
           const context = createMockExecutionContext(request);
 
           cacheService.get.mockResolvedValue(null);
-          httpService.post.mockReturnValue(throwError(() => new AxiosError('Malformed token', '400')));
+          httpService.post.mockReturnValue(
+            throwError(() => new AxiosError('Malformed token', '400')),
+          );
 
-          await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+          await expect(authGuard.canActivate(context)).rejects.toThrow(
+            UnauthorizedException,
+          );
         }
 
         // Wait a bit for any potential unhandled rejections
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Assert
         expect(unhandledRejections).toHaveLength(0);
@@ -282,10 +292,13 @@ describe('AuthGuard - Regression Tests', () => {
         expect(cacheService.set).toHaveBeenCalledWith(
           expect.stringMatching(/^auth:token:[a-f0-9]{64}$/),
           user,
-          expect.any(Number)
+          expect.any(Number),
         );
 
-        const cacheKey = cacheService.set.mock.calls[cacheService.set.mock.calls.length - 1][0];
+        const cacheKey =
+          cacheService.set.mock.calls[
+            cacheService.set.mock.calls.length - 1
+          ][0];
         expect(cacheKey).not.toContain('admin');
         expect(cacheKey).not.toContain('override');
         expect(cacheKey).not.toContain('../');
@@ -307,7 +320,9 @@ describe('AuthGuard - Regression Tests', () => {
       cacheService.get.mockResolvedValue(null);
 
       const timeoutErrors = [
-        Object.assign(new Error('timeout of 5000ms exceeded'), { code: 'ETIMEDOUT' }),
+        Object.assign(new Error('timeout of 5000ms exceeded'), {
+          code: 'ETIMEDOUT',
+        }),
         Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' }),
         Object.assign(new Error('request timeout'), { code: 'ECONNABORTED' }),
         new AxiosError('timeout', 'ECONNABORTED'),
@@ -317,8 +332,12 @@ describe('AuthGuard - Regression Tests', () => {
       for (const error of timeoutErrors) {
         httpService.post.mockReturnValue(throwError(() => error));
 
-        await expect(authGuard.canActivate(context)).rejects.toThrow(ServiceUnavailableException);
-        await expect(authGuard.canActivate(context)).rejects.toThrow('Authentication service unavailable');
+        await expect(authGuard.canActivate(context)).rejects.toThrow(
+          ServiceUnavailableException,
+        );
+        await expect(authGuard.canActivate(context)).rejects.toThrow(
+          'Authentication service unavailable',
+        );
       }
     });
 
@@ -349,11 +368,11 @@ describe('AuthGuard - Regression Tests', () => {
 
       // Assert
       expect(result).toBe(true);
-      
+
       // Verify no prototype pollution occurred
       expect((Object.prototype as any).isAdmin).toBeUndefined();
       expect((Object.prototype as any).polluted).toBeUndefined();
-      
+
       // User should be cleaned/validated
       const injectedUser = (request as any).user;
       expect(injectedUser.id).toBe('user-123');
@@ -373,27 +392,33 @@ describe('AuthGuard - Regression Tests', () => {
           name: 'invalid-token',
           setup: () => {
             cacheService.get.mockResolvedValue(null);
-            httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '401')));
+            httpService.post.mockReturnValue(
+              throwError(() => new AxiosError('Invalid token', '401')),
+            );
           },
         },
         {
           name: 'expired-token',
           setup: () => {
             cacheService.get.mockResolvedValue(null);
-            httpService.post.mockReturnValue(throwError(() => new AxiosError('Token expired', '401')));
+            httpService.post.mockReturnValue(
+              throwError(() => new AxiosError('Token expired', '401')),
+            );
           },
         },
         {
           name: 'malformed-response',
           setup: () => {
             cacheService.get.mockResolvedValue(null);
-            httpService.post.mockReturnValue(of({
-              data: { valid: false },
-              status: 200,
-              statusText: 'OK',
-              headers: {},
-              config: {} as any,
-            }));
+            httpService.post.mockReturnValue(
+              of({
+                data: { valid: false },
+                status: 200,
+                statusText: 'OK',
+                headers: {},
+                config: {} as any,
+              }),
+            );
           },
         },
       ];
@@ -406,8 +431,8 @@ describe('AuthGuard - Regression Tests', () => {
 
         scenario.setup();
 
-        const error = await authGuard.canActivate(context).catch(e => e);
-        
+        const error = await authGuard.canActivate(context).catch((e) => e);
+
         expect(error).toBeInstanceOf(UnauthorizedException);
         expect(error.message).toBe('Authentication failed'); // Consistent message
       }
@@ -449,7 +474,7 @@ describe('AuthGuard - Regression Tests', () => {
       expect(cacheService.set).toHaveBeenCalledWith(
         expect.stringMatching(/^auth:token:[a-f0-9]{64}$/),
         user,
-        customTTL
+        customTTL,
       );
     });
   });
@@ -473,7 +498,9 @@ describe('AuthGuard - Regression Tests', () => {
         // Standard HTTP context
         {
           switchToHttp: () => ({
-            getRequest: () => ({ headers: { authorization: `Bearer ${token}` } }),
+            getRequest: () => ({
+              headers: { authorization: `Bearer ${token}` },
+            }),
             getResponse: jest.fn(),
             getNext: jest.fn(),
           }),
@@ -488,7 +515,9 @@ describe('AuthGuard - Regression Tests', () => {
         // Context with additional properties
         {
           switchToHttp: () => ({
-            getRequest: () => ({ headers: { authorization: `Bearer ${token}` } }),
+            getRequest: () => ({
+              headers: { authorization: `Bearer ${token}` },
+            }),
             getResponse: jest.fn(),
             getNext: jest.fn(),
           }),
@@ -572,8 +601,8 @@ describe('AuthGuard - Regression Tests', () => {
       const strictConfigService = {
         get: jest.fn().mockImplementation((key: string) => {
           const config: Record<string, string> = {
-            'AUTH_SERVICE_URL': 'http://localhost:3001',
-            'AUTH_SERVICE_TIMEOUT': '5000',
+            AUTH_SERVICE_URL: 'http://localhost:3001',
+            AUTH_SERVICE_TIMEOUT: '5000',
           };
           if (!(key in config)) {
             throw new Error(`Unknown configuration key: ${key}`);
@@ -586,7 +615,7 @@ describe('AuthGuard - Regression Tests', () => {
       const strictGuard = new AuthGuard(
         strictConfigService as any,
         cacheService,
-        httpService
+        httpService,
       );
 
       const request = { headers: { authorization: `Bearer ${token}` } };
@@ -629,7 +658,7 @@ describe('AuthGuard - Regression Tests', () => {
         const start = process.hrtime.bigint();
         await authGuard.canActivate(context);
         const end = process.hrtime.bigint();
-        
+
         cacheHitTimes.push(Number(end - start) / 1000000); // Convert to ms
       }
 
@@ -645,18 +674,22 @@ describe('AuthGuard - Regression Tests', () => {
         const start = process.hrtime.bigint();
         await authGuard.canActivate(context);
         const end = process.hrtime.bigint();
-        
+
         cacheMissTimes.push(Number(end - start) / 1000000); // Convert to ms
       }
 
       // Assert - Performance baselines (adjust based on your requirements)
-      const avgCacheHitTime = cacheHitTimes.reduce((a, b) => a + b) / cacheHitTimes.length;
-      const avgCacheMissTime = cacheMissTimes.reduce((a, b) => a + b) / cacheMissTimes.length;
+      const avgCacheHitTime =
+        cacheHitTimes.reduce((a, b) => a + b) / cacheHitTimes.length;
+      const avgCacheMissTime =
+        cacheMissTimes.reduce((a, b) => a + b) / cacheMissTimes.length;
 
       expect(avgCacheHitTime).toBeLessThan(5); // Cache hits should be under 5ms
       expect(avgCacheMissTime).toBeLessThan(50); // Cache misses should be under 50ms
 
-      console.log(`📊 Performance Baseline - Cache Hit: ${avgCacheHitTime.toFixed(2)}ms, Cache Miss: ${avgCacheMissTime.toFixed(2)}ms`);
+      console.log(
+        `📊 Performance Baseline - Cache Hit: ${avgCacheHitTime.toFixed(2)}ms, Cache Miss: ${avgCacheMissTime.toFixed(2)}ms`,
+      );
     });
 
     /**
@@ -680,7 +713,7 @@ describe('AuthGuard - Regression Tests', () => {
         const context = createMockExecutionContext(request);
 
         await authGuard.canActivate(context);
-        
+
         // Clean up to enable GC
         delete (request as any).user;
       }
@@ -691,8 +724,10 @@ describe('AuthGuard - Regression Tests', () => {
       const memoryGrowth = finalMemory - initialMemory;
 
       expect(memoryGrowth).toBeLessThan(65 * 1024 * 1024);
-      
-      console.log(`📊 Memory Baseline - Growth: ${(memoryGrowth / 1024 / 1024).toFixed(2)}MB`);
+
+      console.log(
+        `📊 Memory Baseline - Growth: ${(memoryGrowth / 1024 / 1024).toFixed(2)}MB`,
+      );
     });
   });
 
@@ -730,9 +765,13 @@ describe('AuthGuard - Regression Tests', () => {
         const context = createMockExecutionContext(request);
 
         cacheService.get.mockResolvedValue(null);
-        httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '401')));
+        httpService.post.mockReturnValue(
+          throwError(() => new AxiosError('Invalid token', '401')),
+        );
 
-        await expect(authGuard.canActivate(context)).rejects.toThrow(UnauthorizedException);
+        await expect(authGuard.canActivate(context)).rejects.toThrow(
+          UnauthorizedException,
+        );
       }
     });
 
@@ -763,7 +802,10 @@ describe('AuthGuard - Regression Tests', () => {
         await authGuard.canActivate(context);
 
         // Verify cache key is properly hashed and sanitized
-        const cacheKey = cacheService.set.mock.calls[cacheService.set.mock.calls.length - 1][0];
+        const cacheKey =
+          cacheService.set.mock.calls[
+            cacheService.set.mock.calls.length - 1
+          ][0];
         expect(cacheKey).toMatch(/^auth:token:[a-f0-9]{64}$/);
         expect(cacheKey).not.toContain('admin');
         expect(cacheKey).not.toContain('../');
@@ -791,10 +833,12 @@ describe('AuthGuard - Regression Tests', () => {
         const context = createMockExecutionContext(request);
 
         cacheService.get.mockResolvedValue(null);
-        httpService.post.mockReturnValue(throwError(() => new AxiosError('Internal server error', '500')));
+        httpService.post.mockReturnValue(
+          throwError(() => new AxiosError('Internal server error', '500')),
+        );
 
-        const error = await authGuard.canActivate(context).catch(e => e);
-        
+        const error = await authGuard.canActivate(context).catch((e) => e);
+
         // Verify no sensitive information is leaked
         expect(error.message).not.toContain(token);
         expect(error.message).not.toContain('secret');

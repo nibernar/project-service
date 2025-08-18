@@ -1,6 +1,11 @@
 // test/unit/common/guards/auth.guard.security.spec.ts
 
-import { ExecutionContext, UnauthorizedException, ServiceUnavailableException, InternalServerErrorException } from '@nestjs/common';
+import {
+  ExecutionContext,
+  UnauthorizedException,
+  ServiceUnavailableException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { FastifyRequest } from 'fastify';
@@ -45,7 +50,9 @@ describe('AuthGuard - Security Tests', () => {
     roles: ['user'],
   });
 
-  const createValidAuthResponse = (user: User = createValidUser()): AxiosResponse => ({
+  const createValidAuthResponse = (
+    user: User = createValidUser(),
+  ): AxiosResponse => ({
     data: {
       valid: true,
       user: {
@@ -63,19 +70,25 @@ describe('AuthGuard - Security Tests', () => {
 
   const createSecureToken = (): string => {
     // Générer un token JWT-like sécurisé pour les tests
-    const header = Buffer.from('{"alg":"HS256","typ":"JWT"}').toString('base64url');
-    const payload = Buffer.from(JSON.stringify({
-      sub: 'user-123',
-      email: 'test@example.com',
-      roles: ['user'],
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 3600,
-    })).toString('base64url');
+    const header = Buffer.from('{"alg":"HS256","typ":"JWT"}').toString(
+      'base64url',
+    );
+    const payload = Buffer.from(
+      JSON.stringify({
+        sub: 'user-123',
+        email: 'test@example.com',
+        roles: ['user'],
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      }),
+    ).toString('base64url');
     const signature = crypto.randomBytes(32).toString('base64url');
     return `${header}.${payload}.${signature}`;
   };
 
-  const measureExecutionTime = async (fn: () => Promise<any>): Promise<number> => {
+  const measureExecutionTime = async (
+    fn: () => Promise<any>,
+  ): Promise<number> => {
     const start = process.hrtime.bigint();
     try {
       await fn();
@@ -145,7 +158,9 @@ describe('AuthGuard - Security Tests', () => {
       const responseTimes: number[] = [];
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '401')));
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Invalid token', '401')),
+      );
 
       // Act - Mesurer les temps de réponse
       for (const token of tokens) {
@@ -164,9 +179,12 @@ describe('AuthGuard - Security Tests', () => {
       }
 
       // Assert - Les temps ne doivent pas varier significativement
-      const avgTime = responseTimes.reduce((a, b) => a + b) / responseTimes.length;
-      const maxDeviation = Math.max(...responseTimes.map(time => Math.abs(time - avgTime)));
-      
+      const avgTime =
+        responseTimes.reduce((a, b) => a + b) / responseTimes.length;
+      const maxDeviation = Math.max(
+        ...responseTimes.map((time) => Math.abs(time - avgTime)),
+      );
+
       // Très relaxed assertion pour les tests CI/CD
       expect(maxDeviation).toBeLessThan(avgTime * 5.0); // Max 500% de variation (très tolérant)
     });
@@ -175,7 +193,10 @@ describe('AuthGuard - Security Tests', () => {
       // Arrange
       const validToken = createSecureToken();
       const invalidToken = 'invalid.token.signature';
-      const responseTimes: { valid: number[]; invalid: number[] } = { valid: [], invalid: [] };
+      const responseTimes: { valid: number[]; invalid: number[] } = {
+        valid: [],
+        invalid: [],
+      };
 
       // Mesurer les tokens valides
       for (let i = 0; i < 10; i++) {
@@ -185,17 +206,23 @@ describe('AuthGuard - Security Tests', () => {
         cacheService.get.mockResolvedValue(null);
         httpService.post.mockReturnValue(of(createValidAuthResponse()));
 
-        const time = await measureExecutionTime(() => authGuard.canActivate(context));
+        const time = await measureExecutionTime(() =>
+          authGuard.canActivate(context),
+        );
         responseTimes.valid.push(time);
       }
 
       // Mesurer les tokens invalides
       for (let i = 0; i < 10; i++) {
-        const request = { headers: { authorization: `Bearer ${invalidToken}` } };
+        const request = {
+          headers: { authorization: `Bearer ${invalidToken}` },
+        };
         const context = createMockExecutionContext(request);
 
         cacheService.get.mockResolvedValue(null);
-        httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '401')));
+        httpService.post.mockReturnValue(
+          throwError(() => new AxiosError('Invalid token', '401')),
+        );
 
         const time = await measureExecutionTime(async () => {
           try {
@@ -208,11 +235,17 @@ describe('AuthGuard - Security Tests', () => {
       }
 
       // Assert - Les temps moyens ne doivent pas révéler d'informations
-      const avgValidTime = responseTimes.valid.reduce((a, b) => a + b) / responseTimes.valid.length;
-      const avgInvalidTime = responseTimes.invalid.reduce((a, b) => a + b) / responseTimes.invalid.length;
+      const avgValidTime =
+        responseTimes.valid.reduce((a, b) => a + b) /
+        responseTimes.valid.length;
+      const avgInvalidTime =
+        responseTimes.invalid.reduce((a, b) => a + b) /
+        responseTimes.invalid.length;
       const timeDifference = Math.abs(avgValidTime - avgInvalidTime);
 
-      expect(timeDifference).toBeLessThan(Math.max(avgValidTime, avgInvalidTime) * 0.8); // Max 80% de différence (plus tolérant)
+      expect(timeDifference).toBeLessThan(
+        Math.max(avgValidTime, avgInvalidTime) * 0.8,
+      ); // Max 80% de différence (plus tolérant)
     });
 
     it('should not leak information through cache hit/miss timing', async () => {
@@ -229,7 +262,9 @@ describe('AuthGuard - Security Tests', () => {
         const context = createMockExecutionContext(request);
         cacheService.get.mockResolvedValue(user); // Cache hit
 
-        const time = await measureExecutionTime(() => authGuard.canActivate(context));
+        const time = await measureExecutionTime(() =>
+          authGuard.canActivate(context),
+        );
         cacheHitTimes.push(time);
       }
 
@@ -239,14 +274,18 @@ describe('AuthGuard - Security Tests', () => {
         cacheService.get.mockResolvedValue(null); // Cache miss
         httpService.post.mockReturnValue(of(createValidAuthResponse(user)));
 
-        const time = await measureExecutionTime(() => authGuard.canActivate(context));
+        const time = await measureExecutionTime(() =>
+          authGuard.canActivate(context),
+        );
         cacheMissTimes.push(time);
       }
 
-      // Assert - Bien que les cache hits soient plus rapides, 
+      // Assert - Bien que les cache hits soient plus rapides,
       // la différence ne doit pas être exploitable pour des attaques
-      const avgCacheHitTime = cacheHitTimes.reduce((a, b) => a + b) / cacheHitTimes.length;
-      const avgCacheMissTime = cacheMissTimes.reduce((a, b) => a + b) / cacheMissTimes.length;
+      const avgCacheHitTime =
+        cacheHitTimes.reduce((a, b) => a + b) / cacheHitTimes.length;
+      const avgCacheMissTime =
+        cacheMissTimes.reduce((a, b) => a + b) / cacheMissTimes.length;
 
       expect(avgCacheHitTime).toBeLessThan(avgCacheMissTime); // Normal que cache soit plus rapide
       expect(avgCacheHitTime).toBeGreaterThan(0.01); // Très tolérant pour éviter timing attacks
@@ -275,7 +314,7 @@ describe('AuthGuard - Security Tests', () => {
       expect(cacheService.set).toHaveBeenCalledWith(
         expect.stringMatching(/^auth:token:[a-f0-9]{64}$/), // SHA-256 hash (64 hex chars)
         user,
-        expect.any(Number)
+        expect.any(Number),
       );
 
       // Vérifier que le token original n'apparaît pas dans la clé
@@ -303,7 +342,11 @@ describe('AuthGuard - Security Tests', () => {
         const context = createMockExecutionContext(request);
 
         await authGuard.canActivate(context);
-        cacheKeys.push(cacheService.set.mock.calls[cacheService.set.mock.calls.length - 1][0]);
+        cacheKeys.push(
+          cacheService.set.mock.calls[
+            cacheService.set.mock.calls.length - 1
+          ][0],
+        );
       }
 
       // Assert - Toutes les clés doivent être uniques
@@ -331,7 +374,7 @@ describe('AuthGuard - Security Tests', () => {
       // Act - L'AuthGuard utilise les données du cache telles quelles
       const result = await authGuard.canActivate(context);
       expect(result).toBe(true);
-      
+
       // Assert - Vérifier que les données malveillantes sont utilisées (comportement actuel)
       expect(httpService.post).not.toHaveBeenCalled(); // Pas de fallback, utilise le cache
       expect((request as any).user).toBe(maliciousData);
@@ -339,7 +382,10 @@ describe('AuthGuard - Security Tests', () => {
 
     it('should prevent cache overflow attacks', async () => {
       // Arrange
-      const tokens = Array.from({ length: 1000 }, (_, i) => `token-${i}.unique.signature`);
+      const tokens = Array.from(
+        { length: 1000 },
+        (_, i) => `token-${i}.unique.signature`,
+      );
       const user = createValidUser();
 
       cacheService.get.mockResolvedValue(null);
@@ -356,7 +402,7 @@ describe('AuthGuard - Security Tests', () => {
       const results = await Promise.all(promises);
 
       // Assert
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
       expect(cacheService.set).toHaveBeenCalledTimes(1000);
       // Le guard ne doit pas limiter les appels (c'est le rôle du cache/rate limiter)
     });
@@ -366,15 +412,20 @@ describe('AuthGuard - Security Tests', () => {
   // TESTS - PROTECTION CONTRE LES FUITES D'INFORMATIONS
   // ============================================================================
 
-  describe('Protection contre les fuites d\'informations', () => {
+  describe("Protection contre les fuites d'informations", () => {
     it('should not leak tokens in error messages', async () => {
       // Arrange
-      const sensitiveToken = 'secret-token-with-sensitive-information-in-payload';
-      const request = { headers: { authorization: `Bearer ${sensitiveToken}` } };
+      const sensitiveToken =
+        'secret-token-with-sensitive-information-in-payload';
+      const request = {
+        headers: { authorization: `Bearer ${sensitiveToken}` },
+      };
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new Error('Authentication failed')));
+      httpService.post.mockReturnValue(
+        throwError(() => new Error('Authentication failed')),
+      );
 
       // Act & Assert
       try {
@@ -401,8 +452,12 @@ describe('AuthGuard - Security Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      cacheService.set.mockRejectedValue(new Error('Cache error with user data'));
-      httpService.post.mockReturnValue(of(createValidAuthResponse(sensitiveUser as any)));
+      cacheService.set.mockRejectedValue(
+        new Error('Cache error with user data'),
+      );
+      httpService.post.mockReturnValue(
+        of(createValidAuthResponse(sensitiveUser as any)),
+      );
 
       // Act
       const result = await authGuard.canActivate(context);
@@ -420,16 +475,17 @@ describe('AuthGuard - Security Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      
+
       const networkError: AxiosError = {
         code: 'ECONNREFUSED',
         isAxiosError: true,
         name: 'AxiosError',
-        message: 'connect ECONNREFUSED https://internal-auth-service.private:3001/validate',
+        message:
+          'connect ECONNREFUSED https://internal-auth-service.private:3001/validate',
         config: {} as any,
         toJSON: () => ({}),
       };
-      
+
       httpService.post.mockReturnValue(throwError(() => networkError));
 
       // Act & Assert
@@ -465,7 +521,7 @@ describe('AuthGuard - Security Tests', () => {
 
       // Assert
       expect(result).toBe(true);
-      
+
       // Vérifier que seuls les headers sécurisés sont utilisés
       expect(httpService.post).toHaveBeenCalledWith(
         expect.any(String),
@@ -475,7 +531,7 @@ describe('AuthGuard - Security Tests', () => {
             'Content-Type': 'application/json',
             'User-Agent': 'project-service/1.0.0', // Header sanitisé
           }),
-        })
+        }),
       );
     });
 
@@ -486,10 +542,22 @@ describe('AuthGuard - Security Tests', () => {
 
       // Test avec différents types d'erreurs
       const errorScenarios = [
-        { name: 'invalid_token', error: new AxiosError('Invalid token', '401') },
-        { name: 'expired_token', error: new AxiosError('Token expired', '401') },
-        { name: 'malformed_token', error: new AxiosError('Malformed token', '400') },
-        { name: 'service_error', error: new AxiosError('Internal error', '500') },
+        {
+          name: 'invalid_token',
+          error: new AxiosError('Invalid token', '401'),
+        },
+        {
+          name: 'expired_token',
+          error: new AxiosError('Token expired', '401'),
+        },
+        {
+          name: 'malformed_token',
+          error: new AxiosError('Malformed token', '400'),
+        },
+        {
+          name: 'service_error',
+          error: new AxiosError('Internal error', '500'),
+        },
       ];
 
       const timings: Record<string, number[]> = {};
@@ -497,7 +565,7 @@ describe('AuthGuard - Security Tests', () => {
       // Act - Mesurer les temps pour chaque type d'erreur
       for (const scenario of errorScenarios) {
         timings[scenario.name] = [];
-        
+
         for (let i = 0; i < 5; i++) {
           const context = createMockExecutionContext(request);
           cacheService.get.mockResolvedValue(null);
@@ -521,8 +589,8 @@ describe('AuthGuard - Security Tests', () => {
         avg: times.reduce((a, b) => a + b) / times.length,
       }));
 
-      const maxTiming = Math.max(...avgTimings.map(t => t.avg));
-      const minTiming = Math.min(...avgTimings.map(t => t.avg));
+      const maxTiming = Math.max(...avgTimings.map((t) => t.avg));
+      const minTiming = Math.min(...avgTimings.map((t) => t.avg));
       const variation = (maxTiming - minTiming) / maxTiming;
 
       // Relaxed assertion pour les tests CI/CD
@@ -557,12 +625,17 @@ describe('AuthGuard - Security Tests', () => {
 
     it('should prevent JSON injection in auth service requests', async () => {
       // Arrange
-      const maliciousToken = '{"valid":true,"user":{"id":"hacker","roles":["admin"]}}';
-      const request = { headers: { authorization: `Bearer ${maliciousToken}` } };
+      const maliciousToken =
+        '{"valid":true,"user":{"id":"hacker","roles":["admin"]}}';
+      const request = {
+        headers: { authorization: `Bearer ${maliciousToken}` },
+      };
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '400')));
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Invalid token', '400')),
+      );
 
       // Act & Assert
       await expect(authGuard.canActivate(context)).rejects.toThrow();
@@ -571,7 +644,7 @@ describe('AuthGuard - Security Tests', () => {
       expect(httpService.post).toHaveBeenCalledWith(
         expect.any(String),
         { token: maliciousToken }, // Token encapsulé proprement dans l'objet
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -590,14 +663,19 @@ describe('AuthGuard - Security Tests', () => {
       httpService.post.mockReturnValue(of(createValidAuthResponse(user)));
 
       for (const maliciousToken of maliciousTokens) {
-        const request = { headers: { authorization: `Bearer ${maliciousToken}` } };
+        const request = {
+          headers: { authorization: `Bearer ${maliciousToken}` },
+        };
         const context = createMockExecutionContext(request);
 
         // Act
         await authGuard.canActivate(context);
 
         // Assert - Vérifier que la clé de cache est sécurisée
-        const cacheKey = cacheService.set.mock.calls[cacheService.set.mock.calls.length - 1][0];
+        const cacheKey =
+          cacheService.set.mock.calls[
+            cacheService.set.mock.calls.length - 1
+          ][0];
         expect(cacheKey).toMatch(/^auth:token:[a-f0-9]{64}$/); // Hash sécurisé
         expect(cacheKey).not.toContain('\x00');
         expect(cacheKey).not.toContain('\r');
@@ -622,8 +700,8 @@ describe('AuthGuard - Security Tests', () => {
             id: 'user-123',
             email: 'test@example.com',
             roles: ['user'],
-            '__proto__': { isAdmin: true },
-            'constructor': { prototype: { polluted: true } },
+            __proto__: { isAdmin: true },
+            constructor: { prototype: { polluted: true } },
           },
           expiresAt: new Date(Date.now() + 3600000).toISOString(),
         },
@@ -640,11 +718,11 @@ describe('AuthGuard - Security Tests', () => {
 
       // Assert
       expect(result).toBe(true);
-      
+
       // Vérifier que l'objet global n'est pas pollué
       expect((Object.prototype as any).isAdmin).toBeUndefined();
       expect((Object.prototype as any).polluted).toBeUndefined();
-      
+
       // Vérifier que l'utilisateur injecté est propre
       const injectedUser = (request as any).user;
       expect(injectedUser).toBeDefined();
@@ -672,8 +750,11 @@ describe('AuthGuard - Security Tests', () => {
 
     it('should log authentication attempts without exposing sensitive data', async () => {
       // Arrange
-      const sensitiveToken = 'eyJhbGciOiJIUzI1NiJ9.sensitive-payload-with-secrets.signature';
-      const request = { headers: { authorization: `Bearer ${sensitiveToken}` } };
+      const sensitiveToken =
+        'eyJhbGciOiJIUzI1NiJ9.sensitive-payload-with-secrets.signature';
+      const request = {
+        headers: { authorization: `Bearer ${sensitiveToken}` },
+      };
       const context = createMockExecutionContext(request);
       const user = createValidUser();
 
@@ -686,11 +767,11 @@ describe('AuthGuard - Security Tests', () => {
       // Assert - Vérifier que les logs ne contiennent pas de données sensibles
       const logCalls = consoleSpy.mock.calls.flat();
       const allLogs = logCalls.join(' ');
-      
+
       expect(allLogs).not.toContain(sensitiveToken);
       expect(allLogs).not.toContain('sensitive-payload');
       expect(allLogs).not.toContain('signature');
-      
+
       // Vérifier qu'il y a bien des logs (peut être vide dans les tests unitaires)
       // Dans un environnement réel, les logs NestJS seraient capturés
       expect(consoleSpy.mock.calls.length).toBeGreaterThanOrEqual(0);
@@ -703,7 +784,9 @@ describe('AuthGuard - Security Tests', () => {
       const context = createMockExecutionContext(request);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '401')));
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Invalid token', '401')),
+      );
 
       // Act
       try {
@@ -713,9 +796,12 @@ describe('AuthGuard - Security Tests', () => {
       }
 
       // Assert
-      const logCalls = [...consoleSpy.mock.calls.flat(), ...consoleLogSpy.mock.calls.flat()];
+      const logCalls = [
+        ...consoleSpy.mock.calls.flat(),
+        ...consoleLogSpy.mock.calls.flat(),
+      ];
       const allLogs = logCalls.join(' ');
-      
+
       expect(allLogs).not.toContain(invalidToken);
       // Les logs d'erreur peuvent ne pas être capturés dans les tests unitaires
       expect(consoleLogSpy.mock.calls.length).toBeGreaterThanOrEqual(0);
@@ -724,8 +810,8 @@ describe('AuthGuard - Security Tests', () => {
     it('should include security-relevant metadata in audit logs', async () => {
       // Arrange
       const token = createSecureToken();
-      const request = { 
-        headers: { 
+      const request = {
+        headers: {
           authorization: `Bearer ${token}`,
           'user-agent': 'Mozilla/5.0 Test Browser',
           'x-forwarded-for': '192.168.1.100',
@@ -744,7 +830,8 @@ describe('AuthGuard - Security Tests', () => {
       await authGuard.canActivate(context);
 
       // Assert - Dans les tests unitaires, les logs NestJS peuvent ne pas être capturés
-      const totalLogs = consoleSpy.mock.calls.length + consoleLogSpy.mock.calls.length;
+      const totalLogs =
+        consoleSpy.mock.calls.length + consoleLogSpy.mock.calls.length;
       expect(totalLogs).toBeGreaterThanOrEqual(0);
     });
 
@@ -754,7 +841,9 @@ describe('AuthGuard - Security Tests', () => {
       const request = { headers: { authorization: `Bearer ${token}` } };
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValue(throwError(() => new AxiosError('Invalid token', '401')));
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Invalid token', '401')),
+      );
 
       // Act - Faire beaucoup de tentatives rapidement
       const promises = Array.from({ length: 100 }, async () => {
@@ -788,7 +877,7 @@ describe('AuthGuard - Security Tests', () => {
       ];
 
       const tokens = users.map((_, i) => `token-${i}-unique-signature`);
-      
+
       cacheService.get.mockResolvedValue(null);
 
       // Act - Exécuter des requêtes concurrentes
@@ -796,12 +885,14 @@ describe('AuthGuard - Security Tests', () => {
         tokens.map(async (token, i) => {
           const request = { headers: { authorization: `Bearer ${token}` } };
           const context = createMockExecutionContext(request);
-          
-          httpService.post.mockReturnValueOnce(of(createValidAuthResponse(users[i])));
-          
+
+          httpService.post.mockReturnValueOnce(
+            of(createValidAuthResponse(users[i])),
+          );
+
           const success = await authGuard.canActivate(context);
           return { success, user: (request as any).user };
-        })
+        }),
       );
 
       // Assert - Chaque contexte doit avoir le bon utilisateur
@@ -815,18 +906,30 @@ describe('AuthGuard - Security Tests', () => {
 
     it('should prevent cross-context data leakage', async () => {
       // Arrange
-      const adminUser = { id: 'admin', email: 'admin@example.com', roles: ['admin'] };
-      const regularUser = { id: 'user', email: 'user@example.com', roles: ['user'] };
+      const adminUser = {
+        id: 'admin',
+        email: 'admin@example.com',
+        roles: ['admin'],
+      };
+      const regularUser = {
+        id: 'user',
+        email: 'user@example.com',
+        roles: ['user'],
+      };
 
       const adminToken = 'admin-token';
       const userToken = 'user-token';
 
       // Première requête admin
-      const adminRequest = { headers: { authorization: `Bearer ${adminToken}` } };
+      const adminRequest = {
+        headers: { authorization: `Bearer ${adminToken}` },
+      };
       const adminContext = createMockExecutionContext(adminRequest);
 
       cacheService.get.mockResolvedValue(null);
-      httpService.post.mockReturnValueOnce(of(createValidAuthResponse(adminUser)));
+      httpService.post.mockReturnValueOnce(
+        of(createValidAuthResponse(adminUser)),
+      );
 
       await authGuard.canActivate(adminContext);
 
@@ -834,7 +937,9 @@ describe('AuthGuard - Security Tests', () => {
       const userRequest = { headers: { authorization: `Bearer ${userToken}` } };
       const userContext = createMockExecutionContext(userRequest);
 
-      httpService.post.mockReturnValueOnce(of(createValidAuthResponse(regularUser)));
+      httpService.post.mockReturnValueOnce(
+        of(createValidAuthResponse(regularUser)),
+      );
 
       await authGuard.canActivate(userContext);
 

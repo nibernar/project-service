@@ -15,11 +15,11 @@ export const PAGINATION_CONSTANTS = {
 
 /**
  * DTO standardisé pour les paramètres de pagination
- * 
+ *
  * Utilisé dans tous les endpoints retournant des listes paginées.
  * Valide automatiquement les paramètres de requête et applique
  * les valeurs par défaut appropriées.
- * 
+ *
  * @example
  * ```typescript
  * @Get()
@@ -31,7 +31,7 @@ export const PAGINATION_CONSTANTS = {
 export class PaginationDto {
   /**
    * Numéro de la page demandée (base 1)
-   * 
+   *
    * @example 1, 2, 3...
    * @default 1
    */
@@ -45,20 +45,20 @@ export class PaginationDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'page must be an integer' })
-  @Min(PAGINATION_CONSTANTS.MIN_PAGE, { 
-    message: `page must be at least ${PAGINATION_CONSTANTS.MIN_PAGE}` 
+  @Min(PAGINATION_CONSTANTS.MIN_PAGE, {
+    message: `page must be at least ${PAGINATION_CONSTANTS.MIN_PAGE}`,
   })
   page?: number = PAGINATION_CONSTANTS.DEFAULT_PAGE;
 
   /**
    * Nombre d'éléments par page
-   * 
+   *
    * @example 10, 20, 50...
    * @default 10
    * @maximum 100
    */
   @ApiPropertyOptional({
-    description: 'Nombre d\'éléments par page',
+    description: "Nombre d'éléments par page",
     minimum: PAGINATION_CONSTANTS.MIN_LIMIT,
     maximum: PAGINATION_CONSTANTS.MAX_LIMIT,
     default: PAGINATION_CONSTANTS.DEFAULT_LIMIT,
@@ -68,17 +68,17 @@ export class PaginationDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt({ message: 'limit must be an integer' })
-  @Min(PAGINATION_CONSTANTS.MIN_LIMIT, { 
-    message: `limit must be at least ${PAGINATION_CONSTANTS.MIN_LIMIT}` 
+  @Min(PAGINATION_CONSTANTS.MIN_LIMIT, {
+    message: `limit must be at least ${PAGINATION_CONSTANTS.MIN_LIMIT}`,
   })
-  @Max(PAGINATION_CONSTANTS.MAX_LIMIT, { 
-    message: `limit must not be greater than ${PAGINATION_CONSTANTS.MAX_LIMIT}` 
+  @Max(PAGINATION_CONSTANTS.MAX_LIMIT, {
+    message: `limit must not be greater than ${PAGINATION_CONSTANTS.MAX_LIMIT}`,
   })
   limit?: number = PAGINATION_CONSTANTS.DEFAULT_LIMIT;
 
   /**
    * Calcule l'offset pour les requêtes base de données
-   * 
+   *
    * @returns Nombre d'éléments à ignorer (skip)
    * @example
    * ```typescript
@@ -96,7 +96,7 @@ export class PaginationDto {
 
   /**
    * Retourne le nombre d'éléments à prendre
-   * 
+   *
    * @returns Nombre d'éléments à récupérer (take)
    * @example
    * ```typescript
@@ -111,13 +111,13 @@ export class PaginationDto {
 
   /**
    * Valide que la pagination est dans des limites raisonnables
-   * 
+   *
    * @returns true si la pagination est valide
    */
   isValid(): boolean {
     const currentPage = this.page ?? PAGINATION_CONSTANTS.DEFAULT_PAGE;
     const currentLimit = this.limit ?? PAGINATION_CONSTANTS.DEFAULT_LIMIT;
-    
+
     return (
       currentPage >= PAGINATION_CONSTANTS.MIN_PAGE &&
       currentLimit >= PAGINATION_CONSTANTS.MIN_LIMIT &&
@@ -127,7 +127,7 @@ export class PaginationDto {
 
   /**
    * Retourne une représentation string de la pagination pour le logging
-   * 
+   *
    * @returns Chaîne descriptive de la pagination
    */
   toString(): string {

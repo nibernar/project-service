@@ -13,11 +13,13 @@ describe('CurrentUser Decorator - Security Tests', () => {
   const extractUserFunction = (data: unknown, ctx: ExecutionContext): User => {
     const request = ctx.switchToHttp().getRequest<FastifyRequest>();
     const user = (request as any).user;
-    
+
     if (!user) {
-      throw new Error('User not found in request context. Make sure AuthGuard is applied.');
+      throw new Error(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     }
-    
+
     return user;
   };
 
@@ -62,7 +64,7 @@ describe('CurrentUser Decorator - Security Tests', () => {
 
       // Act
       const extractedUser = extractUserFunction(undefined, mockContext);
-      
+
       // Modify extracted user (simulation d'une manipulation malveillante)
       (extractedUser as any).isAdmin = true;
       (extractedUser as any).sensitiveData = 'compromised';
@@ -80,7 +82,7 @@ describe('CurrentUser Decorator - Security Tests', () => {
         user: testUser,
         password: 'secret123', // Données sensibles qui ne doivent pas être exposées
         sessionToken: 'token-abc-123',
-        internalFlags: { isAdmin: true }
+        internalFlags: { isAdmin: true },
       };
       const mockContext = createMockExecutionContext(mockRequest);
 
@@ -97,12 +99,12 @@ describe('CurrentUser Decorator - Security Tests', () => {
     it('should prevent access to request prototype pollution', () => {
       const testUser = createTestUser();
       const maliciousRequest: any = { user: testUser };
-      
+
       try {
         maliciousRequest.__proto__.polluted = 'malicious-value';
-        maliciousRequest.constructor.prototype.polluted = 'another-malicious-value';
-      } catch (e) {
-      }
+        maliciousRequest.constructor.prototype.polluted =
+          'another-malicious-value';
+      } catch (e) {}
 
       const mockContext = createMockExecutionContext(maliciousRequest);
 
@@ -114,14 +116,12 @@ describe('CurrentUser Decorator - Security Tests', () => {
       expect(result.roles).toEqual(testUser.roles);
     });
 
-
     it('should handle user object with prototype pollution attempts', () => {
       const maliciousUser: any = createTestUser();
       try {
         maliciousUser.__proto__.maliciousMethod = () => 'hacked';
         maliciousUser.constructor = { name: 'FakeConstructor' };
-      } catch (e) {
-      }
+      } catch (e) {}
 
       const mockRequest = { user: maliciousUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -187,7 +187,11 @@ describe('CurrentUser Decorator - Security Tests', () => {
       const result = extractUserFunction(undefined, mockContext);
 
       // Assert
-      expect(result.roles).toEqual(['user', '{"$ne": null}', '{"$where": "this.password"}']);
+      expect(result.roles).toEqual([
+        'user',
+        '{"$ne": null}',
+        '{"$where": "this.password"}',
+      ]);
       expect(Array.isArray(result.roles)).toBe(true);
     });
 
@@ -240,13 +244,18 @@ describe('CurrentUser Decorator - Security Tests', () => {
 
       // Act
       const result = extractUserFunction(undefined, mockContext);
-      
+
       // Tentative de modification des rôles
       result.roles.push('admin');
       result.roles.push('super-admin');
 
       // Assert
-      expect(testUser.roles).toEqual(['user', 'reader', 'admin', 'super-admin']);
+      expect(testUser.roles).toEqual([
+        'user',
+        'reader',
+        'admin',
+        'super-admin',
+      ]);
       // Note: Même référence, donc modification possible - comportement attendu
       // La protection contre les modifications doit se faire dans AuthGuard
     });
@@ -254,15 +263,15 @@ describe('CurrentUser Decorator - Security Tests', () => {
     it('should handle attempts to inject admin roles through object manipulation', () => {
       // Arrange
       const testUser = createTestUser({
-        roles: ['user']
+        roles: ['user'],
       });
-      
+
       // Tentative d'injection de rôles administrateur
-      const maliciousRequest = { 
+      const maliciousRequest = {
         user: testUser,
         // Tentative d'override via le request
         isAdmin: true,
-        adminRoles: ['admin', 'super-admin']
+        adminRoles: ['admin', 'super-admin'],
       };
       const mockContext = createMockExecutionContext(maliciousRequest);
 
@@ -328,7 +337,7 @@ describe('CurrentUser Decorator - Security Tests', () => {
   // TESTS DE SÉCURITÉ - INFORMATION DISCLOSURE
   // ============================================================================
 
-  describe('Protection contre la divulgation d\'informations', () => {
+  describe("Protection contre la divulgation d'informations", () => {
     it('should not expose internal request properties through user object', () => {
       // Arrange
       const testUser = createTestUser();
@@ -337,13 +346,13 @@ describe('CurrentUser Decorator - Security Tests', () => {
         headers: {
           authorization: 'Bearer secret-token-123',
           'x-api-key': 'super-secret-api-key',
-          cookie: 'session=secret-session-data'
+          cookie: 'session=secret-session-data',
         },
         ip: '192.168.1.100',
         internalProcessingData: {
           databaseConnection: 'postgresql://...',
-          encryptionKeys: ['key1', 'key2']
-        }
+          encryptionKeys: ['key1', 'key2'],
+        },
       };
       const mockContext = createMockExecutionContext(sensitiveRequest);
 
@@ -362,7 +371,7 @@ describe('CurrentUser Decorator - Security Tests', () => {
       const testUser: any = createTestUser(); // ✅ Utiliser any pour propriétés custom
       testUser.self = testUser; // Circular reference
       testUser.parent = { child: testUser }; // Nested circular reference
-      
+
       const mockRequest = { user: testUser };
       const mockContext = createMockExecutionContext(mockRequest);
 
@@ -379,14 +388,18 @@ describe('CurrentUser Decorator - Security Tests', () => {
     it('should not leak memory through large user objects', () => {
       // Arrange
       const largeData = 'x'.repeat(1000000); // 1MB string
-      const largeUser: any = createTestUser({ // Utiliser any pour les propriétés custom
+      const largeUser: any = createTestUser({
+        // Utiliser any pour les propriétés custom
         id: 'memory-test-user',
       });
-      
+
       // Ajouter les propriétés custom après création
       largeUser.largeProperty = largeData;
-      largeUser.anotherLargeProperty = Array.from({ length: 10000 }, () => largeData);
-      
+      largeUser.anotherLargeProperty = Array.from(
+        { length: 10000 },
+        () => largeData,
+      );
+
       const mockRequest = { user: largeUser };
       const mockContext = createMockExecutionContext(mockRequest);
 
@@ -409,7 +422,7 @@ describe('CurrentUser Decorator - Security Tests', () => {
         secret: 'not-really-secret',
         token: 'fake-token',
         key: 'not-a-real-key',
-        private: 'not-actually-private'
+        private: 'not-actually-private',
       };
       const mockRequest = { user: userWithSensitiveProps };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -421,7 +434,9 @@ describe('CurrentUser Decorator - Security Tests', () => {
       expect(result).toEqual(userWithSensitiveProps);
       // Le décorateur ne filtre pas les propriétés - c'est intentionnel
       // La sécurité doit être assurée par l'AuthGuard et la validation upstream
-      expect((result as any).password).toBe('this-should-not-be-a-password-field');
+      expect((result as any).password).toBe(
+        'this-should-not-be-a-password-field',
+      );
     });
   });
 
@@ -438,7 +453,9 @@ describe('CurrentUser Decorator - Security Tests', () => {
         roles: Array.from({ length: 1000 }, (_, i) => `role-${i}`),
       });
 
-      largeUser.metadata = Array.from({ length: 1000 }, (_, i) => ({ key: `value-${i}` }));
+      largeUser.metadata = Array.from({ length: 1000 }, (_, i) => ({
+        key: `value-${i}`,
+      }));
 
       const smallRequest = { user: smallUser };
       const largeRequest = { user: largeUser };
@@ -447,19 +464,23 @@ describe('CurrentUser Decorator - Security Tests', () => {
 
       // Act & Measure
       const measurements: number[] = [];
-      
+
       for (let i = 0; i < 100; i++) {
         const startTime = process.hrtime.bigint();
-        extractUserFunction(undefined, i % 2 === 0 ? smallContext : largeContext);
+        extractUserFunction(
+          undefined,
+          i % 2 === 0 ? smallContext : largeContext,
+        );
         const endTime = process.hrtime.bigint();
         measurements.push(Number(endTime - startTime) / 1000000); // Convert to milliseconds
       }
 
       // Assert
-      const avgTime = measurements.reduce((a, b) => a + b) / measurements.length;
+      const avgTime =
+        measurements.reduce((a, b) => a + b) / measurements.length;
       const maxTime = Math.max(...measurements);
       const minTime = Math.min(...measurements);
-      
+
       expect(avgTime).toBeLessThan(10); // Moyenne < 10ms
       expect(maxTime - minTime).toBeLessThan(50); // Variation < 50ms
     });
@@ -474,7 +495,9 @@ describe('CurrentUser Decorator - Security Tests', () => {
       ];
 
       const validContext = createMockExecutionContext(validRequest);
-      const invalidContexts = invalidRequests.map(req => createMockExecutionContext(req));
+      const invalidContexts = invalidRequests.map((req) =>
+        createMockExecutionContext(req),
+      );
 
       // Act & Measure
       const errorTimes: number[] = [];
@@ -501,9 +524,11 @@ describe('CurrentUser Decorator - Security Tests', () => {
       }
 
       // Assert
-      const avgErrorTime = errorTimes.reduce((a, b) => a + b) / errorTimes.length;
-      const avgSuccessTime = successTimes.reduce((a, b) => a + b) / successTimes.length;
-      
+      const avgErrorTime =
+        errorTimes.reduce((a, b) => a + b) / errorTimes.length;
+      const avgSuccessTime =
+        successTimes.reduce((a, b) => a + b) / successTimes.length;
+
       // Les temps ne devraient pas révéler d'informations (différence acceptable < 5ms)
       expect(Math.abs(avgErrorTime - avgSuccessTime)).toBeLessThan(5);
     });
@@ -513,7 +538,7 @@ describe('CurrentUser Decorator - Security Tests', () => {
   // TESTS DE SÉCURITÉ - VALIDATION D'INTÉGRITÉ
   // ============================================================================
 
-  describe('Validation d\'intégrité', () => {
+  describe("Validation d'intégrité", () => {
     it('should maintain data integrity under concurrent access', () => {
       // Arrange
       const sharedUser = createTestUser();
@@ -527,7 +552,7 @@ describe('CurrentUser Decorator - Security Tests', () => {
       }
 
       // Assert
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result).toEqual(sharedUser);
         expect(result.id).toBe('security-test-user');
         expect(result.email).toBe('security@example.com');
@@ -538,10 +563,10 @@ describe('CurrentUser Decorator - Security Tests', () => {
       // Arrange
       const frozenUser = Object.freeze(createTestUser());
       const sealedUser = Object.seal(createTestUser());
-      
+
       const frozenRequest = { user: frozenUser };
       const sealedRequest = { user: sealedUser };
-      
+
       const frozenContext = createMockExecutionContext(frozenRequest);
       const sealedContext = createMockExecutionContext(sealedRequest);
 
@@ -566,10 +591,12 @@ describe('CurrentUser Decorator - Security Tests', () => {
 
       expect(result).toEqual(immutableUser);
       expect(Object.isFrozen(result)).toBe(true);
-      
+
       expect(() => {
         (result as any).maliciousProperty = 'hacked';
-      }).toThrow('Cannot add property maliciousProperty, object is not extensible');
+      }).toThrow(
+        'Cannot add property maliciousProperty, object is not extensible',
+      );
       expect(result).not.toHaveProperty('maliciousProperty');
     });
   });

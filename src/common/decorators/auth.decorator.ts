@@ -1,9 +1,9 @@
 import { applyDecorators, UseGuards } from '@nestjs/common';
-import { 
-  ApiBearerAuth, 
+import {
+  ApiBearerAuth,
   ApiUnauthorizedResponse,
   ApiOperation,
-  ApiServiceUnavailableResponse
+  ApiServiceUnavailableResponse,
 } from '@nestjs/swagger';
 import { AuthGuard } from '../guards/auth.guard';
 
@@ -21,13 +21,13 @@ export interface AuthDecoratorOptions {
    * @default false
    */
   skipExpiredCheck?: boolean;
-  
+
   /**
    * Rôles autorisés pour accéder à la ressource (fonctionnalité future)
    * @default undefined
    */
   allowedRoles?: string[];
-  
+
   /**
    * Indique si l'authentification est optionnelle
    * @default false
@@ -44,30 +44,30 @@ const UNAUTHORIZED_RESPONSE_SCHEMA = {
     statusCode: {
       type: 'number',
       example: 401,
-      description: 'Code de statut HTTP'
+      description: 'Code de statut HTTP',
     },
     message: {
       type: 'string',
       example: 'Unauthorized',
-      description: 'Message d\'erreur'
+      description: "Message d'erreur",
     },
     error: {
       type: 'string',
       example: 'Unauthorized',
-      description: 'Type d\'erreur'
+      description: "Type d'erreur",
     },
     timestamp: {
       type: 'string',
       example: '2024-01-15T10:30:00.000Z',
-      description: 'Horodatage de l\'erreur'
+      description: "Horodatage de l'erreur",
     },
     path: {
       type: 'string',
       example: '/api/v1/projects',
-      description: 'Chemin de la requête'
-    }
+      description: 'Chemin de la requête',
+    },
   },
-  required: ['statusCode', 'message', 'error', 'timestamp', 'path']
+  required: ['statusCode', 'message', 'error', 'timestamp', 'path'],
 };
 
 /**
@@ -79,32 +79,32 @@ const SERVICE_UNAVAILABLE_RESPONSE_SCHEMA = {
     statusCode: {
       type: 'number',
       example: 503,
-      description: 'Code de statut HTTP'
+      description: 'Code de statut HTTP',
     },
     message: {
       type: 'string',
       example: 'Authentication service unavailable',
-      description: 'Message d\'erreur'
+      description: "Message d'erreur",
     },
     error: {
       type: 'string',
       example: 'Service Unavailable',
-      description: 'Type d\'erreur'
-    }
+      description: "Type d'erreur",
+    },
   },
-  required: ['statusCode', 'message', 'error']
+  required: ['statusCode', 'message', 'error'],
 };
 
 /**
  * Décorateur composite d'authentification
- * 
+ *
  * Combine automatiquement :
  * - La validation JWT via AuthGuard
  * - La documentation Swagger pour l'authentification Bearer
  * - Les réponses d'erreur standardisées
- * 
+ *
  * @param options - Options de configuration (optionnel, pour extensibilité future)
- * 
+ *
  * @example
  * // Usage basique sur une méthode
  * @Get()
@@ -113,7 +113,7 @@ const SERVICE_UNAVAILABLE_RESPONSE_SCHEMA = {
  *   // user est automatiquement injecté par AuthGuard
  *   // Logique métier avec accès à user.id, user.email, user.roles
  * }
- * 
+ *
  * @example
  * // Usage sur une classe entière
  * @Controller('projects')
@@ -121,7 +121,7 @@ const SERVICE_UNAVAILABLE_RESPONSE_SCHEMA = {
  * export class ProjectController {
  *   // Toutes les méthodes héritent de l'authentification
  * }
- * 
+ *
  * @example
  * // Combinaison avec d'autres guards
  * @Get(':id')
@@ -131,39 +131,45 @@ const SERVICE_UNAVAILABLE_RESPONSE_SCHEMA = {
  *   // AuthGuard s'exécute en premier, puis ProjectOwnerGuard
  * }
  */
-export const Auth = (options?: AuthDecoratorOptions): MethodDecorator & ClassDecorator => {
+export const Auth = (
+  options?: AuthDecoratorOptions,
+): MethodDecorator & ClassDecorator => {
   // Pour l'extensibilité future, on peut stocker les options dans les métadonnées
-  const decorators: Array<ClassDecorator | MethodDecorator | PropertyDecorator> = [
+  const decorators: Array<
+    ClassDecorator | MethodDecorator | PropertyDecorator
+  > = [
     // Application du guard d'authentification JWT
     UseGuards(AuthGuard),
-    
+
     // Documentation Swagger pour l'authentification Bearer
     ApiBearerAuth('JWT-auth'),
-    
+
     // Documentation de la réponse d'erreur 401
     ApiUnauthorizedResponse({
-      description: 'Authentication required. Valid JWT token must be provided in Authorization header.',
-      schema: UNAUTHORIZED_RESPONSE_SCHEMA
+      description:
+        'Authentication required. Valid JWT token must be provided in Authorization header.',
+      schema: UNAUTHORIZED_RESPONSE_SCHEMA,
     }),
-    
+
     // Documentation de la réponse d'erreur 503 (service d'authentification indisponible)
     ApiServiceUnavailableResponse({
-      description: 'Authentication service temporarily unavailable. Please retry in a few moments.',
-      schema: SERVICE_UNAVAILABLE_RESPONSE_SCHEMA
-    })
+      description:
+        'Authentication service temporarily unavailable. Please retry in a few moments.',
+      schema: SERVICE_UNAVAILABLE_RESPONSE_SCHEMA,
+    }),
   ];
 
   // Si des options sont fournies, on peut les traiter ici (extensibilité future)
   if (options) {
     // Stockage des métadonnées pour usage futur
     // Reflect.defineMetadata(AUTH_METADATA_KEY, options, target);
-    
+
     // Exemple d'extension future : authentification optionnelle
     if (options.optional) {
       // Logique pour authentification optionnelle
       // (à implémenter avec un guard spécialisé)
     }
-    
+
     // Exemple d'extension future : rôles spécifiques
     if (options.allowedRoles && options.allowedRoles.length > 0) {
       // Logique pour vérification de rôles
@@ -177,10 +183,10 @@ export const Auth = (options?: AuthDecoratorOptions): MethodDecorator & ClassDec
 /**
  * Décorateur d'authentification avec indication explicite de l'opération API
  * Utile pour une documentation Swagger plus détaillée
- * 
+ *
  * @param summary - Résumé de l'opération pour Swagger
  * @param options - Options de configuration du décorateur Auth
- * 
+ *
  * @example
  * @Get()
  * @AuthWithOperation('Get all user projects')
@@ -189,19 +195,16 @@ export const Auth = (options?: AuthDecoratorOptions): MethodDecorator & ClassDec
  * }
  */
 export const AuthWithOperation = (
-  summary: string, 
-  options?: AuthDecoratorOptions
+  summary: string,
+  options?: AuthDecoratorOptions,
 ): MethodDecorator => {
-  return applyDecorators(
-    ApiOperation({ summary }),
-    Auth(options)
-  );
+  return applyDecorators(ApiOperation({ summary }), Auth(options));
 };
 
 /**
  * Décorateur d'authentification pour les opérations d'administration
  * Pré-configuré avec une documentation appropriée
- * 
+ *
  * @example
  * @Get('admin/stats')
  * @AdminAuth()
@@ -212,9 +215,10 @@ export const AuthWithOperation = (
 export const AdminAuth = (): MethodDecorator & ClassDecorator => {
   return applyDecorators(
     Auth(),
-    ApiOperation({ 
+    ApiOperation({
       summary: 'Administrative operation - requires authentication',
-      description: 'This endpoint requires valid authentication and appropriate permissions.'
-    })
+      description:
+        'This endpoint requires valid authentication and appropriate permissions.',
+    }),
   );
 };

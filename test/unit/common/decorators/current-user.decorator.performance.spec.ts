@@ -16,14 +16,16 @@ describe('CurrentUser Decorator - Performance Tests', () => {
 
   // Fonction helper qui reproduit la logique du décorateur pour les tests
   const extractUserFunction = (data: unknown, ctx: ExecutionContext): User => {
-  const request = ctx.switchToHttp().getRequest<FastifyRequest>();
-  const user = (request as any).user;
+    const request = ctx.switchToHttp().getRequest<FastifyRequest>();
+    const user = (request as any).user;
 
-  if (!user) {
-      throw new Error('User not found in request context. Make sure AuthGuard is applied.');
-  }
+    if (!user) {
+      throw new Error(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
+    }
 
-  return user;
+    return user;
   };
 
   // ============================================================================
@@ -47,14 +49,19 @@ describe('CurrentUser Decorator - Performance Tests', () => {
     } as ExecutionContext;
   };
 
-  const createTestUser = (overrides: Partial<ExtendedUserForTesting> = {}): ExtendedUserForTesting => ({
+  const createTestUser = (
+    overrides: Partial<ExtendedUserForTesting> = {},
+  ): ExtendedUserForTesting => ({
     id: 'perf-test-user',
     email: 'performance@example.com',
     roles: ['user'],
     ...overrides,
   });
 
-  const measureExecutionTime = (fn: () => void, iterations: number = 1): number => {
+  const measureExecutionTime = (
+    fn: () => void,
+    iterations: number = 1,
+  ): number => {
     const startTime = process.hrtime.bigint();
     for (let i = 0; i < iterations; i++) {
       fn();
@@ -63,16 +70,18 @@ describe('CurrentUser Decorator - Performance Tests', () => {
     return Number(endTime - startTime) / 1000000; // Convert to milliseconds
   };
 
-  const measureMemoryUsage = (fn: () => void): { heapUsed: number; heapTotal: number; external: number } => {
+  const measureMemoryUsage = (
+    fn: () => void,
+  ): { heapUsed: number; heapTotal: number; external: number } => {
     // Force garbage collection if available (requires --expose-gc)
     if (global.gc) {
       global.gc();
     }
-    
+
     const beforeMemory = process.memoryUsage();
     fn();
     const afterMemory = process.memoryUsage();
-    
+
     return {
       heapUsed: afterMemory.heapUsed - beforeMemory.heapUsed,
       heapTotal: afterMemory.heapTotal - beforeMemory.heapTotal,
@@ -84,7 +93,7 @@ describe('CurrentUser Decorator - Performance Tests', () => {
   // TESTS DE PERFORMANCE - VITESSE D'EXÉCUTION
   // ============================================================================
 
-  describe('Vitesse d\'exécution', () => {
+  describe("Vitesse d'exécution", () => {
     it('should extract user in less than 1ms for simple user objects', () => {
       // Arrange
       const testUser = createTestUser();
@@ -104,15 +113,15 @@ describe('CurrentUser Decorator - Performance Tests', () => {
       // Arrange - Utilisation de l'interface étendue pour les tests
       const largeUser = createTestUser({
         roles: Array.from({ length: 1000 }, (_, i) => `role-${i}`),
-        metadata: Array.from({ length: 1000 }, (_, i) => ({ 
+        metadata: Array.from({ length: 1000 }, (_, i) => ({
           key: `metadata-${i}`,
-          value: `${'x'.repeat(100)}` // 100 char strings
+          value: `${'x'.repeat(100)}`, // 100 char strings
         })),
         permissions: Array.from({ length: 500 }, (_, i) => ({
           resource: `resource-${i}`,
           actions: ['read', 'write', 'delete'],
-          conditions: { userId: `user-${i}`, department: `dept-${i % 10}` }
-        }))
+          conditions: { userId: `user-${i}`, department: `dept-${i % 10}` },
+        })),
       });
       const mockRequest = { user: largeUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -136,7 +145,7 @@ describe('CurrentUser Decorator - Performance Tests', () => {
       const times: number[] = [];
 
       // Act
-      iterations.forEach(iteration => {
+      iterations.forEach((iteration) => {
         const time = measureExecutionTime(() => {
           extractUserFunction(undefined, mockContext);
         }, iteration);
@@ -171,14 +180,14 @@ describe('CurrentUser Decorator - Performance Tests', () => {
     it('should maintain performance with deeply nested user properties', () => {
       // Arrange
       let deepUser = createTestUser();
-      
+
       // Create 50 levels of nesting
       let current: any = deepUser;
       for (let i = 0; i < 50; i++) {
         current.nested = {
           level: i,
           data: `data-at-level-${i}`,
-          array: Array.from({ length: 10 }, (_, j) => `item-${i}-${j}`)
+          array: Array.from({ length: 10 }, (_, j) => `item-${i}-${j}`),
         };
         current = current.nested;
       }
@@ -226,26 +235,27 @@ describe('CurrentUser Decorator - Performance Tests', () => {
 
       // Act - Multiple rounds to detect memory leaks
       const memoryMeasurements: number[] = [];
-      
+
       for (let round = 0; round < 5; round++) {
         const memoryBefore = process.memoryUsage().heapUsed;
-        
+
         // Perform many extractions
         for (let i = 0; i < 10000; i++) {
           extractUserFunction(undefined, mockContext);
         }
-        
+
         // Force garbage collection if available
         if (global.gc) {
           global.gc();
         }
-        
+
         const memoryAfter = process.memoryUsage().heapUsed;
         memoryMeasurements.push(memoryAfter - memoryBefore);
       }
 
       // Assert - Memory usage should not grow significantly between rounds
-      const avgMemoryGrowth = memoryMeasurements.reduce((a, b) => a + b) / memoryMeasurements.length;
+      const avgMemoryGrowth =
+        memoryMeasurements.reduce((a, b) => a + b) / memoryMeasurements.length;
       expect(avgMemoryGrowth).toBeLessThan(1024 * 1024); // < 1MB average growth
     });
 
@@ -255,7 +265,7 @@ describe('CurrentUser Decorator - Performance Tests', () => {
       const largeUser = createTestUser({
         largeField1: largeUserData,
         largeField2: largeUserData,
-        largeArray: Array.from({ length: 1000 }, () => largeUserData)
+        largeArray: Array.from({ length: 1000 }, () => largeUserData),
       });
       const mockRequest = { user: largeUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -277,14 +287,16 @@ describe('CurrentUser Decorator - Performance Tests', () => {
       const mockContext = createMockExecutionContext(mockRequest);
 
       // Act - Simulate concurrent extractions
-      const promises = Array.from({ length: 100 }, () => 
-        Promise.resolve().then(() => extractUserFunction(undefined, mockContext))
+      const promises = Array.from({ length: 100 }, () =>
+        Promise.resolve().then(() =>
+          extractUserFunction(undefined, mockContext),
+        ),
       );
 
-      return Promise.all(promises).then(results => {
+      return Promise.all(promises).then((results) => {
         // Assert
         expect(results).toHaveLength(100);
-        results.forEach(result => {
+        results.forEach((result) => {
           expect(result).toEqual(testUser);
           expect(result === testUser).toBe(true); // Same reference
         });
@@ -307,7 +319,7 @@ describe('CurrentUser Decorator - Performance Tests', () => {
       const avgTimes: number[] = [];
 
       // Act
-      callCounts.forEach(callCount => {
+      callCounts.forEach((callCount) => {
         const totalTime = measureExecutionTime(() => {
           for (let i = 0; i < callCount; i++) {
             extractUserFunction(undefined, mockContext);
@@ -352,16 +364,19 @@ describe('CurrentUser Decorator - Performance Tests', () => {
         { roles: ['user'] }, // Small
         { roles: Array.from({ length: 10 }, (_, i) => `role-${i}`) }, // Medium
         { roles: Array.from({ length: 100 }, (_, i) => `role-${i}`) }, // Large
-        { 
+        {
           roles: Array.from({ length: 1000 }, (_, i) => `role-${i}`),
-          metadata: Array.from({ length: 1000 }, (_, i) => ({ key: i, value: `value-${i}` }))
-        } // Very Large
+          metadata: Array.from({ length: 1000 }, (_, i) => ({
+            key: i,
+            value: `value-${i}`,
+          })),
+        }, // Very Large
       ];
 
       const times: number[] = [];
 
       // Act
-      userSizes.forEach(userData => {
+      userSizes.forEach((userData) => {
         const user = createTestUser(userData);
         const mockRequest = { user };
         const mockContext = createMockExecutionContext(mockRequest);
@@ -426,8 +441,12 @@ describe('CurrentUser Decorator - Performance Tests', () => {
           createdAt: '2025-01-01T00:00:00Z',
           lastLogin: '2025-01-28T10:30:00Z',
           department: 'Engineering',
-          permissions: ['read:projects', 'write:comments', 'delete:own-comments']
-        }
+          permissions: [
+            'read:projects',
+            'write:comments',
+            'delete:own-comments',
+          ],
+        },
       });
       const mockRequest = { user: typicalUser };
       const mockContext = createMockExecutionContext(mockRequest);
@@ -444,7 +463,9 @@ describe('CurrentUser Decorator - Performance Tests', () => {
       expect(benchmarkTime).toBeLessThan(100); // Total time < 100ms for 10k calls
 
       // Log for regression tracking
-      console.log(`✅ Baseline performance: ${avgTimePerCall.toFixed(6)}ms per extraction`);
+      console.log(
+        `✅ Baseline performance: ${avgTimePerCall.toFixed(6)}ms per extraction`,
+      );
     });
 
     it('should compare favorably to direct property access', () => {
@@ -468,8 +489,10 @@ describe('CurrentUser Decorator - Performance Tests', () => {
       // Assert - Decorator should be only marginally slower than direct access
       const ratio = decoratorTime / directAccessTime;
       expect(ratio).toBeLessThan(2); // Max 2x slower than direct access
-      
-      console.log(`📊 Performance ratio (decorator/direct): ${ratio.toFixed(2)}x`);
+
+      console.log(
+        `📊 Performance ratio (decorator/direct): ${ratio.toFixed(2)}x`,
+      );
     });
 
     it('should establish performance profile for monitoring', () => {
@@ -483,21 +506,24 @@ describe('CurrentUser Decorator - Performance Tests', () => {
         singleCall: measureExecutionTime(() => {
           extractUserFunction(undefined, mockContext);
         }),
-        burst100: measureExecutionTime(() => {
-          for (let i = 0; i < 100; i++) {
-            extractUserFunction(undefined, mockContext);
-          }
-        }) / 100,
-        burst1000: measureExecutionTime(() => {
-          for (let i = 0; i < 1000; i++) {
-            extractUserFunction(undefined, mockContext);
-          }
-        }) / 1000,
-        sustained10k: measureExecutionTime(() => {
-          for (let i = 0; i < 10000; i++) {
-            extractUserFunction(undefined, mockContext);
-          }
-        }) / 10000
+        burst100:
+          measureExecutionTime(() => {
+            for (let i = 0; i < 100; i++) {
+              extractUserFunction(undefined, mockContext);
+            }
+          }) / 100,
+        burst1000:
+          measureExecutionTime(() => {
+            for (let i = 0; i < 1000; i++) {
+              extractUserFunction(undefined, mockContext);
+            }
+          }) / 1000,
+        sustained10k:
+          measureExecutionTime(() => {
+            for (let i = 0; i < 10000; i++) {
+              extractUserFunction(undefined, mockContext);
+            }
+          }) / 10000,
       };
 
       // Assert & Log profile for monitoring
@@ -510,7 +536,7 @@ describe('CurrentUser Decorator - Performance Tests', () => {
         singleCall: `${profile.singleCall.toFixed(6)}ms`,
         burst100: `${profile.burst100.toFixed(6)}ms`,
         burst1000: `${profile.burst1000.toFixed(6)}ms`,
-        sustained10k: `${profile.sustained10k.toFixed(6)}ms`
+        sustained10k: `${profile.sustained10k.toFixed(6)}ms`,
       });
     });
   });

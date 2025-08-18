@@ -1,6 +1,9 @@
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
-import { UpdateProjectDto, UPDATE_PROJECT_CONSTANTS } from '../../../../src/project/dto/update-project.dto';
+import {
+  UpdateProjectDto,
+  UPDATE_PROJECT_CONSTANTS,
+} from '../../../../src/project/dto/update-project.dto';
 
 /**
  * Tests unitaires pour UpdateProjectDto
@@ -47,17 +50,20 @@ describe('UpdateProjectDto', () => {
         { value: 'A'.repeat(101), description: 'too long' },
         { value: null, description: 'null value' },
         { value: 123, description: 'number instead of string' },
-        { value: '<script>alert("xss")</script>', description: 'dangerous characters' },
+        {
+          value: '<script>alert("xss")</script>',
+          description: 'dangerous characters',
+        },
         { value: 'javascript:alert("xss")', description: 'dangerous protocol' },
       ];
 
       for (const testCase of invalidCases) {
         dto.name = testCase.value as any;
         const errors = await validate(dto);
-        
+
         expect(errors.length).toBeGreaterThan(0);
-        
-        const nameErrors = errors.filter(e => e.property === 'name');
+
+        const nameErrors = errors.filter((e) => e.property === 'name');
         expect(nameErrors.length).toBeGreaterThan(0);
       }
     });
@@ -81,8 +87,8 @@ describe('UpdateProjectDto', () => {
       dto.name = '   ';
       errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
-      
-      const nameErrors = errors.filter(e => e.property === 'name');
+
+      const nameErrors = errors.filter((e) => e.property === 'name');
       expect(nameErrors.length).toBeGreaterThan(0);
     });
   });
@@ -111,9 +117,9 @@ describe('UpdateProjectDto', () => {
     it('should reject invalid descriptions when provided', async () => {
       dto.description = 'A'.repeat(1001);
       const errors = await validate(dto);
-      
+
       expect(errors.length).toBeGreaterThan(0);
-      const descErrors = errors.filter(e => e.property === 'description');
+      const descErrors = errors.filter((e) => e.property === 'description');
       expect(descErrors.length).toBeGreaterThan(0);
     });
 
@@ -153,9 +159,9 @@ describe('UpdateProjectDto', () => {
       for (const description of dangerousDescriptions) {
         dto.description = description;
         const errors = await validate(dto);
-        
+
         expect(errors.length).toBeGreaterThan(0);
-        const descErrors = errors.filter(e => e.property === 'description');
+        const descErrors = errors.filter((e) => e.property === 'description');
         expect(descErrors.length).toBeGreaterThan(0);
       }
     });
@@ -228,11 +234,11 @@ describe('UpdateProjectDto', () => {
 
       for (const testCase of edgeCases) {
         const transformed = plainToClass(UpdateProjectDto, testCase.input);
-        
+
         if (testCase.shouldHaveName) {
           expect(transformed.name).toBe(testCase.nameValue);
         }
-        
+
         if (testCase.shouldHaveDescription) {
           expect(transformed.description).toBe(testCase.descriptionValue);
         }
@@ -378,7 +384,7 @@ describe('UpdateProjectDto', () => {
 
       it('should return only defined fields', () => {
         dto.name = 'Updated Name';
-        
+
         const defined = dto.getDefinedFields();
         expect(defined).toEqual({ name: 'Updated Name' });
         expect(Object.keys(defined)).toHaveLength(1);
@@ -386,7 +392,7 @@ describe('UpdateProjectDto', () => {
 
       it('should include empty string description', () => {
         dto.description = '';
-        
+
         const defined = dto.getDefinedFields();
         expect(defined).toEqual({ description: '' });
         expect(Object.keys(defined)).toHaveLength(1);
@@ -395,7 +401,7 @@ describe('UpdateProjectDto', () => {
       it('should return both fields when both are defined', () => {
         dto.name = 'Updated Name';
         dto.description = 'Updated Description';
-        
+
         const defined = dto.getDefinedFields();
         expect(defined).toEqual({
           name: 'Updated Name',
@@ -434,7 +440,7 @@ describe('UpdateProjectDto', () => {
         dto.description = 'Original Description';
 
         const copy = dto.createSecureCopy();
-        
+
         expect(copy).toBeInstanceOf(UpdateProjectDto);
         expect(copy.name).toBe(dto.name);
         expect(copy.description).toBe(dto.description);
@@ -446,7 +452,7 @@ describe('UpdateProjectDto', () => {
         // description reste undefined
 
         const copy = dto.createSecureCopy();
-        
+
         expect(copy.name).toBe('Only Name');
         expect(copy.description).toBeUndefined();
       });
@@ -496,7 +502,7 @@ describe('UpdateProjectDto', () => {
         dto.description = 'Sensitive Description';
 
         const result = dto.toLogSafeString();
-        
+
         expect(result).not.toContain('Sensitive');
         expect(result).toContain('name_length=');
         expect(result).toContain('description=updating');
@@ -530,7 +536,7 @@ describe('UpdateProjectDto', () => {
 
       const errors = await validate(minimalUpdate);
       expect(errors).toHaveLength(0);
-      
+
       expect(minimalUpdate.hasValidUpdates()).toBe(true);
       expect(minimalUpdate.isUpdatingName()).toBe(true);
       expect(minimalUpdate.isUpdatingDescription()).toBe(false);
@@ -544,7 +550,7 @@ describe('UpdateProjectDto', () => {
 
       const errors = await validate(completeUpdate);
       expect(errors).toHaveLength(0);
-      
+
       expect(completeUpdate.hasValidUpdates()).toBe(true);
       expect(completeUpdate.getUpdateFieldsCount()).toBe(2);
       expect(completeUpdate.isConsistent()).toBe(true);
@@ -557,7 +563,7 @@ describe('UpdateProjectDto', () => {
 
       const errors = await validate(clearingUpdate);
       expect(errors).toHaveLength(0);
-      
+
       expect(clearingUpdate.isClearingDescription()).toBe(true);
       expect(clearingUpdate.hasValidUpdates()).toBe(true);
     });
@@ -570,8 +576,8 @@ describe('UpdateProjectDto', () => {
 
       const errors = await validate(invalidUpdate);
       expect(errors.length).toBeGreaterThan(1);
-      
-      const properties = errors.map(e => e.property);
+
+      const properties = errors.map((e) => e.property);
       expect(properties).toContain('name');
       expect(properties).toContain('description');
     });
@@ -581,7 +587,7 @@ describe('UpdateProjectDto', () => {
 
       const errors = await validate(noUpdate);
       expect(errors).toHaveLength(0);
-      
+
       expect(noUpdate.hasValidUpdates()).toBe(false);
       expect(noUpdate.getUpdateFieldsCount()).toBe(0);
       expect(noUpdate.isConsistent()).toBe(true);
@@ -596,11 +602,11 @@ describe('UpdateProjectDto', () => {
 
       const errors = await validate(partialInvalid);
       expect(errors.length).toBeGreaterThan(0);
-      
+
       // Seule la description devrait avoir des erreurs
-      const nameErrors = errors.filter(e => e.property === 'name');
-      const descErrors = errors.filter(e => e.property === 'description');
-      
+      const nameErrors = errors.filter((e) => e.property === 'name');
+      const descErrors = errors.filter((e) => e.property === 'description');
+
       expect(nameErrors).toHaveLength(0);
       expect(descErrors.length).toBeGreaterThan(0);
     });
@@ -619,13 +625,13 @@ describe('UpdateProjectDto', () => {
 
       const dto = plainToClass(UpdateProjectDto, updateData);
       const errors = await validate(dto);
-      
+
       expect(errors).toHaveLength(0);
-      
+
       // Pattern typique d'utilisation dans le service
       const fieldsToUpdate = dto.getDefinedFields();
       expect(fieldsToUpdate).toEqual(updateData);
-      
+
       // Log sécurisé pour audit
       const logEntry = dto.toLogSafeString();
       expect(logEntry).toMatch(/UpdateProjectDto\[fields=2/);
@@ -635,13 +641,29 @@ describe('UpdateProjectDto', () => {
       // Les mêmes règles de validation que CreateProjectDto doivent s'appliquer
       const validationTests = [
         // Longueur nom
-        { name: 'A'.repeat(UPDATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH), valid: true },
-        { name: 'A'.repeat(UPDATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH + 1), valid: false },
-        
+        {
+          name: 'A'.repeat(UPDATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH),
+          valid: true,
+        },
+        {
+          name: 'A'.repeat(UPDATE_PROJECT_CONSTANTS.NAME.MAX_LENGTH + 1),
+          valid: false,
+        },
+
         // Longueur description
-        { description: 'A'.repeat(UPDATE_PROJECT_CONSTANTS.DESCRIPTION.MAX_LENGTH), valid: true },
-        { description: 'A'.repeat(UPDATE_PROJECT_CONSTANTS.DESCRIPTION.MAX_LENGTH + 1), valid: false },
-        
+        {
+          description: 'A'.repeat(
+            UPDATE_PROJECT_CONSTANTS.DESCRIPTION.MAX_LENGTH,
+          ),
+          valid: true,
+        },
+        {
+          description: 'A'.repeat(
+            UPDATE_PROJECT_CONSTANTS.DESCRIPTION.MAX_LENGTH + 1,
+          ),
+          valid: false,
+        },
+
         // Sécurité
         { name: '<script>alert("xss")</script>', valid: false },
         { description: '<script>alert("xss")</script>', valid: false },
@@ -651,7 +673,7 @@ describe('UpdateProjectDto', () => {
         const dto = plainToClass(UpdateProjectDto, test);
         const errors = await validate(dto);
         const isValid = errors.length === 0;
-        
+
         expect(isValid).toBe(test.valid);
       }
     });
@@ -684,12 +706,14 @@ expect.extend({
     const pass = Array.isArray(received) && received.length === 0;
     if (pass) {
       return {
-        message: () => `expected ${received} not to be a valid DTO (no validation errors)`,
+        message: () =>
+          `expected ${received} not to be a valid DTO (no validation errors)`,
         pass: true,
       };
     } else {
       return {
-        message: () => `expected ${received} to be a valid DTO (should have no validation errors)`,
+        message: () =>
+          `expected ${received} to be a valid DTO (should have no validation errors)`,
         pass: false,
       };
     }

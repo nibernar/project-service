@@ -10,7 +10,7 @@ describe('Database Configuration Errors', () => {
   describe('DatabaseConfigurationError', () => {
     it('should create error with message', () => {
       const error = new DatabaseConfigurationError('Test error');
-      
+
       expect(error.message).toBe('Test error');
       expect(error.name).toBe('DatabaseConfigurationError');
       expect(error).toBeInstanceOf(Error);
@@ -18,18 +18,18 @@ describe('Database Configuration Errors', () => {
 
     it('should store variable and value', () => {
       const error = new DatabaseConfigurationError(
-        'Invalid config', 
-        'DB_MAX_CONNECTIONS', 
-        'invalid'
+        'Invalid config',
+        'DB_MAX_CONNECTIONS',
+        'invalid',
       );
-      
+
       expect(error.variable).toBe('DB_MAX_CONNECTIONS');
       expect(error.value).toBe('invalid');
     });
 
     it('should work without optional parameters', () => {
       const error = new DatabaseConfigurationError('Simple error');
-      
+
       expect(error.variable).toBeUndefined();
       expect(error.value).toBeUndefined();
     });
@@ -41,9 +41,9 @@ describe('Database Configuration Errors', () => {
         'Validation failed',
         'DB_URL',
         'invalid-url',
-        'Use postgresql:// format'
+        'Use postgresql:// format',
       );
-      
+
       expect(error).toBeInstanceOf(DatabaseConfigurationError);
       expect(error.name).toBe('DatabaseValidationError');
       expect(error.variable).toBe('DB_URL');
@@ -55,9 +55,9 @@ describe('Database Configuration Errors', () => {
       const error = new DatabaseValidationError(
         'Validation failed',
         'DB_URL',
-        'invalid-url'
+        'invalid-url',
       );
-      
+
       expect(error.suggestion).toBeUndefined();
     });
   });
@@ -67,9 +67,9 @@ describe('Database Configuration Errors', () => {
       const originalError = new Error('Connection failed');
       const error = new DatabaseConnectionError(
         'Database unavailable',
-        originalError
+        originalError,
       );
-      
+
       expect(error.originalError).toBe(originalError);
       expect(error.name).toBe('DatabaseConnectionError');
       expect(error.message).toBe('Database unavailable');
@@ -77,7 +77,7 @@ describe('Database Configuration Errors', () => {
 
     it('should work without original error', () => {
       const error = new DatabaseConnectionError('Database unavailable');
-      
+
       expect(error.originalError).toBeUndefined();
     });
   });

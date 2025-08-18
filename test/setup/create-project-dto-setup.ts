@@ -23,7 +23,7 @@ process.env.LOG_LEVEL = 'error';
 // Mock automatique de tous les modules externes - version simplifiée
 jest.mock('@nestjs/common', () => {
   const actual = jest.requireActual('@nestjs/common');
-  
+
   // Mock Logger sans overrideLogger pour éviter les erreurs
   const mockLogger = {
     log: jest.fn(),
@@ -32,7 +32,7 @@ jest.mock('@nestjs/common', () => {
     debug: jest.fn(),
     verbose: jest.fn(),
   };
-  
+
   return {
     ...actual,
     Logger: jest.fn().mockImplementation(() => mockLogger),
@@ -49,9 +49,9 @@ jest.mock('@nestjs/common', () => {
 declare global {
   var validateDto: <T extends object>(
     DtoClass: new () => T,
-    data: any
+    data: any,
   ) => Promise<{ dto: T; errors: any[] }>;
-  
+
   var validProjectData: () => any;
   var invalidProjectData: () => any;
   var generateUuid: () => string;
@@ -59,7 +59,7 @@ declare global {
 
 global.validateDto = async <T extends object>(
   DtoClass: new () => T,
-  data: any
+  data: any,
 ): Promise<{ dto: T; errors: any[] }> => {
   const dto = plainToClass(DtoClass, data);
   const errors = await validate(dto as any);
@@ -91,8 +91,8 @@ global.invalidProjectData = () => ({
  */
 global.generateUuid = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 };
@@ -112,23 +112,25 @@ declare global {
 
 expect.extend({
   toHaveValidationError(received: any[], property: string) {
-    const hasError = received.some(error => error.property === property);
-    
+    const hasError = received.some((error) => error.property === property);
+
     return {
-      message: () => hasError 
-        ? `Expected no validation error for "${property}"` 
-        : `Expected validation error for "${property}"`,
+      message: () =>
+        hasError
+          ? `Expected no validation error for "${property}"`
+          : `Expected validation error for "${property}"`,
       pass: hasError,
     };
   },
 
   toBeValidDto(received: any[]) {
     const isValid = received.length === 0;
-    
+
     return {
-      message: () => isValid 
-        ? 'Expected DTO to be invalid' 
-        : `Expected DTO to be valid but found errors: ${received.map(e => e.property).join(', ')}`,
+      message: () =>
+        isValid
+          ? 'Expected DTO to be invalid'
+          : `Expected DTO to be valid but found errors: ${received.map((e) => e.property).join(', ')}`,
       pass: isValid,
     };
   },

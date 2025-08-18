@@ -1,6 +1,6 @@
 /**
  * Tests d'intégration pour les interfaces de pagination.
- * 
+ *
  * Teste l'intégration avec Prisma, NestJS controllers, et autres composants
  * pour s'assurer que la pagination fonctionne correctement dans un contexte réel.
  */
@@ -64,14 +64,14 @@ class MockProjectService {
     );
 
     // Filtrer par utilisateur
-    const userProjects = this.projects.filter(p => p.ownerId === userId);
+    const userProjects = this.projects.filter((p) => p.ownerId === userId);
 
     // Appliquer la pagination
     const offset = (validPage - 1) * validLimit;
     const paginatedProjects = userProjects.slice(offset, offset + validLimit);
 
     // Transformer en DTO
-    const projectDtos: MockProjectDto[] = paginatedProjects.map(p => ({
+    const projectDtos: MockProjectDto[] = paginatedProjects.map((p) => ({
       id: p.id,
       name: p.name,
       description: p.description,
@@ -87,7 +87,9 @@ class MockProjectService {
   }
 
   async findById(id: string, userId: string): Promise<MockProjectDto | null> {
-    const project = this.projects.find(p => p.id === id && p.ownerId === userId);
+    const project = this.projects.find(
+      (p) => p.id === id && p.ownerId === userId,
+    );
     if (!project) return null;
 
     return {
@@ -99,7 +101,7 @@ class MockProjectService {
   }
 
   async count(userId: string): Promise<number> {
-    return this.projects.filter(p => p.ownerId === userId).length;
+    return this.projects.filter((p) => p.ownerId === userId).length;
   }
 }
 
@@ -138,7 +140,7 @@ describe('Pagination Integration Tests', () => {
         });
 
         // Vérifier que les projets appartiennent bien au bon utilisateur
-        result.data.forEach(project => {
+        result.data.forEach((project) => {
           expect(project.id).toMatch(/^project-[1-9]$|^project-10$/);
         });
       });
@@ -180,10 +182,10 @@ describe('Pagination Integration Tests', () => {
         expect(user2Result.total).toBe(10);
 
         // Vérifier qu'il n'y a pas de fuite de données entre utilisateurs
-        const user1Ids = user1Result.data.map(p => p.id);
-        const user2Ids = user2Result.data.map(p => p.id);
+        const user1Ids = user1Result.data.map((p) => p.id);
+        const user2Ids = user2Result.data.map((p) => p.id);
 
-        expect(user1Ids.some(id => user2Ids.includes(id))).toBe(false);
+        expect(user1Ids.some((id) => user2Ids.includes(id))).toBe(false);
       });
     });
 
@@ -226,7 +228,7 @@ describe('Pagination Integration Tests', () => {
 
         expect(duration).toBeLessThan(50); // Devrait être très rapide
         expect(results).toHaveLength(15);
-        results.forEach(result => {
+        results.forEach((result) => {
           expect(result.data).toHaveLength(10);
           expect(result.total).toBe(10);
         });
@@ -273,14 +275,14 @@ describe('Pagination Integration Tests', () => {
       it('should be consistent across multiple requests', async () => {
         // Faire plusieurs requêtes identiques
         const requests = Array.from({ length: 5 }, () =>
-          controller.findAll('user-7', 1, 5)
+          controller.findAll('user-7', 1, 5),
         );
 
         const results = await Promise.all(requests);
 
         // Tous les résultats doivent être identiques
         const firstResult = results[0];
-        results.forEach(result => {
+        results.forEach((result) => {
           expect(result).toEqual(firstResult);
         });
       });
@@ -294,7 +296,7 @@ describe('Pagination Integration Tests', () => {
 
         // Simuler plusieurs requêtes count simultanées
         const countPromises = Array.from({ length: 15 }, (_, i) =>
-          service.count(`user-${i + 1}`)
+          service.count(`user-${i + 1}`),
         );
 
         const counts = await Promise.all(countPromises);
@@ -302,14 +304,14 @@ describe('Pagination Integration Tests', () => {
 
         expect(duration).toBeLessThan(20);
         expect(counts).toHaveLength(15);
-        counts.forEach(count => {
+        counts.forEach((count) => {
           expect(count).toBe(10);
         });
       });
 
       it('should maintain consistency between findMany and count', async () => {
         const userId = 'user-12';
-        
+
         // Récupérer tous les projets par petites pages
         let allProjectsFromPagination: MockProjectDto[] = [];
         let currentPage = 1;
@@ -329,7 +331,7 @@ describe('Pagination Integration Tests', () => {
     });
   });
 
-  describe('Edge Cases d\'intégration', () => {
+  describe("Edge Cases d'intégration", () => {
     describe('Données vides', () => {
       it('should handle user with no projects', async () => {
         const result = await service.findAll('nonexistent-user', 1, 10);
@@ -363,7 +365,7 @@ describe('Pagination Integration Tests', () => {
         expect(duration).toBeLessThan(100);
         expect(results).toHaveLength(20);
 
-        results.forEach(result => {
+        results.forEach((result) => {
           expect(result.data).toBeDefined();
           expect(result.pagination).toBeDefined();
           expect(result.total).toBeDefined();
@@ -374,16 +376,16 @@ describe('Pagination Integration Tests', () => {
     describe('Cohérence des données', () => {
       it('should maintain data consistency across pages', async () => {
         const userId = 'user-10';
-        
+
         // Récupérer la première et deuxième page
         const page1 = await service.findAll(userId, 1, 3);
         const page2 = await service.findAll(userId, 2, 3);
 
         // Les IDs ne doivent pas se chevaucher
-        const page1Ids = page1.data.map(p => p.id);
-        const page2Ids = page2.data.map(p => p.id);
+        const page1Ids = page1.data.map((p) => p.id);
+        const page2Ids = page2.data.map((p) => p.id);
 
-        expect(page1Ids.some(id => page2Ids.includes(id))).toBe(false);
+        expect(page1Ids.some((id) => page2Ids.includes(id))).toBe(false);
 
         // Le total doit être cohérent
         expect(page1.total).toBe(page2.total);
@@ -421,20 +423,21 @@ describe('Pagination Integration Tests', () => {
     it('should handle entity to DTO transformation in pagination context', async () => {
       // Simuler la transformation Entity -> DTO comme dans un vrai service
       const userId = 'user-4';
-      
+
       // Récupérer les entités brutes
       const rawProjects = service['projects']
-        .filter(p => p.ownerId === userId)
+        .filter((p) => p.ownerId === userId)
         .slice(0, 5);
 
       // Appliquer la pagination avec transformation
       const transformedResult = createPaginatedResult(
-        rawProjects.map(project => ({
+        rawProjects.map((project) => ({
           id: project.id,
           name: project.name.toUpperCase(), // Transformation
           description: project.description?.substring(0, 50), // Troncature
           createdAt: project.createdAt,
-          isRecent: Date.now() - project.createdAt.getTime() < 7 * 24 * 60 * 60 * 1000,
+          isRecent:
+            Date.now() - project.createdAt.getTime() < 7 * 24 * 60 * 60 * 1000,
         })),
         1,
         5,
@@ -454,11 +457,11 @@ describe('Pagination Integration Tests', () => {
       const user1Data = await service.findAll('user-1', 1, 100);
       const user2Data = await service.findAll('user-2', 1, 100);
 
-      const user1ProjectIds = user1Data.data.map(p => p.id);
-      const user2ProjectIds = user2Data.data.map(p => p.id);
+      const user1ProjectIds = user1Data.data.map((p) => p.id);
+      const user2ProjectIds = user2Data.data.map((p) => p.id);
 
       // Aucun ID ne doit être présent dans les deux listes
-      user1ProjectIds.forEach(id => {
+      user1ProjectIds.forEach((id) => {
         expect(user2ProjectIds).not.toContain(id);
       });
     });
@@ -473,7 +476,7 @@ describe('Pagination Integration Tests', () => {
 
       const results = await Promise.allSettled(malformedRequests);
 
-      results.forEach(result => {
+      results.forEach((result) => {
         if (result.status === 'fulfilled') {
           expect(result.value.data).toBeDefined();
           expect(result.value.pagination.page).toBeGreaterThan(0);

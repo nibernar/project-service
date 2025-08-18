@@ -1,4 +1,8 @@
-import { ValidationUtils, ValidationResult, SanitizeOptions } from '../../../../src/common/utils/validation.utils';
+import {
+  ValidationUtils,
+  ValidationResult,
+  SanitizeOptions,
+} from '../../../../src/common/utils/validation.utils';
 
 describe('ValidationUtils', () => {
   describe('constructor', () => {
@@ -20,21 +24,15 @@ describe('ValidationUtils', () => {
         '123-test-project',
       ];
 
-      validNames.forEach(name => {
+      validNames.forEach((name) => {
         expect(ValidationUtils.isValidProjectName(name)).toBe(true);
       });
     });
 
     it('should reject empty names', () => {
-      const emptyNames = [
-        '',
-        null,
-        undefined,
-        '   ',
-        '\t\n\r',
-      ];
+      const emptyNames = ['', null, undefined, '   ', '\t\n\r'];
 
-      emptyNames.forEach(name => {
+      emptyNames.forEach((name) => {
         expect(ValidationUtils.isValidProjectName(name as any)).toBe(false);
       });
     });
@@ -66,42 +64,30 @@ describe('ValidationUtils', () => {
         'project:colon',
         'project;semicolon',
         'project"quotes',
-        'project\'apostrophe',
+        "project'apostrophe",
         'project?question',
         'project/slash',
         'project.dot',
         'project,comma',
       ];
 
-      invalidNames.forEach(name => {
+      invalidNames.forEach((name) => {
         expect(ValidationUtils.isValidProjectName(name)).toBe(false);
       });
     });
 
     it('should reject names with only special characters', () => {
-      const specialOnlyNames = [
-        '---',
-        '___',
-        '   ',
-        '- _',
-        '_-_-_',
-      ];
+      const specialOnlyNames = ['---', '___', '   ', '- _', '_-_-_'];
 
-      specialOnlyNames.forEach(name => {
+      specialOnlyNames.forEach((name) => {
         expect(ValidationUtils.isValidProjectName(name)).toBe(false);
       });
     });
 
     it('should handle non-string input', () => {
-      const nonStrings = [
-        123,
-        true,
-        {},
-        [],
-        new Date(),
-      ];
+      const nonStrings = [123, true, {}, [], new Date()];
 
-      nonStrings.forEach(input => {
+      nonStrings.forEach((input) => {
         expect(ValidationUtils.isValidProjectName(input as any)).toBe(false);
       });
     });
@@ -110,7 +96,7 @@ describe('ValidationUtils', () => {
   describe('validateProjectName', () => {
     it('should return detailed validation for valid names', () => {
       const result = ValidationUtils.validateProjectName('Valid Project');
-      
+
       expect(result.isValid).toBe(true);
       expect(result.errors).toEqual([]);
       expect(result.warnings).toBeDefined();
@@ -118,40 +104,51 @@ describe('ValidationUtils', () => {
 
     it('should provide detailed error messages', () => {
       const result = ValidationUtils.validateProjectName('');
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Project name cannot be empty');
     });
 
     it('should warn about short names', () => {
       const result = ValidationUtils.validateProjectName('Ab');
-      
+
       expect(result.isValid).toBe(true);
-      expect(result.warnings).toContain('Project names with less than 3 characters may be too short');
+      expect(result.warnings).toContain(
+        'Project names with less than 3 characters may be too short',
+      );
     });
 
     it('should warn about trimming whitespace', () => {
       const result = ValidationUtils.validateProjectName('  Project Name  ');
-      
+
       expect(result.isValid).toBe(true);
-      expect(result.warnings).toContain('Project name will be trimmed of leading/trailing whitespace');
+      expect(result.warnings).toContain(
+        'Project name will be trimmed of leading/trailing whitespace',
+      );
     });
 
     it('should handle multiple validation errors', () => {
-      const result = ValidationUtils.validateProjectName('a'.repeat(101) + '@invalid');
-      
+      const result = ValidationUtils.validateProjectName(
+        'a'.repeat(101) + '@invalid',
+      );
+
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(1);
-      expect(result.errors).toContain('Project name cannot exceed 100 characters');
-      expect(result.errors).toContain('Project name can only contain letters, numbers, spaces, hyphens, and underscores');
+      expect(result.errors).toContain(
+        'Project name cannot exceed 100 characters',
+      );
+      expect(result.errors).toContain(
+        'Project name can only contain letters, numbers, spaces, hyphens, and underscores',
+      );
     });
   });
 
   describe('sanitizeDescription', () => {
     it('should remove HTML tags', () => {
-      const htmlDescription = '<p>This is a <strong>description</strong> with <em>HTML</em>.</p>';
+      const htmlDescription =
+        '<p>This is a <strong>description</strong> with <em>HTML</em>.</p>';
       const sanitized = ValidationUtils.sanitizeDescription(htmlDescription);
-      
+
       expect(sanitized).not.toContain('<p>');
       expect(sanitized).not.toContain('<strong>');
       expect(sanitized).not.toContain('</p>');
@@ -159,9 +156,10 @@ describe('ValidationUtils', () => {
     });
 
     it('should remove dangerous HTML tags', () => {
-      const dangerousHtml = '<script>alert("hack")</script><iframe src="evil.com"></iframe>';
+      const dangerousHtml =
+        '<script>alert("hack")</script><iframe src="evil.com"></iframe>';
       const sanitized = ValidationUtils.sanitizeDescription(dangerousHtml);
-      
+
       expect(sanitized).not.toContain('<script');
       expect(sanitized).not.toContain('<iframe');
       expect(sanitized).not.toContain('alert');
@@ -171,14 +169,14 @@ describe('ValidationUtils', () => {
     it('should trim whitespace', () => {
       const description = '   This is a description   ';
       const sanitized = ValidationUtils.sanitizeDescription(description);
-      
+
       expect(sanitized).toBe('This is a description');
     });
 
     it('should limit length', () => {
       const longDescription = 'a'.repeat(1500);
       const sanitized = ValidationUtils.sanitizeDescription(longDescription);
-      
+
       expect(sanitized.length).toBe(1000); // 997 chars + '...'
       expect(sanitized.endsWith('...')).toBe(true);
     });
@@ -186,7 +184,7 @@ describe('ValidationUtils', () => {
     it('should remove brackets and content', () => {
       const description = 'Description with <brackets> and more';
       const sanitized = ValidationUtils.sanitizeDescription(description);
-      
+
       expect(sanitized).toBe('Description with  and more');
     });
 
@@ -213,7 +211,7 @@ describe('ValidationUtils', () => {
         undefined, // Optional field
       ];
 
-      validDescriptions.forEach(desc => {
+      validDescriptions.forEach((desc) => {
         expect(ValidationUtils.isValidDescription(desc as any)).toBe(true);
       });
     });
@@ -228,11 +226,11 @@ describe('ValidationUtils', () => {
         'Description with <script>',
         'Description with >',
         'Description with "quotes"',
-        'Description with \'apostrophes\'',
+        "Description with 'apostrophes'",
         'Description with &ampersand',
       ];
 
-      unsafeDescriptions.forEach(desc => {
+      unsafeDescriptions.forEach((desc) => {
         expect(ValidationUtils.isValidDescription(desc)).toBe(false);
       });
     });
@@ -251,7 +249,7 @@ describe('ValidationUtils', () => {
         'f47ac10b-58cc-4372-9567-0e02b2c3d479',
       ];
 
-      validUUIDs.forEach(uuid => {
+      validUUIDs.forEach((uuid) => {
         expect(ValidationUtils.isValidFileId(uuid)).toBe(true);
       });
     });
@@ -265,7 +263,7 @@ describe('ValidationUtils', () => {
         'a1234567', // 8 caractères avec 5 alphanumériques
       ];
 
-      validFileIds.forEach(fileId => {
+      validFileIds.forEach((fileId) => {
         expect(ValidationUtils.isValidFileId(fileId)).toBe(true);
       });
     });
@@ -290,7 +288,7 @@ describe('ValidationUtils', () => {
         'ab_____c', // 3 caractères alphanumériques seulement
       ];
 
-      invalidIds.forEach(id => {
+      invalidIds.forEach((id) => {
         expect(ValidationUtils.isValidFileId(id)).toBe(false);
       });
     });
@@ -303,7 +301,7 @@ describe('ValidationUtils', () => {
         'file"onclick="alert(1)"',
       ];
 
-      maliciousIds.forEach(id => {
+      maliciousIds.forEach((id) => {
         expect(ValidationUtils.isValidFileId(id)).toBe(false);
       });
     });
@@ -327,7 +325,7 @@ describe('ValidationUtils', () => {
         ['file123456789', 'document_abcd1234'],
       ];
 
-      validArrays.forEach(arr => {
+      validArrays.forEach((arr) => {
         const result = ValidationUtils.validateFileIds(arr);
         expect(result.isValid).toBe(true);
         expect(result.errors).toEqual([]);
@@ -335,25 +333,21 @@ describe('ValidationUtils', () => {
     });
 
     it('should reject non-array input', () => {
-      const nonArrays = [
-        'not-an-array',
-        123,
-        {},
-        null,
-        undefined,
-      ];
+      const nonArrays = ['not-an-array', 123, {}, null, undefined];
 
-      nonArrays.forEach(input => {
+      nonArrays.forEach((input) => {
         const result = ValidationUtils.validateFileIds(input as any);
         expect(result.isValid).toBe(false);
-        expect(result.errors).toContain('File IDs must be provided as an array');
+        expect(result.errors).toContain(
+          'File IDs must be provided as an array',
+        );
       });
     });
 
     it('should detect invalid file IDs', () => {
       const invalidArray = ['valid_id_123456789', 'invalid'];
       const result = ValidationUtils.validateFileIds(invalidArray);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errors[0]).toContain('Invalid file IDs found');
       expect(result.errors[0]).toContain('Position 1: invalid');
@@ -362,26 +356,36 @@ describe('ValidationUtils', () => {
     it('should detect duplicate IDs', () => {
       const duplicateArray = ['file12345678', 'file87654321', 'file12345678'];
       const result = ValidationUtils.validateFileIds(duplicateArray);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errors[0]).toContain('Duplicate file IDs found');
       expect(result.errors[0]).toContain('file12345678');
     });
 
     it('should limit number of files', () => {
-      const tooManyFiles = Array.from({ length: 51 }, (_, i) => `file${i.toString().padStart(8, '0')}`);
+      const tooManyFiles = Array.from(
+        { length: 51 },
+        (_, i) => `file${i.toString().padStart(8, '0')}`,
+      );
       const result = ValidationUtils.validateFileIds(tooManyFiles);
-      
+
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Cannot upload more than 50 files per project');
+      expect(result.errors).toContain(
+        'Cannot upload more than 50 files per project',
+      );
     });
 
     it('should warn about large number of files', () => {
-      const manyFiles = Array.from({ length: 25 }, (_, i) => `file${i.toString().padStart(8, '0')}`);
+      const manyFiles = Array.from(
+        { length: 25 },
+        (_, i) => `file${i.toString().padStart(8, '0')}`,
+      );
       const result = ValidationUtils.validateFileIds(manyFiles);
-      
+
       expect(result.isValid).toBe(true);
-      expect(result.warnings).toContain('Large number of files may impact performance');
+      expect(result.warnings).toContain(
+        'Large number of files may impact performance',
+      );
     });
   });
 
@@ -394,7 +398,7 @@ describe('ValidationUtils', () => {
         'A'.repeat(100), // Longer valid prompt
       ];
 
-      validPrompts.forEach(prompt => {
+      validPrompts.forEach((prompt) => {
         expect(ValidationUtils.isValidPrompt(prompt)).toBe(true);
       });
     });
@@ -406,7 +410,7 @@ describe('ValidationUtils', () => {
         'A'.repeat(9), // Less than 10 characters
       ];
 
-      shortPrompts.forEach(prompt => {
+      shortPrompts.forEach((prompt) => {
         expect(ValidationUtils.isValidPrompt(prompt)).toBe(false);
       });
     });
@@ -423,7 +427,7 @@ describe('ValidationUtils', () => {
         '- - - -',
       ];
 
-      meaninglessPrompts.forEach(prompt => {
+      meaninglessPrompts.forEach((prompt) => {
         expect(ValidationUtils.isValidPrompt(prompt)).toBe(false);
       });
     });
@@ -441,38 +445,52 @@ describe('ValidationUtils', () => {
 
   describe('validatePrompt', () => {
     it('should provide detailed validation for valid prompts', () => {
-      const result = ValidationUtils.validatePrompt('Create a comprehensive web application with modern features');
-      
+      const result = ValidationUtils.validatePrompt(
+        'Create a comprehensive web application with modern features',
+      );
+
       expect(result.isValid).toBe(true);
       expect(result.errors).toEqual([]);
     });
 
     it('should warn about short prompts', () => {
       const result = ValidationUtils.validatePrompt('Short but valid prompt');
-      
+
       expect(result.isValid).toBe(true);
-      expect(result.warnings).toContain('Short prompts may not provide enough context for optimal results');
+      expect(result.warnings).toContain(
+        'Short prompts may not provide enough context for optimal results',
+      );
     });
 
     it('should warn about few words', () => {
       const result = ValidationUtils.validatePrompt('Create app now');
-      
+
       expect(result.isValid).toBe(true);
-      expect(result.warnings).toContain('Prompts with fewer than 5 words may be too brief');
+      expect(result.warnings).toContain(
+        'Prompts with fewer than 5 words may be too brief',
+      );
     });
 
     it('should warn about missing punctuation', () => {
-      const result = ValidationUtils.validatePrompt('Create a web application with authentication');
-      
+      const result = ValidationUtils.validatePrompt(
+        'Create a web application with authentication',
+      );
+
       expect(result.isValid).toBe(true);
-      expect(result.warnings).toContain('Consider ending your prompt with proper punctuation');
+      expect(result.warnings).toContain(
+        'Consider ending your prompt with proper punctuation',
+      );
     });
 
     it('should not warn when punctuation is present', () => {
-      const result = ValidationUtils.validatePrompt('Create a web application with authentication.');
-      
+      const result = ValidationUtils.validatePrompt(
+        'Create a web application with authentication.',
+      );
+
       expect(result.isValid).toBe(true);
-      expect(result.warnings?.some(w => w.includes('punctuation'))).toBe(false);
+      expect(result.warnings?.some((w) => w.includes('punctuation'))).toBe(
+        false,
+      );
     });
   });
 
@@ -484,7 +502,7 @@ describe('ValidationUtils', () => {
         'f47ac10b-58cc-4372-9567-0e02b2c3d479',
       ];
 
-      validUUIDs.forEach(uuid => {
+      validUUIDs.forEach((uuid) => {
         expect(ValidationUtils.isValidUUID(uuid)).toBe(true);
       });
     });
@@ -499,7 +517,7 @@ describe('ValidationUtils', () => {
         '123e4567e89b12d3a456426614174000', // Missing dashes
       ];
 
-      invalidUUIDs.forEach(uuid => {
+      invalidUUIDs.forEach((uuid) => {
         expect(ValidationUtils.isValidUUID(uuid)).toBe(false);
       });
     });
@@ -519,42 +537,59 @@ describe('ValidationUtils', () => {
     });
 
     it('should not trim when trimWhitespace is false', () => {
-      const result = ValidationUtils.sanitizeText('  test  ', { trimWhitespace: false });
+      const result = ValidationUtils.sanitizeText('  test  ', {
+        trimWhitespace: false,
+      });
       expect(result).toBe('  test  ');
     });
 
     it('should remove HTML by default', () => {
-      const result = ValidationUtils.sanitizeText('<p>test</p>', defaultOptions);
+      const result = ValidationUtils.sanitizeText(
+        '<p>test</p>',
+        defaultOptions,
+      );
       expect(result).toBe('test');
     });
 
     it('should keep HTML when allowHtml is true', () => {
-      const result = ValidationUtils.sanitizeText('<p>test</p>', { allowHtml: true });
+      const result = ValidationUtils.sanitizeText('<p>test</p>', {
+        allowHtml: true,
+      });
       expect(result).toBe('<p>test</p>');
     });
 
     it('should remove special characters when requested', () => {
-      const result = ValidationUtils.sanitizeText('test@#$%', { removeSpecialChars: true });
+      const result = ValidationUtils.sanitizeText('test@#$%', {
+        removeSpecialChars: true,
+      });
       expect(result).toBe('test');
     });
 
     it('should limit length when specified', () => {
-      const result = ValidationUtils.sanitizeText('very long text here', { maxLength: 10 });
+      const result = ValidationUtils.sanitizeText('very long text here', {
+        maxLength: 10,
+      });
       expect(result).toBe('very lo...');
       expect(result.length).toBe(10);
     });
 
     it('should handle empty input', () => {
       expect(ValidationUtils.sanitizeText('', defaultOptions)).toBe('');
-      expect(ValidationUtils.sanitizeText(null as any, defaultOptions)).toBe('');
-      expect(ValidationUtils.sanitizeText(undefined as any, defaultOptions)).toBe('');
+      expect(ValidationUtils.sanitizeText(null as any, defaultOptions)).toBe(
+        '',
+      );
+      expect(
+        ValidationUtils.sanitizeText(undefined as any, defaultOptions),
+      ).toBe('');
     });
   });
 
   describe('validateTextLength', () => {
     it('should accept text within valid range', () => {
       expect(ValidationUtils.validateTextLength('hello', 1, 10)).toBe(true);
-      expect(ValidationUtils.validateTextLength('hello world', 5, 15)).toBe(true);
+      expect(ValidationUtils.validateTextLength('hello world', 5, 15)).toBe(
+        true,
+      );
     });
 
     it('should reject text that is too short', () => {
@@ -562,7 +597,9 @@ describe('ValidationUtils', () => {
     });
 
     it('should reject text that is too long', () => {
-      expect(ValidationUtils.validateTextLength('very long text', 1, 5)).toBe(false);
+      expect(ValidationUtils.validateTextLength('very long text', 1, 5)).toBe(
+        false,
+      );
     });
 
     it('should handle empty text with zero minimum', () => {
@@ -585,7 +622,7 @@ describe('ValidationUtils', () => {
       };
 
       const result = ValidationUtils.validateAndSanitizeInput(input);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.sanitized).toBeDefined();
       expect(result.sanitized?.name).toBe('Valid Project');
@@ -597,7 +634,7 @@ describe('ValidationUtils', () => {
       };
 
       const result = ValidationUtils.validateAndSanitizeInput(input);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.sanitized?.name).toBe('Valid Project');
       expect(result.sanitized?.description).toBeUndefined();
@@ -612,7 +649,7 @@ describe('ValidationUtils', () => {
       };
 
       const result = ValidationUtils.validateAndSanitizeInput(input);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(1);
       expect(result.sanitized).toBeUndefined();
@@ -622,15 +659,18 @@ describe('ValidationUtils', () => {
       const input = {
         name: '  Valid Project  ',
         description: '  <p>Description</p>  ',
-        initialPrompt: '  Create a comprehensive web application with modern authentication system and user management features.  ', // Ajout du point final
+        initialPrompt:
+          '  Create a comprehensive web application with modern authentication system and user management features.  ', // Ajout du point final
       };
 
       const result = ValidationUtils.validateAndSanitizeInput(input);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.sanitized?.name).toBe('Valid Project');
       expect(result.sanitized?.description).toBe('Description');
-      expect(result.sanitized?.initialPrompt).toBe('Create a comprehensive web application with modern authentication system and user management features.');
+      expect(result.sanitized?.initialPrompt).toBe(
+        'Create a comprehensive web application with modern authentication system and user management features.',
+      );
     });
   });
 
@@ -642,19 +682,15 @@ describe('ValidationUtils', () => {
           'project_12345678',
         ];
 
-        validIds.forEach(id => {
+        validIds.forEach((id) => {
           expect(ValidationUtils.isValidProjectId(id)).toBe(true);
         });
       });
 
       it('should reject invalid project IDs', () => {
-        const invalidIds = [
-          '',
-          'short',
-          'invalid@id',
-        ];
+        const invalidIds = ['', 'short', 'invalid@id'];
 
-        invalidIds.forEach(id => {
+        invalidIds.forEach((id) => {
           expect(ValidationUtils.isValidProjectId(id)).toBe(false);
         });
       });
@@ -662,14 +698,9 @@ describe('ValidationUtils', () => {
 
     describe('isValidResourceType', () => {
       it('should accept valid resource types', () => {
-        const validTypes = [
-          'project',
-          'statistics',
-          'user',
-          'file',
-        ];
+        const validTypes = ['project', 'statistics', 'user', 'file'];
 
-        validTypes.forEach(type => {
+        validTypes.forEach((type) => {
           expect(ValidationUtils.isValidResourceType(type)).toBe(true);
         });
       });
@@ -680,13 +711,9 @@ describe('ValidationUtils', () => {
       });
 
       it('should reject invalid resource types', () => {
-        const invalidTypes = [
-          '',
-          'invalid_type',
-          'hack',
-        ];
+        const invalidTypes = ['', 'invalid_type', 'hack'];
 
-        invalidTypes.forEach(type => {
+        invalidTypes.forEach((type) => {
           expect(ValidationUtils.isValidResourceType(type)).toBe(false);
         });
       });
@@ -694,15 +721,9 @@ describe('ValidationUtils', () => {
 
     describe('isValidAction', () => {
       it('should accept valid actions', () => {
-        const validActions = [
-          'read',
-          'write',
-          'delete',
-          'create',
-          'admin',
-        ];
+        const validActions = ['read', 'write', 'delete', 'create', 'admin'];
 
-        validActions.forEach(action => {
+        validActions.forEach((action) => {
           expect(ValidationUtils.isValidAction(action)).toBe(true);
         });
       });
@@ -713,13 +734,9 @@ describe('ValidationUtils', () => {
       });
 
       it('should reject invalid actions', () => {
-        const invalidActions = [
-          '',
-          'hack',
-          'exploit',
-        ];
+        const invalidActions = ['', 'hack', 'exploit'];
 
-        invalidActions.forEach(action => {
+        invalidActions.forEach((action) => {
           expect(ValidationUtils.isValidAction(action)).toBe(false);
         });
       });
@@ -730,25 +747,26 @@ describe('ValidationUtils', () => {
     it('should handle large inputs efficiently', () => {
       const largeInput = 'a'.repeat(10000);
       const start = Date.now();
-      
+
       ValidationUtils.sanitizeText(largeInput);
       ValidationUtils.isValidProjectName(largeInput);
       ValidationUtils.isValidDescription(largeInput);
-      
+
       const duration = Date.now() - start;
       expect(duration).toBeLessThan(100); // Should complete in under 100ms
     });
 
     it('should handle many file IDs efficiently', () => {
       // CORRECTION: Génération d'IDs alternatifs valides pour éviter les problèmes d'UUID
-      const manyFileIds = Array.from({ length: 50 }, (_, i) => 
-        `file${i.toString().padStart(8, '0')}`
+      const manyFileIds = Array.from(
+        { length: 50 },
+        (_, i) => `file${i.toString().padStart(8, '0')}`,
       );
-      
+
       const start = Date.now();
       const result = ValidationUtils.validateFileIds(manyFileIds);
       const duration = Date.now() - start;
-      
+
       expect(result.isValid).toBe(true);
       expect(duration).toBeLessThan(50); // Should complete quickly
     });

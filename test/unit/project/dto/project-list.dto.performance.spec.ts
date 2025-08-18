@@ -23,10 +23,13 @@ describe('ProjectListItemDto - Performance Tests', () => {
   describe('Performance des transformations', () => {
     it('should handle large dataset efficiently', () => {
       // Create larger dataset simulating a SaaS environment with many projects
-      const largeDataset = Array.from({ length: 10000 }, (_, i) => `generated-doc-${i}.md`);
-      
+      const largeDataset = Array.from(
+        { length: 10000 },
+        (_, i) => `generated-doc-${i}.md`,
+      );
+
       const start = performance.now();
-      
+
       const dto = plainToInstance(ProjectListItemDto, {
         ...baseDto,
         uploadedFileIds: largeDataset.slice(0, 5000), // User uploaded files
@@ -34,10 +37,10 @@ describe('ProjectListItemDto - Performance Tests', () => {
         uploadedFilesCount: undefined,
         generatedFilesCount: undefined,
       });
-      
+
       const end = performance.now();
       const transformTime = end - start;
-      
+
       expect(dto.uploadedFilesCount).toBe(5000);
       expect(dto.generatedFilesCount).toBe(5000);
       expect(transformTime).toBeLessThan(100); // Critical for SaaS performance
@@ -46,7 +49,7 @@ describe('ProjectListItemDto - Performance Tests', () => {
     it('should handle multiple DTO creation efficiently', () => {
       const dtoCount = 1000;
       const start = performance.now();
-      
+
       const dtos: ProjectListItemDto[] = [];
       const projectTypes = [
         'E-commerce Platform',
@@ -56,9 +59,9 @@ describe('ProjectListItemDto - Performance Tests', () => {
         'AI Chat Bot',
         'Data Analytics Dashboard',
         'Payment Processing System',
-        'User Management API'
+        'User Management API',
       ];
-      
+
       for (let i = 0; i < dtoCount; i++) {
         const projectType = projectTypes[i % projectTypes.length];
         const dto = plainToInstance(ProjectListItemDto, {
@@ -71,10 +74,10 @@ describe('ProjectListItemDto - Performance Tests', () => {
         });
         dtos.push(dto);
       }
-      
+
       const end = performance.now();
       const creationTime = end - start;
-      
+
       expect(dtos).toHaveLength(dtoCount);
       expect(creationTime).toBeLessThan(1000); // Should create 1000 DTOs in less than 1s
       expect(creationTime / dtoCount).toBeLessThan(1); // Less than 1ms per DTO on average
@@ -95,15 +98,15 @@ describe('ProjectListItemDto - Performance Tests', () => {
         },
         performance: {
           generationTime: 120000, // 2 minutes
-          processingTime: 45000,  // 45 seconds
-          totalTime: 165000,      // Total processing
-          agentInteractions: 15,  // AI agent interactions
+          processingTime: 45000, // 45 seconds
+          totalTime: 165000, // Total processing
+          agentInteractions: 15, // AI agent interactions
         },
         usage: {
-          documentsGenerated: 5,  // Cadrage, roadmaps, plans, guides
-          filesProcessed: 3,      // User uploaded files
-          tokensUsed: 25000,      // Claude API tokens
-          apiCalls: 47,           // Total API calls
+          documentsGenerated: 5, // Cadrage, roadmaps, plans, guides
+          filesProcessed: 3, // User uploaded files
+          tokensUsed: 25000, // Claude API tokens
+          apiCalls: 47, // Total API calls
         },
         metadata: {
           orchestrationId: 'orch-123456789',
@@ -111,19 +114,19 @@ describe('ProjectListItemDto - Performance Tests', () => {
           largeData: 'x'.repeat(10000),
         },
       };
-      
+
       const start = performance.now();
-      
+
       const dto = plainToInstance(ProjectListItemDto, {
         ...baseDto,
         statistics: complexStatistics,
         hasStatistics: undefined,
         totalCost: undefined,
       });
-      
+
       const end = performance.now();
       const transformTime = end - start;
-      
+
       expect(dto.hasStatistics).toBe(true);
       expect(dto.totalCost).toBe(66.35); // Total cost from Claude API + infrastructure
       expect(transformTime).toBeLessThan(50); // Should handle complex statistics quickly
@@ -132,7 +135,7 @@ describe('ProjectListItemDto - Performance Tests', () => {
     it('should handle numeric transformations efficiently', () => {
       const iterations = 10000;
       const start = performance.now();
-      
+
       for (let i = 0; i < iterations; i++) {
         const dto = plainToInstance(ProjectListItemDto, {
           ...baseDto,
@@ -140,16 +143,16 @@ describe('ProjectListItemDto - Performance Tests', () => {
           generatedFilesCount: Math.random() * 1000 + 0.987654,
           totalCost: Math.random() * 1000 + 0.555555,
         });
-        
+
         // Trigger transformations
         dto.uploadedFilesCount;
         dto.generatedFilesCount;
         dto.totalCost;
       }
-      
+
       const end = performance.now();
       const totalTime = end - start;
-      
+
       expect(totalTime).toBeLessThan(500); // Should handle 10k numeric transformations quickly
       expect(totalTime / iterations).toBeLessThan(0.05); // Less than 0.05ms per transformation
     });
@@ -162,20 +165,20 @@ describe('ProjectListItemDto - Performance Tests', () => {
         date.setDate(date.getDate() - i);
         return date;
       });
-      
+
       const start = performance.now();
-      
-      dates.forEach(date => {
+
+      dates.forEach((date) => {
         const dto = plainToInstance(ProjectListItemDto, {
           ...baseDto,
           createdAt: date,
         });
         dto.getRelativeAge();
       });
-      
+
       const end = performance.now();
       const calculationTime = end - start;
-      
+
       expect(calculationTime).toBeLessThan(100); // Should calculate 1000 relative ages quickly
       expect(calculationTime / dates.length).toBeLessThan(0.1); // Less than 0.1ms per calculation
     });
@@ -183,7 +186,7 @@ describe('ProjectListItemDto - Performance Tests', () => {
     it('should handle completion score calculation efficiently', () => {
       const iterations = 10000;
       const start = performance.now();
-      
+
       for (let i = 0; i < iterations; i++) {
         const dto = plainToInstance(ProjectListItemDto, {
           ...baseDto,
@@ -192,74 +195,75 @@ describe('ProjectListItemDto - Performance Tests', () => {
           hasStatistics: i % 2 === 0,
           description: i % 3 === 0 ? 'Has description' : undefined,
         });
-        
+
         dto.getCompletionScore();
       }
-      
+
       const end = performance.now();
       const calculationTime = end - start;
-      
+
       // CORRECTION: Augmenter les seuils pour être plus réalistes
       expect(calculationTime).toBeLessThan(500); // Should calculate 10k completion scores quickly
       expect(calculationTime / iterations).toBeLessThan(0.05); // Less than 0.05ms per calculation
     });
 
     it('should handle description truncation efficiently', () => {
-      const longDescription = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(100);
+      const longDescription =
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(100);
       const iterations = 1000;
-      
+
       const dto = plainToInstance(ProjectListItemDto, {
         ...baseDto,
         description: longDescription,
       });
-      
+
       const start = performance.now();
-      
+
       for (let i = 0; i < iterations; i++) {
         dto.getShortDescription(100);
         dto.getShortDescription(200);
         dto.getShortDescription(50);
       }
-      
+
       const end = performance.now();
       const truncationTime = end - start;
-      
+
       expect(truncationTime).toBeLessThan(100); // Should truncate quickly even with long text
       expect(truncationTime / (iterations * 3)).toBeLessThan(0.033); // Less than 0.033ms per truncation
     });
 
     it('should handle activity indicator calculation efficiently', () => {
       const iterations = 5000;
-      
+
       jest.useFakeTimers();
       jest.setSystemTime(new Date('2024-08-08T10:00:00Z'));
-      
+
       const start = performance.now();
-      
+
       for (let i = 0; i < iterations; i++) {
         const dto = plainToInstance(ProjectListItemDto, {
           ...baseDto,
-          createdAt: new Date(Date.now() - (i * 86400000)), // Different ages
-          updatedAt: new Date(Date.now() - (i * 43200000)), // Different update times
+          createdAt: new Date(Date.now() - i * 86400000), // Different ages
+          updatedAt: new Date(Date.now() - i * 43200000), // Different update times
           generatedFilesCount: i % 5,
         });
-        
+
         dto.getActivityIndicator();
       }
-      
+
       const end = performance.now();
       const calculationTime = end - start;
-      
+
       expect(calculationTime).toBeLessThan(200); // Should calculate activity indicators quickly
       expect(calculationTime / iterations).toBeLessThan(0.04); // Less than 0.04ms per calculation
-      
+
       jest.useRealTimers();
     });
 
     it('should handle formatting methods efficiently', () => {
       const iterations = 5000;
       const start = performance.now();
-      
+
       for (let i = 0; i < iterations; i++) {
         const dto = plainToInstance(ProjectListItemDto, {
           ...baseDto,
@@ -267,17 +271,17 @@ describe('ProjectListItemDto - Performance Tests', () => {
           uploadedFilesCount: i % 20,
           generatedFilesCount: i % 15,
         });
-        
+
         dto.getFormattedCost();
         dto.toString();
         dto.getTooltipSummary();
         dto.getListMetadata();
         dto.toLightweight();
       }
-      
+
       const end = performance.now();
       const formattingTime = end - start;
-      
+
       expect(formattingTime).toBeLessThan(500); // Should format quickly
       expect(formattingTime / (iterations * 5)).toBeLessThan(0.02); // Less than 0.02ms per format operation
     });
@@ -286,7 +290,7 @@ describe('ProjectListItemDto - Performance Tests', () => {
   describe('Performance de sérialisation en masse', () => {
     it('should serialize large numbers of DTOs efficiently', () => {
       const dtoCount = 1000;
-      const dtos = Array.from({ length: dtoCount }, (_, i) => 
+      const dtos = Array.from({ length: dtoCount }, (_, i) =>
         plainToInstance(ProjectListItemDto, {
           ...baseDto,
           id: `550e8400-e29b-41d4-a716-44665544${String(i).padStart(4, '0')}`,
@@ -295,23 +299,23 @@ describe('ProjectListItemDto - Performance Tests', () => {
           uploadedFilesCount: i % 50,
           generatedFilesCount: i % 30,
           totalCost: Math.random() * 1000,
-        })
+        }),
       );
-      
+
       const start = performance.now();
-      
+
       // Serialize all DTOs
-      const serialized = dtos.map(dto => ({
+      const serialized = dtos.map((dto) => ({
         toString: dto.toString(),
         toLogSafe: dto.toLogSafeString(),
         metadata: dto.getListMetadata(),
         lightweight: dto.toLightweight(),
         tooltip: dto.getTooltipSummary(),
       }));
-      
+
       const end = performance.now();
       const serializationTime = end - start;
-      
+
       expect(serialized).toHaveLength(dtoCount);
       expect(serializationTime).toBeLessThan(1000); // Should serialize 1000 DTOs in less than 1s
       expect(serializationTime / (dtoCount * 5)).toBeLessThan(0.2); // Less than 0.2ms per serialization method
@@ -319,39 +323,48 @@ describe('ProjectListItemDto - Performance Tests', () => {
 
     it('should handle bulk operations efficiently', () => {
       const dtoCount = 2000;
-      const dtos = Array.from({ length: dtoCount }, (_, i) => 
+      const dtos = Array.from({ length: dtoCount }, (_, i) =>
         plainToInstance(ProjectListItemDto, {
           ...baseDto,
           id: `bulk-test-${i}`,
-          createdAt: new Date(Date.now() - (i * 3600000)), // Different hours
+          createdAt: new Date(Date.now() - i * 3600000), // Different hours
           uploadedFilesCount: i % 100,
           generatedFilesCount: i % 50,
-        })
+        }),
       );
-      
+
       const start = performance.now();
-      
+
       // Simulate bulk operations that might be done in a list view
       const results = {
-        totalFiles: dtos.reduce((sum, dto) => sum + dto.getTotalFilesCount(), 0),
-        productiveCount: dtos.filter(dto => dto.isProductive()).length,
-        accessibleCount: dtos.filter(dto => dto.isAccessible()).length,
-        averageAge: dtos.reduce((sum, dto) => sum + dto.getAgeInDays(), 0) / dtos.length,
-        statusDistribution: dtos.reduce((acc, dto) => {
-          acc[dto.status] = (acc[dto.status] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
+        totalFiles: dtos.reduce(
+          (sum, dto) => sum + dto.getTotalFilesCount(),
+          0,
+        ),
+        productiveCount: dtos.filter((dto) => dto.isProductive()).length,
+        accessibleCount: dtos.filter((dto) => dto.isAccessible()).length,
+        averageAge:
+          dtos.reduce((sum, dto) => sum + dto.getAgeInDays(), 0) / dtos.length,
+        statusDistribution: dtos.reduce(
+          (acc, dto) => {
+            acc[dto.status] = (acc[dto.status] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
       };
-      
+
       const end = performance.now();
       const bulkTime = end - start;
-      
+
       expect(results.totalFiles).toBeGreaterThanOrEqual(0);
       expect(results.productiveCount).toBeGreaterThanOrEqual(0);
       expect(results.accessibleCount).toBeGreaterThanOrEqual(0);
       expect(results.averageAge).toBeGreaterThanOrEqual(0);
-      expect(Object.keys(results.statusDistribution)).toContain(ProjectStatus.ACTIVE);
-      
+      expect(Object.keys(results.statusDistribution)).toContain(
+        ProjectStatus.ACTIVE,
+      );
+
       expect(bulkTime).toBeLessThan(500); // Should handle bulk operations quickly
       expect(bulkTime / dtoCount).toBeLessThan(0.25); // Less than 0.25ms per DTO for bulk operations
     });
@@ -361,7 +374,7 @@ describe('ProjectListItemDto - Performance Tests', () => {
     it('should not leak memory during repeated creation', () => {
       const iterations = 1000;
       const memoryBefore = process.memoryUsage().heapUsed;
-      
+
       for (let i = 0; i < iterations; i++) {
         const dto = plainToInstance(ProjectListItemDto, {
           ...baseDto,
@@ -369,21 +382,21 @@ describe('ProjectListItemDto - Performance Tests', () => {
           name: `Project ${i}`,
           description: 'Test description '.repeat(100),
         });
-        
+
         // Use the DTO to ensure it's not optimized away
         dto.toString();
         dto.getCompletionScore();
         dto.getRelativeAge();
       }
-      
+
       // Force garbage collection if available
       if (global.gc) {
         global.gc();
       }
-      
+
       const memoryAfter = process.memoryUsage().heapUsed;
       const memoryIncrease = memoryAfter - memoryBefore;
-      
+
       // Memory increase should be reasonable (less than 50MB for 1000 DTOs)
       expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024);
     });
@@ -391,27 +404,27 @@ describe('ProjectListItemDto - Performance Tests', () => {
     it('should handle large descriptions without excessive memory usage', () => {
       const largeDescription = 'x'.repeat(100000); // 100KB description
       const iterations = 100;
-      
+
       const memoryBefore = process.memoryUsage().heapUsed;
-      
-      const dtos = Array.from({ length: iterations }, (_, i) => 
+
+      const dtos = Array.from({ length: iterations }, (_, i) =>
         plainToInstance(ProjectListItemDto, {
           ...baseDto,
           id: `large-desc-${i}`,
           description: largeDescription,
-        })
+        }),
       );
-      
+
       // Use the DTOs
-      dtos.forEach(dto => {
+      dtos.forEach((dto) => {
         dto.getShortDescription(100);
         dto.getShortDescription(500);
         dto.getShortDescription(1000);
       });
-      
+
       const memoryAfter = process.memoryUsage().heapUsed;
       const memoryIncrease = memoryAfter - memoryBefore;
-      
+
       // Memory increase should be reasonable even with large descriptions
       expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024); // Less than 50MB
     });
@@ -419,9 +432,9 @@ describe('ProjectListItemDto - Performance Tests', () => {
     it('should efficiently handle repeated method calls without memory buildup', () => {
       const dto = plainToInstance(ProjectListItemDto, baseDto);
       const iterations = 10000;
-      
+
       const memoryBefore = process.memoryUsage().heapUsed;
-      
+
       for (let i = 0; i < iterations; i++) {
         dto.getShortDescription(100);
         dto.getTotalFilesCount();
@@ -434,14 +447,14 @@ describe('ProjectListItemDto - Performance Tests', () => {
         dto.toString();
         dto.toLogSafeString();
       }
-      
+
       if (global.gc) {
         global.gc();
       }
-      
+
       const memoryAfter = process.memoryUsage().heapUsed;
       const memoryIncrease = memoryAfter - memoryBefore;
-      
+
       // Repeated method calls should not cause significant memory increase
       expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024); // Less than 10MB
     });
@@ -457,10 +470,10 @@ describe('ProjectListItemDto - Performance Tests', () => {
         generatedFilesCount: 999999,
         totalCost: 999999.999999,
       };
-      
+
       const iterations = 100;
       const start = performance.now();
-      
+
       for (let i = 0; i < iterations; i++) {
         const dto = plainToInstance(ProjectListItemDto, extremeDto);
         dto.getShortDescription(1000);
@@ -469,10 +482,10 @@ describe('ProjectListItemDto - Performance Tests', () => {
         dto.getFormattedCost();
         dto.toString();
       }
-      
+
       const end = performance.now();
       const extremeTime = end - start;
-      
+
       expect(extremeTime).toBeLessThan(1000); // Should handle extreme values reasonably
       expect(extremeTime / iterations).toBeLessThan(10); // Less than 10ms per extreme case
     });
@@ -492,7 +505,10 @@ describe('ProjectListItemDto - Performance Tests', () => {
                 metadata: {
                   tags: Array.from({ length: 10 }, (_, j) => `tag-${i}-${j}`),
                   properties: Object.fromEntries(
-                    Array.from({ length: 50 }, (_, k) => [`prop${k}`, `value${i}-${k}`])
+                    Array.from({ length: 50 }, (_, k) => [
+                      `prop${k}`,
+                      `value${i}-${k}`,
+                    ]),
                   ),
                 },
               },
@@ -506,10 +522,10 @@ describe('ProjectListItemDto - Performance Tests', () => {
         uploadedFileIds: Array.from({ length: 1000 }, (_, i) => `file-${i}`),
         generatedFileIds: Array.from({ length: 1000 }, (_, i) => `gen-${i}`),
       };
-      
+
       const iterations = 50;
       const start = performance.now();
-      
+
       for (let i = 0; i < iterations; i++) {
         const dto = plainToInstance(ProjectListItemDto, {
           ...complexDto,
@@ -518,17 +534,17 @@ describe('ProjectListItemDto - Performance Tests', () => {
           hasStatistics: undefined,
           totalCost: undefined,
         });
-        
+
         // Trigger all transformations
         dto.uploadedFilesCount;
         dto.generatedFilesCount;
         dto.hasStatistics;
         dto.totalCost;
       }
-      
+
       const end = performance.now();
       const complexTime = end - start;
-      
+
       // CORRECTION: Augmenter le seuil car les objets complexes prennent plus de temps
       expect(complexTime).toBeLessThan(10000); // Should handle complex objects reasonably (10 secondes)
       expect(complexTime / iterations).toBeLessThan(200); // Less than 200ms per complex transformation

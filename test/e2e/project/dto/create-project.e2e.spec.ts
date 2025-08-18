@@ -39,7 +39,8 @@ describe('CreateProjectDto - E2E Tests', () => {
       const userInput = {
         name: '  E2E Test Project  ',
         description: '  End-to-end test project  ',
-        initialPrompt: '  Create a comprehensive e2e test application with user authentication  ',
+        initialPrompt:
+          '  Create a comprehensive e2e test application with user authentication  ',
         uploadedFileIds: ['550e8400-e29b-41d4-a716-446655440000'],
       };
 
@@ -100,7 +101,7 @@ describe('CreateProjectDto - E2E Tests', () => {
         validationPipe.transform(invalidInput, {
           type: 'body',
           metatype: CreateProjectDto,
-        })
+        }),
       ).rejects.toThrow();
 
       // Simulation de logging d'erreur
@@ -130,7 +131,9 @@ describe('CreateProjectDto - E2E Tests', () => {
       // Vérification que les espaces sont supprimés
       expect(transformed.name).toBe('Project Name');
       expect(transformed.description).toBe('Project Description');
-      expect(transformed.initialPrompt).toBe('Create an application with whitespace');
+      expect(transformed.initialPrompt).toBe(
+        'Create an application with whitespace',
+      );
 
       // Simulation de sauvegarde avec données propres
       const cleanData = {
@@ -160,10 +163,10 @@ describe('CreateProjectDto - E2E Tests', () => {
           expectedField: 'initialPrompt',
         },
         {
-          input: { 
-            name: 'Valid name', 
+          input: {
+            name: 'Valid name',
             initialPrompt: 'Valid prompt',
-            uploadedFileIds: ['invalid-uuid']
+            uploadedFileIds: ['invalid-uuid'],
           },
           expectedField: 'uploadedFileIds',
         },
@@ -173,9 +176,11 @@ describe('CreateProjectDto - E2E Tests', () => {
         // Utiliser validation directe au lieu du ValidationPipe pour des messages plus spécifiques
         const dto = plainToClass(CreateProjectDto, testCase.input);
         const errors = await validate(dto);
-        
+
         expect(errors.length).toBeGreaterThan(0);
-        expect(errors.some(e => e.property === testCase.expectedField)).toBe(true);
+        expect(errors.some((e) => e.property === testCase.expectedField)).toBe(
+          true,
+        );
       }
     });
 
@@ -192,7 +197,7 @@ describe('CreateProjectDto - E2E Tests', () => {
         validationPipe.transform(maliciousInput, {
           type: 'body',
           metatype: CreateProjectDto,
-        })
+        }),
       ).rejects.toThrow();
 
       // Vérifier qu'il n'y a pas de pollution de prototype
@@ -210,17 +215,19 @@ describe('CreateProjectDto - E2E Tests', () => {
       const startTime = Date.now();
       const batchSize = 10;
 
-      const promises = Array(batchSize).fill(null).map(async (_, i) => {
-        const dto = {
-          name: `Burst Test Project ${i}`,
-          initialPrompt: `Create burst test application number ${i}`,
-        };
+      const promises = Array(batchSize)
+        .fill(null)
+        .map(async (_, i) => {
+          const dto = {
+            name: `Burst Test Project ${i}`,
+            initialPrompt: `Create burst test application number ${i}`,
+          };
 
-        return validationPipe.transform(dto, {
-          type: 'body',
-          metatype: CreateProjectDto,
+          return validationPipe.transform(dto, {
+            type: 'body',
+            metatype: CreateProjectDto,
+          });
         });
-      });
 
       const results = await Promise.all(promises);
       const duration = Date.now() - startTime;
@@ -298,7 +305,7 @@ describe('CreateProjectDto - E2E Tests', () => {
 
         expect(result).toBeInstanceOf(CreateProjectDto);
         expect(result.name).toBe(testCase.name);
-        
+
         // Vérifier que les méthodes utilitaires fonctionnent
         expect(() => result.toString()).not.toThrow();
         expect(() => result.toLogSafeString()).not.toThrow();
@@ -321,7 +328,7 @@ describe('CreateProjectDto - E2E Tests', () => {
       expect(result.name).toBeTruthy();
       expect(result.initialPrompt).toBeTruthy();
       expect(result.isValid()).toBe(true);
-      
+
       // Les dates simulées doivent être cohérentes
       const now = new Date();
       const mockTimestamps = {
@@ -330,7 +337,7 @@ describe('CreateProjectDto - E2E Tests', () => {
       };
 
       expect(mockTimestamps.updatedAt.getTime()).toBeGreaterThanOrEqual(
-        mockTimestamps.createdAt.getTime()
+        mockTimestamps.createdAt.getTime(),
       );
     });
   });
@@ -342,7 +349,7 @@ describe('CreateProjectDto - E2E Tests', () => {
   describe('observability simulation', () => {
     it('should emit proper events during processing', async () => {
       const events: any[] = [];
-      
+
       // Simulation d'émission d'événements
       const emitEvent = (event: any) => events.push(event);
 
@@ -352,19 +359,19 @@ describe('CreateProjectDto - E2E Tests', () => {
       };
 
       emitEvent({ type: 'validation_started', timestamp: Date.now() });
-      
+
       const result = await validationPipe.transform(dto, {
         type: 'body',
         metatype: CreateProjectDto,
       });
 
       emitEvent({ type: 'validation_completed', timestamp: Date.now() });
-      emitEvent({ 
-        type: 'project_processed', 
-        data: { 
-          name: result.name, 
-          complexity: result.getPromptComplexity() 
-        } 
+      emitEvent({
+        type: 'project_processed',
+        data: {
+          name: result.name,
+          complexity: result.getPromptComplexity(),
+        },
       });
 
       expect(events).toHaveLength(3);

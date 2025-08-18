@@ -1,8 +1,7 @@
-import { ValidationPipe, BadRequestException} from '@nestjs/common';
+import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { UpdateProjectDto } from '../../../../src/project/dto/update-project.dto';
-
 
 /**
  * Tests d'intégration pour UpdateProjectDto
@@ -82,24 +81,24 @@ describe('UpdateProjectDto - Integration Tests', () => {
     it('should handle partial updates through validation pipe', async () => {
       const partialUpdates = [
         // Name only
-        { 
+        {
           input: { name: '  Name Only Update  ' },
-          expected: { name: 'Name Only Update', description: undefined }
+          expected: { name: 'Name Only Update', description: undefined },
         },
         // Description only
-        { 
+        {
           input: { description: '  Description Only Update  ' },
-          expected: { name: undefined, description: 'Description Only Update' }
+          expected: { name: undefined, description: 'Description Only Update' },
         },
         // Description clearing
-        { 
+        {
           input: { description: '' },
-          expected: { name: undefined, description: '' }
+          expected: { name: undefined, description: '' },
         },
         // No updates
-        { 
+        {
           input: {},
-          expected: { name: undefined, description: undefined }
+          expected: { name: undefined, description: undefined },
         },
       ];
 
@@ -126,7 +125,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
         validationPipe.transform(invalidDto, {
           type: 'body',
           metatype: UpdateProjectDto,
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -143,7 +142,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
         validationPipe.transform(dtoWithExtraFields, {
           type: 'body',
           metatype: UpdateProjectDto,
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -227,15 +226,18 @@ describe('UpdateProjectDto - Integration Tests', () => {
       // Simulate cache operations for update
       const cacheKey = `project:${mockProject.id}`;
       const userCacheKey = `projects:${mockUser.id}:*`;
-      
+
       mockCacheService.invalidateProjectCache.mockResolvedValue('OK');
 
       // Simulate cache invalidation after update
-      await mockCacheService.invalidateProjectCache(mockProject.id, mockUser.id);
-      
+      await mockCacheService.invalidateProjectCache(
+        mockProject.id,
+        mockUser.id,
+      );
+
       expect(mockCacheService.invalidateProjectCache).toHaveBeenCalledWith(
         mockProject.id,
-        mockUser.id
+        mockUser.id,
       );
     });
 
@@ -267,7 +269,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
 
         // Verify only defined fields were updated
         const definedFields = updateDto.getDefinedFields();
-        Object.keys(definedFields).forEach(key => {
+        Object.keys(definedFields).forEach((key) => {
           expect(result[key]).toBe(definedFields[key]);
         });
 
@@ -300,7 +302,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
           mockDatabaseService.project.update({
             where: { id: mockProject.id },
             data: updateDto.getDefinedFields(),
-          })
+          }),
         ).rejects.toThrow(error.message);
 
         // Reset for next test
@@ -346,7 +348,8 @@ describe('UpdateProjectDto - Integration Tests', () => {
       const complexInput = {
         name: '  Complex Update  ',
         description: '  Complex description  ',
-        metadata: { // This should be stripped
+        metadata: {
+          // This should be stripped
           version: '2.0',
           author: 'test',
         },
@@ -359,7 +362,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
         validationPipe.transform(complexInput, {
           type: 'body',
           metatype: UpdateProjectDto,
-        })
+        }),
       ).rejects.toThrow(); // Should reject extra fields
     });
 
@@ -390,7 +393,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
 
         expect(result).toBeInstanceOf(UpdateProjectDto);
         expect(result.hasValidUpdates()).toBe(Object.keys(testCase).length > 0);
-        
+
         if (testCase.name !== undefined) {
           expect(result.name).toBe(testCase.name.trim());
         }
@@ -426,16 +429,18 @@ describe('UpdateProjectDto - Integration Tests', () => {
 
   describe('integration scenarios', () => {
     it('should handle concurrent update DTO processing', async () => {
-      const concurrentUpdates = Array(10).fill(null).map((_, i) => ({
-        name: `Concurrent Update ${i}`,
-        description: i % 3 === 0 ? `Description ${i}` : undefined,
-      }));
+      const concurrentUpdates = Array(10)
+        .fill(null)
+        .map((_, i) => ({
+          name: `Concurrent Update ${i}`,
+          description: i % 3 === 0 ? `Description ${i}` : undefined,
+        }));
 
-      const promises = concurrentUpdates.map(updateData =>
+      const promises = concurrentUpdates.map((updateData) =>
         validationPipe.transform(updateData, {
           type: 'body',
           metatype: UpdateProjectDto,
-        })
+        }),
       );
 
       const results = await Promise.all(promises);
@@ -485,7 +490,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
             type: 'body',
             metatype: UpdateProjectDto,
             data: undefined,
-          })
+          }),
         ).rejects.toThrow(BadRequestException);
       }
 
@@ -493,7 +498,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
       const robustnessInputs: any[] = [
         // Objets complexes simples (pas circulaires)
         { name: { nested: 'object' }, description: ['array', 'data'] },
-        // Fonctions et symboles  
+        // Fonctions et symboles
         { name: () => 'function', description: Symbol('symbol') },
         // Objets avec propriétés dangereuses
         { name: 'valid', description: 'valid', __proto__: { polluted: true } },
@@ -506,11 +511,11 @@ describe('UpdateProjectDto - Integration Tests', () => {
         // Test seulement la transformation (pas la validation avec ValidationPipe)
         expect(() => {
           const transformed = plainToClass(UpdateProjectDto, input);
-          
+
           // Vérifier qu'aucune pollution de prototype n'a eu lieu
           expect((UpdateProjectDto.prototype as any).polluted).toBeUndefined();
           expect((Object.prototype as any).polluted).toBeUndefined();
-          
+
           // Les méthodes du DTO doivent toujours fonctionner
           expect(() => transformed.hasValidUpdates()).not.toThrow();
           expect(() => transformed.toString()).not.toThrow();
@@ -547,7 +552,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
             validationPipe.transform(testCase.input, {
               type: 'body',
               metatype: UpdateProjectDto,
-            })
+            }),
           ).rejects.toThrow();
         } else {
           const result = await validationPipe.transform(testCase.input, {
@@ -568,17 +573,21 @@ describe('UpdateProjectDto - Integration Tests', () => {
   describe('business validation integration', () => {
     it('should integrate with business rules validation', async () => {
       // Simulate business rules that might be applied after DTO validation
-      const updateDto = await validationPipe.transform({
-        name: 'Business Rules Update Test',
-        description: 'Testing business rules integration',
-      }, {
-        type: 'body',
-        metatype: UpdateProjectDto,
-      });
+      const updateDto = await validationPipe.transform(
+        {
+          name: 'Business Rules Update Test',
+          description: 'Testing business rules integration',
+        },
+        {
+          type: 'body',
+          metatype: UpdateProjectDto,
+        },
+      );
 
       // Simulate business validation
       const businessValidation = {
-        isValidUpdateName: (name: string) => !name.toLowerCase().includes('forbidden'),
+        isValidUpdateName: (name: string) =>
+          !name.toLowerCase().includes('forbidden'),
         canUpdateDescription: (userId: string) => userId === mockUser.id,
         isUpdateFrequencyAllowed: (lastUpdate: Date) => {
           const now = new Date();
@@ -590,17 +599,24 @@ describe('UpdateProjectDto - Integration Tests', () => {
       // Business rules should work with validated DTO
       expect(businessValidation.isValidUpdateName(updateDto.name!)).toBe(true);
       expect(businessValidation.canUpdateDescription(mockUser.id)).toBe(true);
-      expect(businessValidation.isUpdateFrequencyAllowed(new Date(Date.now() - 120000))).toBe(true);
+      expect(
+        businessValidation.isUpdateFrequencyAllowed(
+          new Date(Date.now() - 120000),
+        ),
+      ).toBe(true);
     });
 
     it('should handle authorization context integration', async () => {
-      const updateDto = await validationPipe.transform({
-        name: 'Authorization Update Test',
-        description: 'Testing authorization integration',
-      }, {
-        type: 'body',
-        metatype: UpdateProjectDto,
-      });
+      const updateDto = await validationPipe.transform(
+        {
+          name: 'Authorization Update Test',
+          description: 'Testing authorization integration',
+        },
+        {
+          type: 'body',
+          metatype: UpdateProjectDto,
+        },
+      );
 
       // Simulate authorization checks
       const authContext = {
@@ -614,24 +630,37 @@ describe('UpdateProjectDto - Integration Tests', () => {
 
       // Authorization should work with validated DTO
       expect(authContext.canUpdateProject).toBe(true);
-      expect(updateDto.name!.length).toBeLessThanOrEqual(authContext.maxNameLength);
-      
+      expect(updateDto.name!.length).toBeLessThanOrEqual(
+        authContext.maxNameLength,
+      );
+
       const updateFields = Object.keys(updateDto.getDefinedFields());
-      expect(updateFields.every(field => authContext.allowedUpdateFields.includes(field))).toBe(true);
+      expect(
+        updateFields.every((field) =>
+          authContext.allowedUpdateFields.includes(field),
+        ),
+      ).toBe(true);
     });
 
     it('should integrate with conflict detection', async () => {
-      const updateDto = await validationPipe.transform({
-        name: 'Conflict Detection Test',
-        description: 'Testing conflict detection',
-      }, {
-        type: 'body',
-        metatype: UpdateProjectDto,
-      });
+      const updateDto = await validationPipe.transform(
+        {
+          name: 'Conflict Detection Test',
+          description: 'Testing conflict detection',
+        },
+        {
+          type: 'body',
+          metatype: UpdateProjectDto,
+        },
+      );
 
       // Simulate optimistic locking / conflict detection
       const conflictDetection = {
-        checkForConflicts: (projectId: string, currentVersion: number, updateFields: object) => {
+        checkForConflicts: (
+          projectId: string,
+          currentVersion: number,
+          updateFields: object,
+        ) => {
           // Simulate version check
           return {
             hasConflict: false,
@@ -644,7 +673,7 @@ describe('UpdateProjectDto - Integration Tests', () => {
       const result = conflictDetection.checkForConflicts(
         mockProject.id,
         1,
-        updateDto.getDefinedFields()
+        updateDto.getDefinedFields(),
       );
 
       expect(result.hasConflict).toBe(false);
@@ -658,13 +687,16 @@ describe('UpdateProjectDto - Integration Tests', () => {
 
   describe('logging and monitoring integration', () => {
     it('should integrate with structured logging systems', async () => {
-      const updateDto = await validationPipe.transform({
-        name: 'Logging Integration Test',
-        description: 'Testing logging integration',
-      }, {
-        type: 'body',
-        metatype: UpdateProjectDto,
-      });
+      const updateDto = await validationPipe.transform(
+        {
+          name: 'Logging Integration Test',
+          description: 'Testing logging integration',
+        },
+        {
+          type: 'body',
+          metatype: UpdateProjectDto,
+        },
+      );
 
       // Simulate structured logging
       const logEntry = {
@@ -691,14 +723,17 @@ describe('UpdateProjectDto - Integration Tests', () => {
 
     it('should integrate with metrics collection', async () => {
       const startTime = Date.now();
-      
-      const updateDto = await validationPipe.transform({
-        name: 'Metrics Integration Test',
-        description: 'Testing metrics integration',
-      }, {
-        type: 'body',
-        metatype: UpdateProjectDto,
-      });
+
+      const updateDto = await validationPipe.transform(
+        {
+          name: 'Metrics Integration Test',
+          description: 'Testing metrics integration',
+        },
+        {
+          type: 'body',
+          metatype: UpdateProjectDto,
+        },
+      );
 
       const endTime = Date.now();
 
@@ -767,13 +802,16 @@ describe('UpdateProjectDto - Integration Tests', () => {
   describe('complete workflow integration', () => {
     it('should handle complete update workflow', async () => {
       // 1. Validation and transformation
-      const updateDto = await validationPipe.transform({
-        name: '  Complete Workflow Test  ',
-        description: '  Complete workflow description  ',
-      }, {
-        type: 'body',
-        metatype: UpdateProjectDto,
-      });
+      const updateDto = await validationPipe.transform(
+        {
+          name: '  Complete Workflow Test  ',
+          description: '  Complete workflow description  ',
+        },
+        {
+          type: 'body',
+          metatype: UpdateProjectDto,
+        },
+      );
 
       expect(updateDto).toBeInstanceOf(UpdateProjectDto);
       expect(updateDto.name).toBe('Complete Workflow Test');
@@ -798,7 +836,10 @@ describe('UpdateProjectDto - Integration Tests', () => {
       });
 
       // 4. Cache invalidation
-      await mockCacheService.invalidateProjectCache(mockProject.id, mockUser.id);
+      await mockCacheService.invalidateProjectCache(
+        mockProject.id,
+        mockUser.id,
+      );
 
       // 5. Audit logging
       const auditLog = {
@@ -819,19 +860,22 @@ describe('UpdateProjectDto - Integration Tests', () => {
       });
       expect(mockCacheService.invalidateProjectCache).toHaveBeenCalledWith(
         mockProject.id,
-        mockUser.id
+        mockUser.id,
       );
       expect(auditLog.metadata).toContain('fields=2');
     });
 
     it('should handle partial update workflow', async () => {
       // Test partial update (description clearing)
-      const updateDto = await validationPipe.transform({
-        description: '', // Clearing description
-      }, {
-        type: 'body',
-        metatype: UpdateProjectDto,
-      });
+      const updateDto = await validationPipe.transform(
+        {
+          description: '', // Clearing description
+        },
+        {
+          type: 'body',
+          metatype: UpdateProjectDto,
+        },
+      );
 
       expect(updateDto.isUpdatingDescription()).toBe(true);
       expect(updateDto.isClearingDescription()).toBe(true);
@@ -859,10 +903,13 @@ describe('UpdateProjectDto - Integration Tests', () => {
 
     it('should handle no-update workflow', async () => {
       // Test empty update
-      const updateDto = await validationPipe.transform({}, {
-        type: 'body',
-        metatype: UpdateProjectDto,
-      });
+      const updateDto = await validationPipe.transform(
+        {},
+        {
+          type: 'body',
+          metatype: UpdateProjectDto,
+        },
+      );
 
       expect(updateDto.hasValidUpdates()).toBe(false);
       expect(updateDto.getUpdateFieldsCount()).toBe(0);

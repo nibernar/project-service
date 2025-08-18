@@ -1,40 +1,56 @@
 /**
  * Repository Project - Couche d'accès aux données pour les entités Project
- * 
+ *
  * Ce repository encapsule toutes les opérations de persistance avec PostgreSQL
  * via Prisma ORM, en assurant la séparation des préoccupations entre la logique
  * métier (services) et l'accès aux données.
- * 
+ *
  * RESPONSABILITÉS :
  * - Opérations CRUD complètes sur les projets
  * - Gestion des relations avec ProjectStatistics
  * - Optimisation des performances (pagination, index, cache)
  * - Transformation entre modèles Prisma et entités domain
  * - Gestion des transactions et de la cohérence des données
- * 
+ *
  * PERFORMANCES :
  * - Utilisation d'index optimaux pour les requêtes fréquentes
  * - Pagination cursor-based pour les gros volumes
  * - Chargement conditionnel des relations (eager/lazy)
  * - Requêtes batch pour les opérations multiples
- * 
+ *
  * SÉCURITÉ :
  * - Validation stricte des entrées
  * - Isolation des données par propriétaire (ownerId)
  * - Protection contre les injections SQL
  * - Audit des opérations sensibles
- * 
+ *
  * @fileoverview Repository principal pour la gestion des projets
  * @version 1.0.0
  * @since 2025-01-28
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, ProjectStatus, Project, ProjectStatistics } from '@prisma/client';
+import {
+  Prisma,
+  ProjectStatus,
+  Project,
+  ProjectStatistics,
+} from '@prisma/client';
 import { DatabaseService } from '../database/database.service';
-import { ProjectEntity, CreateProjectData, UpdateProjectData, ProjectSummary, ProjectExportData } from './entities/project.entity';
+import {
+  ProjectEntity,
+  CreateProjectData,
+  UpdateProjectData,
+  ProjectSummary,
+  ProjectExportData,
+} from './entities/project.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
-import { PaginatedResult, createPaginatedResult, createEmptyPaginatedResult, validatePaginationParams } from '../common/interfaces/paginated-result.interface';
+import {
+  PaginatedResult,
+  createPaginatedResult,
+  createEmptyPaginatedResult,
+  validatePaginationParams,
+} from '../common/interfaces/paginated-result.interface';
 
 /**
  * Types d'erreurs spécialisées pour le repository
@@ -118,7 +134,7 @@ type ProjectWithRelations = Project & {
 
 /**
  * Repository principal pour la gestion des projets
- * 
+ *
  * Encapsule toutes les opérations de persistance avec optimisations
  * de performance et gestion d'erreurs appropriée.
  */
@@ -126,9 +142,7 @@ type ProjectWithRelations = Project & {
 export class ProjectRepository {
   private readonly logger = new Logger(ProjectRepository.name);
 
-  constructor(
-    private readonly db: DatabaseService,
-  ) {}
+  constructor(private readonly db: DatabaseService) {}
 
   // ========================================================================
   // OPÉRATIONS CRUD PRINCIPALES
@@ -136,12 +150,12 @@ export class ProjectRepository {
 
   /**
    * Crée un nouveau projet avec validation et transaction
-   * 
+   *
    * @param data Données de création du projet
    * @param ownerId Identifiant du propriétaire
    * @returns Projet créé transformé en entité
    * @throws ProjectConstraintError si les contraintes sont violées
-   * 
+   *
    * @example
    * ```typescript
    * const project = await repository.create({
@@ -152,7 +166,10 @@ export class ProjectRepository {
    * }, 'user-123');
    * ```
    */
-  async create(data: CreateProjectData, ownerId: string): Promise<ProjectEntity> {
+  async create(
+    data: CreateProjectData,
+    ownerId: string,
+  ): Promise<ProjectEntity> {
     this.logger.log(`Creating project for user ${ownerId}`, {
       operation: 'create',
       ownerId,
@@ -195,11 +212,11 @@ export class ProjectRepository {
 
   /**
    * Récupère un projet par son identifiant
-   * 
+   *
    * @param id Identifiant du projet
    * @param includeStatistics Inclure les statistiques dans le résultat
    * @returns Projet trouvé ou null si non trouvé
-   * 
+   *
    * @example
    * ```typescript
    * const project = await repository.findById('project-123', true);
@@ -208,7 +225,10 @@ export class ProjectRepository {
    * }
    * ```
    */
-  async findById(id: string, includeStatistics: boolean = false): Promise<ProjectEntity | null> {
+  async findById(
+    id: string,
+    includeStatistics: boolean = false,
+  ): Promise<ProjectEntity | null> {
     try {
       this.validateUUID(id, 'Project ID');
 
@@ -232,13 +252,13 @@ export class ProjectRepository {
 
   /**
    * Récupère les projets d'un utilisateur avec pagination et filtres
-   * 
+   *
    * @param ownerId Identifiant du propriétaire
    * @param pagination Paramètres de pagination
    * @param filters Filtres optionnels à appliquer
    * @param options Options de requête
    * @returns Résultat paginé des projets
-   * 
+   *
    * @example
    * ```typescript
    * const result = await repository.findByOwner('user-123', {
@@ -248,7 +268,7 @@ export class ProjectRepository {
    *   status: ProjectStatus.ACTIVE,
    *   hasGeneratedFiles: true
    * });
-   * 
+   *
    * console.log(`Found ${result.data.length} projects out of ${result.total}`);
    * ```
    */
@@ -293,16 +313,21 @@ export class ProjectRepository {
       ]);
 
       // Transformation des résultats
-      const entities = projects.map((project: ProjectWithRelations) => this.transformToEntity(project));
+      const entities = projects.map((project: ProjectWithRelations) =>
+        this.transformToEntity(project),
+      );
 
-      this.logger.debug(`Found ${entities.length} projects for user ${ownerId}`, {
-        operation: 'findByOwner',
-        ownerId,
-        page,
-        limit,
-        total,
-        filters: filters ? Object.keys(filters) : [],
-      });
+      this.logger.debug(
+        `Found ${entities.length} projects for user ${ownerId}`,
+        {
+          operation: 'findByOwner',
+          ownerId,
+          page,
+          limit,
+          total,
+          filters: filters ? Object.keys(filters) : [],
+        },
+      );
 
       return createPaginatedResult(entities, page, limit, total);
     } catch (error) {
@@ -313,13 +338,13 @@ export class ProjectRepository {
 
   /**
    * Met à jour un projet existant avec optimistic locking
-   * 
+   *
    * @param id Identifiant du projet
    * @param data Données de mise à jour partielles
    * @returns Projet mis à jour
    * @throws ProjectNotFoundError si le projet n'existe pas
    * @throws ProjectOptimisticLockError en cas de conflit de modification
-   * 
+   *
    * @example
    * ```typescript
    * const updated = await repository.update('project-123', {
@@ -403,10 +428,10 @@ export class ProjectRepository {
 
   /**
    * Supprime logiquement un projet (soft delete)
-   * 
+   *
    * @param id Identifiant du projet à supprimer
    * @throws ProjectNotFoundError si le projet n'existe pas
-   * 
+   *
    * @example
    * ```typescript
    * await repository.delete('project-123');
@@ -449,11 +474,11 @@ export class ProjectRepository {
 
   /**
    * Met à jour spécifiquement les fichiers générés d'un projet
-   * 
+   *
    * @param id Identifiant du projet
    * @param update Données de mise à jour des fichiers
    * @throws ProjectNotFoundError si le projet n'existe pas
-   * 
+   *
    * @example
    * ```typescript
    * await repository.updateGeneratedFiles('project-123', {
@@ -462,7 +487,10 @@ export class ProjectRepository {
    * });
    * ```
    */
-  async updateGeneratedFiles(id: string, update: GeneratedFilesUpdate): Promise<void> {
+  async updateGeneratedFiles(
+    id: string,
+    update: GeneratedFilesUpdate,
+  ): Promise<void> {
     this.logger.log(`Updating generated files for project ${id}`, {
       operation: 'updateGeneratedFiles',
       projectId: id,
@@ -496,7 +524,9 @@ export class ProjectRepository {
 
         // Suppression des doublons et ajout des nouveaux fichiers
         const existingFiles = new Set(project.generatedFileIds);
-        const newFiles = update.fileIds.filter(fileId => !existingFiles.has(fileId));
+        const newFiles = update.fileIds.filter(
+          (fileId) => !existingFiles.has(fileId),
+        );
         const updatedFileIds = [...project.generatedFileIds, ...newFiles];
 
         await this.db.project.update({
@@ -521,18 +551,21 @@ export class ProjectRepository {
         throw new ProjectNotFoundError(id);
       }
 
-      this.logger.error(`Failed to update generated files for project ${id}`, error);
+      this.logger.error(
+        `Failed to update generated files for project ${id}`,
+        error,
+      );
       throw this.handlePrismaError(error);
     }
   }
 
   /**
    * Compte les projets d'un utilisateur avec filtres optionnels
-   * 
+   *
    * @param ownerId Identifiant du propriétaire
    * @param filters Filtres optionnels
    * @returns Nombre de projets correspondants
-   * 
+   *
    * @example
    * ```typescript
    * const activeCount = await repository.countByOwner('user-123', {
@@ -540,7 +573,10 @@ export class ProjectRepository {
    * });
    * ```
    */
-  async countByOwner(ownerId: string, filters?: ProjectFilters): Promise<number> {
+  async countByOwner(
+    ownerId: string,
+    filters?: ProjectFilters,
+  ): Promise<number> {
     try {
       this.validateUUID(ownerId, 'Owner ID');
 
@@ -557,7 +593,7 @@ export class ProjectRepository {
 
   /**
    * Récupère les projets actifs d'un utilisateur
-   * 
+   *
    * @param ownerId Identifiant du propriétaire
    * @returns Liste des projets actifs
    */
@@ -578,21 +614,29 @@ export class ProjectRepository {
         },
       });
 
-      return projects.map((project: ProjectWithRelations) => this.transformToEntity(project));
+      return projects.map((project: ProjectWithRelations) =>
+        this.transformToEntity(project),
+      );
     } catch (error) {
-      this.logger.error(`Failed to find active projects for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to find active projects for user ${ownerId}`,
+        error,
+      );
       throw this.handlePrismaError(error);
     }
   }
 
   /**
    * Récupère les projets récents d'un utilisateur
-   * 
+   *
    * @param ownerId Identifiant du propriétaire
    * @param days Nombre de jours pour définir "récent"
    * @returns Liste des projets récents
    */
-  async findRecentByOwner(ownerId: string, days: number = 7): Promise<ProjectEntity[]> {
+  async findRecentByOwner(
+    ownerId: string,
+    days: number = 7,
+  ): Promise<ProjectEntity[]> {
     try {
       this.validateUUID(ownerId, 'Owner ID');
 
@@ -617,21 +661,29 @@ export class ProjectRepository {
         },
       });
 
-      return projects.map((project: ProjectWithRelations) => this.transformToEntity(project));
+      return projects.map((project: ProjectWithRelations) =>
+        this.transformToEntity(project),
+      );
     } catch (error) {
-      this.logger.error(`Failed to find recent projects for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to find recent projects for user ${ownerId}`,
+        error,
+      );
       throw this.handlePrismaError(error);
     }
   }
 
   /**
    * Recherche un projet par nom et propriétaire
-   * 
+   *
    * @param name Nom du projet à rechercher
    * @param ownerId Identifiant du propriétaire
    * @returns Projet trouvé ou null si non trouvé
    */
-  async findByNameAndOwner(name: string, ownerId: string): Promise<ProjectEntity | null> {
+  async findByNameAndOwner(
+    name: string,
+    ownerId: string,
+  ): Promise<ProjectEntity | null> {
     try {
       this.validateUUID(ownerId, 'Owner ID');
 
@@ -663,7 +715,10 @@ export class ProjectRepository {
 
       return this.transformToEntity(project);
     } catch (error) {
-      this.logger.error(`Failed to find project by name "${name}" for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to find project by name "${name}" for user ${ownerId}`,
+        error,
+      );
       throw this.handlePrismaError(error);
     }
   }
@@ -674,18 +729,21 @@ export class ProjectRepository {
 
   /**
    * Récupère plusieurs projets par leurs identifiants
-   * 
+   *
    * @param ids Liste des identifiants
    * @param includeStatistics Inclure les statistiques
    * @returns Liste des projets trouvés
    */
-  async findManyByIds(ids: string[], includeStatistics: boolean = false): Promise<ProjectEntity[]> {
+  async findManyByIds(
+    ids: string[],
+    includeStatistics: boolean = false,
+  ): Promise<ProjectEntity[]> {
     try {
       if (ids.length === 0) {
         return [];
       }
 
-      ids.forEach(id => this.validateUUID(id, 'Project ID'));
+      ids.forEach((id) => this.validateUUID(id, 'Project ID'));
 
       const projects = await this.db.project.findMany({
         where: {
@@ -698,7 +756,9 @@ export class ProjectRepository {
         },
       });
 
-      return projects.map((project: ProjectWithRelations) => this.transformToEntity(project));
+      return projects.map((project: ProjectWithRelations) =>
+        this.transformToEntity(project),
+      );
     } catch (error) {
       this.logger.error(`Failed to find projects by IDs`, error);
       throw this.handlePrismaError(error);
@@ -707,18 +767,21 @@ export class ProjectRepository {
 
   /**
    * Met à jour le statut de plusieurs projets
-   * 
+   *
    * @param ids Liste des identifiants
    * @param status Nouveau statut
    * @returns Nombre de projets mis à jour
    */
-  async updateManyStatuses(ids: string[], status: ProjectStatus): Promise<number> {
+  async updateManyStatuses(
+    ids: string[],
+    status: ProjectStatus,
+  ): Promise<number> {
     try {
       if (ids.length === 0) {
         return 0;
       }
 
-      ids.forEach(id => this.validateUUID(id, 'Project ID'));
+      ids.forEach((id) => this.validateUUID(id, 'Project ID'));
 
       const result = await this.db.project.updateMany({
         where: {
@@ -751,7 +814,7 @@ export class ProjectRepository {
 
   /**
    * Vérifie si un projet existe
-   * 
+   *
    * @param id Identifiant du projet
    * @returns true si le projet existe
    */
@@ -773,7 +836,7 @@ export class ProjectRepository {
 
   /**
    * Vérifie si un projet existe pour un propriétaire donné
-   * 
+   *
    * @param id Identifiant du projet
    * @param ownerId Identifiant du propriétaire
    * @returns true si le projet existe et appartient au propriétaire
@@ -793,14 +856,17 @@ export class ProjectRepository {
 
       return project !== null;
     } catch (error) {
-      this.logger.error(`Failed to check ownership of project ${id} for user ${ownerId}`, error);
+      this.logger.error(
+        `Failed to check ownership of project ${id} for user ${ownerId}`,
+        error,
+      );
       return false;
     }
   }
 
   /**
    * Vérifie si un utilisateur est propriétaire d'un projet
-   * 
+   *
    * @param projectId Identifiant du projet
    * @param userId Identifiant de l'utilisateur
    * @returns true si l'utilisateur est propriétaire
@@ -911,7 +977,9 @@ export class ProjectRepository {
   /**
    * Construit la clause ORDER BY pour les requêtes
    */
-  private buildOrderByClause(options?: ProjectQueryOptions): Prisma.ProjectOrderByWithRelationInput {
+  private buildOrderByClause(
+    options?: ProjectQueryOptions,
+  ): Prisma.ProjectOrderByWithRelationInput {
     const orderBy = options?.orderBy || 'createdAt';
     const order = options?.order || 'desc';
 
@@ -927,7 +995,10 @@ export class ProjectRepository {
   /**
    * Parse un champ JSON de Prisma vers un Record<string, any>
    */
-  private parseJsonField(jsonValue: Prisma.JsonValue, defaultValue: Record<string, any> = {}): Record<string, any> {
+  private parseJsonField(
+    jsonValue: Prisma.JsonValue,
+    defaultValue: Record<string, any> = {},
+  ): Record<string, any> {
     // Si la valeur est null ou undefined, retourner la valeur par défaut
     if (jsonValue === null || jsonValue === undefined) {
       return defaultValue;
@@ -957,7 +1028,9 @@ export class ProjectRepository {
   /**
    * Transforme un objet Prisma en entité domain
    */
-  private transformToEntity(prismaProject: ProjectWithRelations): ProjectEntity {
+  private transformToEntity(
+    prismaProject: ProjectWithRelations,
+  ): ProjectEntity {
     const entity = new ProjectEntity();
 
     entity.id = prismaProject.id;
@@ -977,7 +1050,10 @@ export class ProjectRepository {
         id: prismaProject.statistics.id,
         projectId: prismaProject.statistics.projectId,
         costs: this.parseJsonField(prismaProject.statistics.costs, {}),
-        performance: this.parseJsonField(prismaProject.statistics.performance, {}),
+        performance: this.parseJsonField(
+          prismaProject.statistics.performance,
+          {},
+        ),
         usage: this.parseJsonField(prismaProject.statistics.usage, {}),
         lastUpdated: prismaProject.statistics.lastUpdated,
       };
@@ -989,28 +1065,39 @@ export class ProjectRepository {
   /**
    * Valide les données de création d'un projet
    */
-  private async validateCreateData(data: CreateProjectData, ownerId: string): Promise<void> {
+  private async validateCreateData(
+    data: CreateProjectData,
+    ownerId: string,
+  ): Promise<void> {
     // Validation du nom
     if (!data.name || data.name.trim().length === 0) {
       throw new ProjectConstraintError('Project name is required');
     }
 
     if (data.name.trim().length > 100) {
-      throw new ProjectConstraintError('Project name cannot exceed 100 characters');
+      throw new ProjectConstraintError(
+        'Project name cannot exceed 100 characters',
+      );
     }
 
     // Validation du prompt initial
     if (!data.initialPrompt || data.initialPrompt.trim().length < 10) {
-      throw new ProjectConstraintError('Initial prompt must be at least 10 characters long');
+      throw new ProjectConstraintError(
+        'Initial prompt must be at least 10 characters long',
+      );
     }
 
     if (data.initialPrompt.trim().length > 5000) {
-      throw new ProjectConstraintError('Initial prompt cannot exceed 5000 characters');
+      throw new ProjectConstraintError(
+        'Initial prompt cannot exceed 5000 characters',
+      );
     }
 
     // Validation de la description
     if (data.description && data.description.trim().length > 1000) {
-      throw new ProjectConstraintError('Description cannot exceed 1000 characters');
+      throw new ProjectConstraintError(
+        'Description cannot exceed 1000 characters',
+      );
     }
 
     // Validation des fichiers uploadés
@@ -1033,13 +1120,21 @@ export class ProjectRepository {
       }
 
       if (data.name.trim().length > 100) {
-        throw new ProjectConstraintError('Project name cannot exceed 100 characters');
+        throw new ProjectConstraintError(
+          'Project name cannot exceed 100 characters',
+        );
       }
     }
 
     // Validation de la description si fournie
-    if (data.description !== undefined && data.description && data.description.trim().length > 1000) {
-      throw new ProjectConstraintError('Description cannot exceed 1000 characters');
+    if (
+      data.description !== undefined &&
+      data.description &&
+      data.description.trim().length > 1000
+    ) {
+      throw new ProjectConstraintError(
+        'Description cannot exceed 1000 characters',
+      );
     }
 
     // Validation des fichiers si fournis
@@ -1055,7 +1150,10 @@ export class ProjectRepository {
   /**
    * Valide une transition de statut
    */
-  private validateStatusTransition(currentStatus: ProjectStatus, newStatus: ProjectStatus): void {
+  private validateStatusTransition(
+    currentStatus: ProjectStatus,
+    newStatus: ProjectStatus,
+  ): void {
     const validTransitions: Record<ProjectStatus, ProjectStatus[]> = {
       [ProjectStatus.ACTIVE]: [ProjectStatus.ARCHIVED, ProjectStatus.DELETED],
       [ProjectStatus.ARCHIVED]: [ProjectStatus.ACTIVE, ProjectStatus.DELETED],
@@ -1065,7 +1163,7 @@ export class ProjectRepository {
     const allowedStatuses = validTransitions[currentStatus];
     if (!allowedStatuses.includes(newStatus)) {
       throw new ProjectConstraintError(
-        `Invalid status transition from ${currentStatus} to ${newStatus}`
+        `Invalid status transition from ${currentStatus} to ${newStatus}`,
       );
     }
   }
@@ -1074,8 +1172,9 @@ export class ProjectRepository {
    * Valide qu'une chaîne est un UUID valide
    */
   private validateUUID(value: string, fieldName: string): void {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[4][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
     if (!value || typeof value !== 'string' || !uuidRegex.test(value)) {
       throw new ProjectConstraintError(`${fieldName} must be a valid UUID`);
     }
@@ -1093,7 +1192,9 @@ export class ProjectRepository {
       try {
         this.validateUUID(fileId, `File ID at index ${index}`);
       } catch (error) {
-        throw new ProjectConstraintError(`Invalid file ID at index ${index}: ${fileId}`);
+        throw new ProjectConstraintError(
+          `Invalid file ID at index ${index}: ${fileId}`,
+        );
       }
     });
   }
@@ -1107,10 +1208,12 @@ export class ProjectRepository {
    */
   private handlePrismaError(error: any): Error {
     // Si c'est déjà une erreur métier, la retourner telle quelle
-    if (error instanceof ProjectNotFoundError ||
-        error instanceof ProjectOwnershipError ||
-        error instanceof ProjectConstraintError ||
-        error instanceof ProjectOptimisticLockError) {
+    if (
+      error instanceof ProjectNotFoundError ||
+      error instanceof ProjectOwnershipError ||
+      error instanceof ProjectConstraintError ||
+      error instanceof ProjectOptimisticLockError
+    ) {
       return error;
     }
 
@@ -1119,7 +1222,9 @@ export class ProjectRepository {
       switch (error.code) {
         case 'P2002':
           // Unique constraint violation
-          return new ProjectConstraintError('A project with this name already exists for this user');
+          return new ProjectConstraintError(
+            'A project with this name already exists for this user',
+          );
 
         case 'P2025':
           // Record not found
@@ -1134,13 +1239,18 @@ export class ProjectRepository {
           return new ProjectConstraintError('Referenced entity does not exist');
 
         default:
-          this.logger.error(`Unhandled Prisma error code: ${error.code}`, error);
+          this.logger.error(
+            `Unhandled Prisma error code: ${error.code}`,
+            error,
+          );
           break;
       }
     }
 
     // Erreur générique avec message sanitisé
-    const sanitizedMessage = this.sanitizeErrorMessage(error.message || 'Unknown database error');
+    const sanitizedMessage = this.sanitizeErrorMessage(
+      error.message || 'Unknown database error',
+    );
     return new Error(`Database operation failed: ${sanitizedMessage}`);
   }
 
@@ -1157,7 +1267,7 @@ export class ProjectRepository {
     ];
 
     let sanitized = message;
-    sensitivePatterns.forEach(pattern => {
+    sensitivePatterns.forEach((pattern) => {
       sanitized = sanitized.replace(pattern, '***');
     });
 

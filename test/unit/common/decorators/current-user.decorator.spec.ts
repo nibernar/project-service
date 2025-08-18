@@ -8,16 +8,18 @@ import { User } from '../../../../src/common/interfaces/user.interface';
 describe('CurrentUser Decorator - Unit Tests', () => {
   // Récupération de la fonction de transformation du décorateur
   const decoratorFactory = CurrentUser as any;
-  
+
   // Fonction helper qui reproduit la logique du décorateur pour les tests
   const extractUserFunction = (data: unknown, ctx: ExecutionContext): User => {
     const request = ctx.switchToHttp().getRequest<FastifyRequest>();
     const user = (request as any).user;
-    
+
     if (!user) {
-      throw new Error('User not found in request context. Make sure AuthGuard is applied.');
+      throw new Error(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     }
-    
+
     return user;
   };
 
@@ -25,7 +27,9 @@ describe('CurrentUser Decorator - Unit Tests', () => {
   // HELPERS DE TEST
   // ============================================================================
 
-  const createMockExecutionContext = (options: { user?: User | null | undefined; [key: string]: any } = {}): ExecutionContext => {
+  const createMockExecutionContext = (
+    options: { user?: User | null | undefined; [key: string]: any } = {},
+  ): ExecutionContext => {
     const mockRequest: any = {
       user: options.user,
       method: options.method || 'GET',
@@ -35,7 +39,7 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       params: options.params || {},
       query: options.query || {},
       ip: options.ip || '127.0.0.1',
-      ...options
+      ...options,
     };
 
     return {
@@ -131,9 +135,9 @@ describe('CurrentUser Decorator - Unit Tests', () => {
 
       testCases.forEach(({ roles }, index) => {
         // Arrange
-        const testUser = createTestUser({ 
+        const testUser = createTestUser({
           id: `user-${index}`,
-          roles 
+          roles,
         });
         const mockContext = createMockExecutionContext({ user: testUser });
 
@@ -182,7 +186,7 @@ describe('CurrentUser Decorator - Unit Tests', () => {
         'USR-2025-001',
       ];
 
-      testIds.forEach(id => {
+      testIds.forEach((id) => {
         // Arrange
         const testUser = createTestUser({ id });
         const mockContext = createMockExecutionContext({ user: testUser });
@@ -207,7 +211,7 @@ describe('CurrentUser Decorator - Unit Tests', () => {
         'admin@localhost',
       ];
 
-      testEmails.forEach(email => {
+      testEmails.forEach((email) => {
         // Arrange
         const testUser = createTestUser({ email });
         const mockContext = createMockExecutionContext({ user: testUser });
@@ -226,14 +230,14 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       const extendedUser = {
         ...createTestUser(),
         customProperty: 'customValue',
-        metadata: { 
+        metadata: {
           createdAt: '2025-01-01T00:00:00Z',
-          lastLogin: '2025-01-28T10:30:00Z'
+          lastLogin: '2025-01-28T10:30:00Z',
         },
         preferences: {
           theme: 'dark',
-          language: 'en'
-        }
+          language: 'en',
+        },
       };
       const mockContext = createMockExecutionContext({ user: extendedUser });
 
@@ -243,13 +247,13 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       // Assert
       expect(result).toEqual(extendedUser);
       expect((result as any).customProperty).toBe('customValue');
-      expect((result as any).metadata).toEqual({ 
+      expect((result as any).metadata).toEqual({
         createdAt: '2025-01-01T00:00:00Z',
-        lastLogin: '2025-01-28T10:30:00Z'
+        lastLogin: '2025-01-28T10:30:00Z',
       });
       expect((result as any).preferences).toEqual({
         theme: 'dark',
-        language: 'en'
+        language: 'en',
       });
     });
 
@@ -260,7 +264,9 @@ describe('CurrentUser Decorator - Unit Tests', () => {
         email: '',
         roles: [],
       });
-      const mockContext = createMockExecutionContext({ user: userWithEmptyValues });
+      const mockContext = createMockExecutionContext({
+        user: userWithEmptyValues,
+      });
 
       // Act
       const result = extractUserFunction(undefined, mockContext);
@@ -276,10 +282,10 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       // Arrange
       const complexRoles = [
         'role:admin:read',
-        'role:admin:write', 
+        'role:admin:write',
         'permission:users:create',
         'permission:projects:delete',
-        'scope:organization:12345'
+        'scope:organization:12345',
       ];
       const testUser = createTestUser({ roles: complexRoles });
       const mockContext = createMockExecutionContext({ user: testUser });
@@ -328,31 +334,31 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       // Arrange
       const testUser = createTestUser();
       const testCases = [
-        { 
-          user: testUser, 
-          method: 'GET', 
+        {
+          user: testUser,
+          method: 'GET',
           url: '/api/projects',
-          headers: { authorization: 'Bearer token123' }
+          headers: { authorization: 'Bearer token123' },
         },
-        { 
-          user: testUser, 
-          method: 'POST', 
-          url: '/api/projects', 
+        {
+          user: testUser,
+          method: 'POST',
+          url: '/api/projects',
           body: { name: 'New Project' },
-          params: {}
+          params: {},
         },
-        { 
-          user: testUser, 
-          method: 'PUT', 
+        {
+          user: testUser,
+          method: 'PUT',
           url: '/api/projects/123',
-          query: { include: 'stats' }
+          query: { include: 'stats' },
         },
         {
           user: testUser,
           method: 'DELETE',
           url: '/api/projects/456',
-          ip: '127.0.0.1'
-        }
+          ip: '127.0.0.1',
+        },
       ];
 
       testCases.forEach((requestData, index) => {
@@ -371,10 +377,10 @@ describe('CurrentUser Decorator - Unit Tests', () => {
     it('should not modify the original request object', () => {
       // Arrange
       const testUser = createTestUser();
-      const mockContext = createMockExecutionContext({ 
+      const mockContext = createMockExecutionContext({
         user: testUser,
         method: 'GET',
-        url: '/test'
+        url: '/test',
       });
 
       // Act
@@ -416,7 +422,7 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       expect(typeof result.id).toBe('string');
       expect(typeof result.email).toBe('string');
       expect(Array.isArray(result.roles)).toBe(true);
-      result.roles.forEach(role => {
+      result.roles.forEach((role) => {
         expect(typeof role).toBe('string');
       });
     });
@@ -430,7 +436,7 @@ describe('CurrentUser Decorator - Unit Tests', () => {
     it('should maintain type safety with generic ExecutionContext', () => {
       // Arrange
       const testUser = createTestUser();
-      
+
       // Test avec différents types de contexte
       const httpContext = createMockExecutionContext({ user: testUser });
       const result = extractUserFunction(undefined, httpContext);
@@ -445,7 +451,7 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       const strictUser: User = {
         id: 'strict-user-123',
         email: 'strict@example.com',
-        roles: ['user', 'reader']
+        roles: ['user', 'reader'],
       };
       const mockContext = createMockExecutionContext({ user: strictUser });
 
@@ -480,17 +486,17 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       // Assert
       expect(controllerResult).toEqual({
         message: 'Hello test@example.com',
-        userId: 'user-123'
+        userId: 'user-123',
       });
     });
 
     it('should work with multiple decorators in same method', () => {
       // Simulate l'utilisation avec d'autres décorateurs
       const testUser = createTestUser();
-      const mockContext = createMockExecutionContext({ 
+      const mockContext = createMockExecutionContext({
         user: testUser,
         body: { name: 'Test Project' },
-        params: { id: '123' }
+        params: { id: '123' },
       });
 
       // Act
@@ -513,11 +519,11 @@ describe('CurrentUser Decorator - Unit Tests', () => {
         url: '/api/projects',
         headers: {
           'content-type': 'application/json',
-          'authorization': 'Bearer token123'
+          authorization: 'Bearer token123',
         },
         body: { name: 'New Project' },
         params: { organizationId: '456' },
-        query: { include: 'stats' }
+        query: { include: 'stats' },
       };
       const mockContext = createMockExecutionContext(complexRequest);
 
@@ -546,7 +552,9 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
 
     it('should throw error when user is null', () => {
@@ -556,7 +564,9 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
 
     it('should throw error when user is undefined', () => {
@@ -566,7 +576,9 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow('User not found in request context. Make sure AuthGuard is applied.');
+      }).toThrow(
+        'User not found in request context. Make sure AuthGuard is applied.',
+      );
     });
   });
 });

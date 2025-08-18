@@ -1,4 +1,9 @@
-import { plainToInstance, instanceToPlain, classToPlain, plainToClass } from 'class-transformer';
+import {
+  plainToInstance,
+  instanceToPlain,
+  classToPlain,
+  plainToClass,
+} from 'class-transformer';
 import { validate } from 'class-validator';
 import { ProjectListItemDto } from '../../../../src/project/dto/project-list.dto';
 import { ProjectStatus } from '../../../../src/common/enums/project-status.enum';
@@ -131,13 +136,13 @@ describe('ProjectListItemDto - Integration Tests', () => {
             ...validData,
             totalCost: 99.999,
           },
-          expected: { totalCost: 100.00 },
+          expected: { totalCost: 100.0 },
         },
       ];
 
       testCases.forEach(({ description, data, expected }) => {
         const dto = plainToInstance(ProjectListItemDto, data);
-        
+
         Object.entries(expected).forEach(([key, value]) => {
           expect(dto[key as keyof ProjectListItemDto]).toBe(value);
         });
@@ -149,13 +154,13 @@ describe('ProjectListItemDto - Integration Tests', () => {
         ...validData,
         statistics: {
           costs: {
-            claudeApi: 15.50,
+            claudeApi: 15.5,
             storage: 2.75,
             compute: 1.25,
-            total: 19.50,
+            total: 19.5,
             breakdown: [
-              { category: 'generation', amount: 10.00 },
-              { category: 'processing', amount: 9.50 },
+              { category: 'generation', amount: 10.0 },
+              { category: 'processing', amount: 9.5 },
             ],
           },
           performance: {
@@ -199,7 +204,7 @@ describe('ProjectListItemDto - Integration Tests', () => {
       expect(dto.uploadedFilesCount).toBe(3);
       expect(dto.generatedFilesCount).toBe(5);
       expect(dto.hasStatistics).toBe(true);
-      expect(dto.totalCost).toBe(19.50);
+      expect(dto.totalCost).toBe(19.5);
 
       // Verify methods work with transformed data
       expect(dto.getTotalFilesCount()).toBe(8);
@@ -210,7 +215,7 @@ describe('ProjectListItemDto - Integration Tests', () => {
       // Verify serialization preserves functionality
       const serialized = instanceToPlain(dto);
       const dto2 = plainToInstance(ProjectListItemDto, serialized);
-      
+
       expect(dto2.getTotalFilesCount()).toBe(dto.getTotalFilesCount());
       expect(dto2.getCompletionScore()).toBe(dto.getCompletionScore());
     });
@@ -230,7 +235,7 @@ describe('ProjectListItemDto - Integration Tests', () => {
       expect(typeof dto.uploadedFilesCount).toBe('number');
       expect(typeof dto.generatedFilesCount).toBe('number');
       expect(typeof dto.hasStatistics).toBe('boolean');
-      
+
       // Pas d'erreurs de validation attendues
       const errors = await validate(dto, { skipMissingProperties: true });
       expect(errors.length).toBeLessThanOrEqual(1); // Peut avoir une erreur générique
@@ -264,7 +269,7 @@ describe('ProjectListItemDto - Integration Tests', () => {
   describe('Intégration avec les méthodes utilitaires', () => {
     it('should work seamlessly with utility methods after serialization', () => {
       const dto = plainToInstance(ProjectListItemDto, validData);
-      
+
       // Serialize and deserialize
       const plainObject = instanceToPlain(dto);
       const dto2 = plainToInstance(ProjectListItemDto, plainObject);
@@ -284,7 +289,7 @@ describe('ProjectListItemDto - Integration Tests', () => {
 
     it('should maintain method functionality across multiple transformation cycles', () => {
       let dto = plainToInstance(ProjectListItemDto, validData);
-      
+
       // Track original values
       const originalTotalFiles = dto.getTotalFilesCount();
       const originalCompletion = dto.getCompletionScore();
@@ -294,12 +299,12 @@ describe('ProjectListItemDto - Integration Tests', () => {
       for (let i = 0; i < 5; i++) {
         const plain = instanceToPlain(dto);
         dto = plainToInstance(ProjectListItemDto, plain);
-        
+
         // Verify values remain stable
         expect(dto.getTotalFilesCount()).toBe(originalTotalFiles);
         expect(dto.getCompletionScore()).toBe(originalCompletion);
         expect(dto.getActivityIndicator()).toBe(originalActivity);
-        
+
         // Verify methods still work
         expect(typeof dto.getTooltipSummary()).toBe('string');
         expect(typeof dto.toString()).toBe('string');
@@ -332,7 +337,7 @@ describe('ProjectListItemDto - Integration Tests', () => {
         project_statistics: {
           cost_breakdown: {
             total_cost: 25.75,
-            api_costs: 20.00,
+            api_costs: 20.0,
             storage_costs: 5.75,
           },
           usage_metrics: {
@@ -350,8 +355,8 @@ describe('ProjectListItemDto - Integration Tests', () => {
         status: dbLikeData.status as ProjectStatus,
         createdAt: dbLikeData.created_at,
         updatedAt: dbLikeData.updated_at,
-        uploadedFileIds: dbLikeData.uploaded_files.map(f => f.id),
-        generatedFileIds: dbLikeData.generated_files.map(f => f.id),
+        uploadedFileIds: dbLikeData.uploaded_files.map((f) => f.id),
+        generatedFileIds: dbLikeData.generated_files.map((f) => f.id),
         statistics: {
           costs: {
             total: dbLikeData.project_statistics.cost_breakdown.total_cost,
@@ -433,7 +438,7 @@ describe('ProjectListItemDto - Integration Tests', () => {
     });
   });
 
-  describe('Intégration avec les cas d\'usage réels', () => {
+  describe("Intégration avec les cas d'usage réels", () => {
     it('should handle pagination response format', () => {
       const paginationResponse = {
         data: [
@@ -449,8 +454,8 @@ describe('ProjectListItemDto - Integration Tests', () => {
         },
       };
 
-      const dtos = paginationResponse.data.map(item => 
-        plainToInstance(ProjectListItemDto, item)
+      const dtos = paginationResponse.data.map((item) =>
+        plainToInstance(ProjectListItemDto, item),
       );
 
       expect(dtos).toHaveLength(3);
@@ -463,9 +468,9 @@ describe('ProjectListItemDto - Integration Tests', () => {
       });
 
       // Test serialization of the entire list
-      const serializedDtos = dtos.map(dto => instanceToPlain(dto));
-      const deserializedDtos = serializedDtos.map(plain => 
-        plainToInstance(ProjectListItemDto, plain)
+      const serializedDtos = dtos.map((dto) => instanceToPlain(dto));
+      const deserializedDtos = serializedDtos.map((plain) =>
+        plainToInstance(ProjectListItemDto, plain),
       );
 
       expect(deserializedDtos).toHaveLength(3);
@@ -506,7 +511,10 @@ describe('ProjectListItemDto - Integration Tests', () => {
         },
       };
 
-      const dto = plainToInstance(ProjectListItemDto, searchResponse.results[0]);
+      const dto = plainToInstance(
+        ProjectListItemDto,
+        searchResponse.results[0],
+      );
 
       expect(dto.name).toBe('Test Project Alpha');
       expect(dto.uploadedFilesCount).toBe(4);

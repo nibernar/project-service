@@ -11,7 +11,7 @@ describe('ProjectListItemDto', () => {
   beforeEach(() => {
     baseDate = new Date('2024-08-01T10:00:00Z');
     updatedDate = new Date('2024-08-08T14:30:00Z');
-    
+
     validDto = plainToInstance(ProjectListItemDto, {
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'Test Project', // CORRECTION: était 'E-commerce Platform Documentation'
@@ -58,7 +58,7 @@ describe('ProjectListItemDto', () => {
     });
 
     it('should validate enum values for status', () => {
-      Object.values(ProjectStatus).forEach(status => {
+      Object.values(ProjectStatus).forEach((status) => {
         const dto = plainToInstance(ProjectListItemDto, {
           ...validDto,
           status,
@@ -161,21 +161,21 @@ describe('ProjectListItemDto', () => {
       it('should detect statistics object presence', () => {
         const dto = plainToInstance(ProjectListItemDto, {
           ...validDto,
-          statistics: { 
-            costs: { 
-              claudeApi: 8.50, 
-              storage: 1.25, 
-              compute: 0.75, 
-              total: 10.50 
+          statistics: {
+            costs: {
+              claudeApi: 8.5,
+              storage: 1.25,
+              compute: 0.75,
+              total: 10.5,
             },
             performance: {
               generationTime: 45000,
-              processingTime: 12000
+              processingTime: 12000,
             },
             usage: {
               documentsGenerated: 5,
-              tokensUsed: 15000
-            }
+              tokensUsed: 15000,
+            },
           },
           hasStatistics: undefined,
         });
@@ -196,30 +196,30 @@ describe('ProjectListItemDto', () => {
       it('should use predefined numeric value', () => {
         const dto = plainToInstance(ProjectListItemDto, {
           ...validDto,
-          totalCost: 25.50,
+          totalCost: 25.5,
         });
-        expect(dto.totalCost).toBe(25.50);
+        expect(dto.totalCost).toBe(25.5);
       });
 
       it('should extract from statistics object', () => {
         const dto = plainToInstance(ProjectListItemDto, {
           ...validDto,
-          statistics: { 
-            costs: { 
-              claudeApi: 12.50,
+          statistics: {
+            costs: {
+              claudeApi: 12.5,
               storage: 2.25,
-              compute: 1.00,
-              total: 15.75 
+              compute: 1.0,
+              total: 15.75,
             },
             performance: {
               generationTime: 60000,
-              processingTime: 15000
+              processingTime: 15000,
             },
             usage: {
               documentsGenerated: 4,
               filesProcessed: 3,
-              tokensUsed: 18500
-            }
+              tokensUsed: 18500,
+            },
           },
           totalCost: undefined,
         });
@@ -245,7 +245,7 @@ describe('ProjectListItemDto', () => {
       it('should prevent negative costs', () => {
         const dto = plainToInstance(ProjectListItemDto, {
           ...validDto,
-          totalCost: -10.50,
+          totalCost: -10.5,
         });
         expect(dto.totalCost).toBe(0);
       });
@@ -260,9 +260,12 @@ describe('ProjectListItemDto', () => {
       });
 
       it('should truncate at word boundary', () => {
-        validDto.description = 'Complete technical documentation for a modern e-commerce platform with microservices architecture, including frontend React app, backend NestJS APIs, PostgreSQL database, Redis cache, and deployment on Kubernetes';
+        validDto.description =
+          'Complete technical documentation for a modern e-commerce platform with microservices architecture, including frontend React app, backend NestJS APIs, PostgreSQL database, Redis cache, and deployment on Kubernetes';
         const result = validDto.getShortDescription(80);
-        expect(result).toBe('Complete technical documentation for a modern e-commerce platform with...');
+        expect(result).toBe(
+          'Complete technical documentation for a modern e-commerce platform with...',
+        );
         expect(result.length).toBeLessThanOrEqual(83); // 80 + '...'
       });
 
@@ -348,7 +351,7 @@ describe('ProjectListItemDto', () => {
 
       it('should return "aujourd\'hui" for same day', () => {
         validDto.createdAt = new Date('2024-08-08T10:00:00Z');
-        expect(validDto.getRelativeAge()).toBe('aujourd\'hui');
+        expect(validDto.getRelativeAge()).toBe("aujourd'hui");
       });
 
       it('should return "hier" for yesterday', () => {
@@ -550,7 +553,9 @@ describe('ProjectListItemDto', () => {
 
       it('should generate safe log string', () => {
         const logStr = validDto.toLogSafeString();
-        expect(logStr).toContain('ProjectListItem[id=550e8400-e29b-41d4-a716-446655440000');
+        expect(logStr).toContain(
+          'ProjectListItem[id=550e8400-e29b-41d4-a716-446655440000',
+        );
         expect(logStr).toContain('status=ACTIVE');
         expect(logStr).toContain('files=8');
         expect(logStr).toContain('completion=100%');
@@ -592,7 +597,7 @@ describe('ProjectListItemDto', () => {
         ...validDto,
         createdAt: new Date('invalid-date'),
       });
-      
+
       expect(dto.getAgeInDays()).toBe(0); // Couvre la ligne 168
     });
 
@@ -601,7 +606,7 @@ describe('ProjectListItemDto', () => {
         ...validDto,
         createdAt: null as any,
       });
-      
+
       expect(dto.getAgeInDays()).toBe(0); // Couvre aussi la ligne 168
     });
 
@@ -610,7 +615,7 @@ describe('ProjectListItemDto', () => {
         ...validDto,
         createdAt: new Date(NaN),
       });
-      
+
       expect(dto.getAgeInDays()).toBe(0); // Couvre la ligne 168
     });
 
@@ -619,7 +624,7 @@ describe('ProjectListItemDto', () => {
         ...validDto,
         status: 'UNKNOWN_STATUS' as ProjectStatus,
       });
-      
+
       expect(dto.getStatusColor()).toBe('#6B7280'); // Couvre ligne 361
       expect(dto.getStatusLabel()).toBe('Inconnu'); // Couvre ligne 379
     });
@@ -629,12 +634,12 @@ describe('ProjectListItemDto', () => {
         ...validDto,
         description: '',
       });
-      
+
       const dto2 = plainToInstance(ProjectListItemDto, {
         ...validDto,
         description: '   ', // Espaces seulement
       });
-      
+
       expect(dto1.getCompletionScore()).toBe(90); // Pas de bonus description
       expect(dto2.getCompletionScore()).toBe(90); // Espaces = pas de bonus
     });
@@ -642,28 +647,28 @@ describe('ProjectListItemDto', () => {
     it('should handle very old dates for year calculation', () => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date('2024-08-08T10:00:00Z'));
-      
+
       const dto = plainToInstance(ProjectListItemDto, {
         ...validDto,
         createdAt: new Date('2020-08-08T10:00:00Z'), // 4 years ago
       });
-      
+
       expect(dto.getRelativeAge()).toBe('il y a 4 ans');
-      
+
       jest.useRealTimers();
     });
 
     it('should handle exactly 1 year old date', () => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date('2024-08-08T10:00:00Z'));
-      
+
       const dto = plainToInstance(ProjectListItemDto, {
         ...validDto,
         createdAt: new Date('2023-08-08T10:00:00Z'), // Exactly 1 year ago
       });
-      
+
       expect(dto.getRelativeAge()).toBe('il y a 1 an');
-      
+
       jest.useRealTimers();
     });
   });

@@ -1,7 +1,10 @@
 // test/e2e/common/guards/project-owner.guard.e2e-spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe, Logger } from '@nestjs/common';
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { ConfigModule } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 // ✅ Import supertest corrigé
@@ -36,7 +39,7 @@ describe('ProjectOwnerGuard E2E Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter()
+      new FastifyAdapter(),
     );
 
     app.useGlobalPipes(
@@ -44,7 +47,7 @@ describe('ProjectOwnerGuard E2E Tests', () => {
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
-      })
+      }),
     );
 
     databaseService = moduleFixture.get<DatabaseService>(DatabaseService);
@@ -92,8 +95,9 @@ describe('ProjectOwnerGuard E2E Tests', () => {
   describe('🧪 Tests de base', () => {
     it('should create test users with valid UUIDs', () => {
       // Vérifier que les UUIDs sont valides
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
       expect(testUser1.id).toMatch(uuidRegex);
       expect(testUser2.id).toMatch(uuidRegex);
       expect(testUser1.id).not.toBe(testUser2.id);
@@ -119,7 +123,7 @@ describe('ProjectOwnerGuard E2E Tests', () => {
     });
   });
 
-  describe('🔐 Tests d\'isolation', () => {
+  describe("🔐 Tests d'isolation", () => {
     it('should isolate projects between users', async () => {
       // Créer des projets pour chaque utilisateur
       const projectUser1Id = randomUUID();
@@ -175,11 +179,11 @@ describe('ProjectOwnerGuard E2E Tests', () => {
               generatedFileIds: [],
             },
           });
-        })
+        }),
       );
 
       expect(projects).toHaveLength(5);
-      projects.forEach(project => {
+      projects.forEach((project) => {
         expect(project.ownerId).toBe(testUser1.id);
       });
     });

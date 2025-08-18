@@ -12,7 +12,7 @@ import { CacheService } from './cache.service';
     RedisModule.forRootAsync({
       useFactory: (configService: ConfigService): RedisModuleOptions => {
         const cacheConfig = getCacheConfig(configService);
-        
+
         // Conversion vers le format attendu par @nestjs-modules/ioredis
         const redisModuleOptions: RedisModuleOptions = {
           type: 'single',

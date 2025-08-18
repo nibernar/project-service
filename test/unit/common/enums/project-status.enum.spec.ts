@@ -1,9 +1,9 @@
 /**
  * Tests unitaires pour le module project-status.enum.ts
- * 
+ *
  * Ces tests couvrent toutes les fonctionnalités principales de l'énumération
  * ProjectStatus et ses utilitaires associés.
- * 
+ *
  * @fileoverview Tests unitaires complets du module ProjectStatus
  */
 
@@ -27,11 +27,10 @@ import {
 } from '../../../../src/common/enums/project-status.enum';
 
 describe('ProjectStatus Enum - Unit Tests', () => {
-  
   // ============================================================================
   // TESTS DE BASE - ENUM ET CONSTANTES
   // ============================================================================
-  
+
   describe('Basic Enum Values', () => {
     it('should have all expected enum values', () => {
       expect(ProjectStatus.ACTIVE).toBe('ACTIVE');
@@ -57,7 +56,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
   // ============================================================================
   // TESTS DE VALIDATION - isValidProjectStatus()
   // ============================================================================
-  
+
   describe('isValidProjectStatus()', () => {
     describe('Valid Status Values', () => {
       it('should return true for ACTIVE', () => {
@@ -138,59 +137,94 @@ describe('ProjectStatus Enum - Unit Tests', () => {
   // ============================================================================
   // TESTS DE TRANSITIONS - isValidStatusTransition()
   // ============================================================================
-  
+
   describe('isValidStatusTransition()', () => {
     describe('Valid Transitions', () => {
       it('should allow ACTIVE → ARCHIVED', () => {
-        expect(isValidStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.ARCHIVED)).toBe(true);
+        expect(
+          isValidStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.ARCHIVED),
+        ).toBe(true);
       });
 
       it('should allow ACTIVE → DELETED', () => {
-        expect(isValidStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.DELETED)).toBe(true);
+        expect(
+          isValidStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.DELETED),
+        ).toBe(true);
       });
 
       it('should allow ARCHIVED → ACTIVE', () => {
-        expect(isValidStatusTransition(ProjectStatus.ARCHIVED, ProjectStatus.ACTIVE)).toBe(true);
+        expect(
+          isValidStatusTransition(ProjectStatus.ARCHIVED, ProjectStatus.ACTIVE),
+        ).toBe(true);
       });
 
       it('should allow ARCHIVED → DELETED', () => {
-        expect(isValidStatusTransition(ProjectStatus.ARCHIVED, ProjectStatus.DELETED)).toBe(true);
+        expect(
+          isValidStatusTransition(
+            ProjectStatus.ARCHIVED,
+            ProjectStatus.DELETED,
+          ),
+        ).toBe(true);
       });
     });
 
     describe('Invalid Transitions', () => {
       it('should reject DELETED → ACTIVE', () => {
-        expect(isValidStatusTransition(ProjectStatus.DELETED, ProjectStatus.ACTIVE)).toBe(false);
+        expect(
+          isValidStatusTransition(ProjectStatus.DELETED, ProjectStatus.ACTIVE),
+        ).toBe(false);
       });
 
       it('should reject DELETED → ARCHIVED', () => {
-        expect(isValidStatusTransition(ProjectStatus.DELETED, ProjectStatus.ARCHIVED)).toBe(false);
+        expect(
+          isValidStatusTransition(
+            ProjectStatus.DELETED,
+            ProjectStatus.ARCHIVED,
+          ),
+        ).toBe(false);
       });
 
       it('should reject DELETED → DELETED', () => {
-        expect(isValidStatusTransition(ProjectStatus.DELETED, ProjectStatus.DELETED)).toBe(false);
+        expect(
+          isValidStatusTransition(ProjectStatus.DELETED, ProjectStatus.DELETED),
+        ).toBe(false);
       });
     });
 
     describe('Self-Transitions', () => {
       it('should reject ACTIVE → ACTIVE', () => {
-        expect(isValidStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.ACTIVE)).toBe(false);
+        expect(
+          isValidStatusTransition(ProjectStatus.ACTIVE, ProjectStatus.ACTIVE),
+        ).toBe(false);
       });
 
       it('should reject ARCHIVED → ARCHIVED', () => {
-        expect(isValidStatusTransition(ProjectStatus.ARCHIVED, ProjectStatus.ARCHIVED)).toBe(false);
+        expect(
+          isValidStatusTransition(
+            ProjectStatus.ARCHIVED,
+            ProjectStatus.ARCHIVED,
+          ),
+        ).toBe(false);
       });
     });
 
     describe('Edge Cases', () => {
       it('should handle invalid from status gracefully', () => {
-        expect(() => isValidStatusTransition('INVALID' as any, ProjectStatus.ACTIVE)).not.toThrow();
-        expect(isValidStatusTransition('INVALID' as any, ProjectStatus.ACTIVE)).toBe(false);
+        expect(() =>
+          isValidStatusTransition('INVALID' as any, ProjectStatus.ACTIVE),
+        ).not.toThrow();
+        expect(
+          isValidStatusTransition('INVALID' as any, ProjectStatus.ACTIVE),
+        ).toBe(false);
       });
 
       it('should handle invalid to status gracefully', () => {
-        expect(() => isValidStatusTransition(ProjectStatus.ACTIVE, 'INVALID' as any)).not.toThrow();
-        expect(isValidStatusTransition(ProjectStatus.ACTIVE, 'INVALID' as any)).toBe(false);
+        expect(() =>
+          isValidStatusTransition(ProjectStatus.ACTIVE, 'INVALID' as any),
+        ).not.toThrow();
+        expect(
+          isValidStatusTransition(ProjectStatus.ACTIVE, 'INVALID' as any),
+        ).toBe(false);
       });
     });
   });
@@ -198,16 +232,16 @@ describe('ProjectStatus Enum - Unit Tests', () => {
   // ============================================================================
   // TESTS DES MÉTADONNÉES - getStatusMetadata()
   // ============================================================================
-  
+
   describe('getStatusMetadata()', () => {
     describe('Valid Metadata Retrieval', () => {
       it('should return correct metadata for ACTIVE', () => {
         const metadata = getStatusMetadata(ProjectStatus.ACTIVE);
-        
+
         expect(metadata).toMatchObject({
           status: ProjectStatus.ACTIVE,
           label: 'Actif',
-          description: expect.stringContaining('cours d\'utilisation'),
+          description: expect.stringContaining("cours d'utilisation"),
           color: '#10B981',
           allowedTransitions: [ProjectStatus.ARCHIVED, ProjectStatus.DELETED],
         });
@@ -215,7 +249,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
 
       it('should return correct metadata for ARCHIVED', () => {
         const metadata = getStatusMetadata(ProjectStatus.ARCHIVED);
-        
+
         expect(metadata).toMatchObject({
           status: ProjectStatus.ARCHIVED,
           label: 'Archivé',
@@ -227,7 +261,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
 
       it('should return correct metadata for DELETED', () => {
         const metadata = getStatusMetadata(ProjectStatus.DELETED);
-        
+
         expect(metadata).toMatchObject({
           status: ProjectStatus.DELETED,
           label: 'Supprimé',
@@ -241,7 +275,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
     describe('Metadata Structure Validation', () => {
       it('should return object with all required properties', () => {
         const metadata = getStatusMetadata(ProjectStatus.ACTIVE);
-        
+
         expect(metadata).toHaveProperty('status');
         expect(metadata).toHaveProperty('label');
         expect(metadata).toHaveProperty('description');
@@ -252,7 +286,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       it('should return immutable metadata', () => {
         const metadata1 = getStatusMetadata(ProjectStatus.ACTIVE);
         const metadata2 = getStatusMetadata(ProjectStatus.ACTIVE);
-        
+
         // Should be equal but not the same reference if properly implemented
         expect(metadata1).toEqual(metadata2);
       });
@@ -264,7 +298,9 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       });
 
       it('should throw specific error message', () => {
-        expect(() => getStatusMetadata('INVALID' as any)).toThrow('Unknown project status: INVALID');
+        expect(() => getStatusMetadata('INVALID' as any)).toThrow(
+          'Unknown project status: INVALID',
+        );
       });
     });
   });
@@ -272,7 +308,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
   // ============================================================================
   // TESTS DES TRANSITIONS DISPONIBLES - getAvailableTransitions()
   // ============================================================================
-  
+
   describe('getAvailableTransitions()', () => {
     describe('Available Transitions', () => {
       it('should return [ARCHIVED, DELETED] for ACTIVE', () => {
@@ -300,7 +336,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       it('should return new array (not reference to original)', () => {
         const transitions1 = getAvailableTransitions(ProjectStatus.ACTIVE);
         const transitions2 = getAvailableTransitions(ProjectStatus.ACTIVE);
-        
+
         expect(transitions1).not.toBe(transitions2);
         expect(transitions1).toEqual(transitions2);
       });
@@ -308,9 +344,9 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       it('mutations should not affect internal state', () => {
         const transitions = getAvailableTransitions(ProjectStatus.ACTIVE);
         const originalLength = transitions.length;
-        
+
         transitions.push('INVALID' as any);
-        
+
         const newTransitions = getAvailableTransitions(ProjectStatus.ACTIVE);
         expect(newTransitions).toHaveLength(originalLength);
       });
@@ -320,7 +356,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       it('should maintain consistent order across calls', () => {
         const transitions1 = getAvailableTransitions(ProjectStatus.ACTIVE);
         const transitions2 = getAvailableTransitions(ProjectStatus.ACTIVE);
-        
+
         expect(transitions1).toEqual(transitions2);
       });
     });
@@ -329,7 +365,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
   // ============================================================================
   // TESTS DES FONCTIONS HELPER
   // ============================================================================
-  
+
   describe('Helper Functions', () => {
     describe('getStatusLabel()', () => {
       it('should return correct French labels', () => {
@@ -339,7 +375,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       });
 
       it('should handle all enum values', () => {
-        Object.values(ProjectStatus).forEach(status => {
+        Object.values(ProjectStatus).forEach((status) => {
           expect(getStatusLabel(status)).toBeTruthy();
           expect(typeof getStatusLabel(status)).toBe('string');
         });
@@ -349,7 +385,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
     describe('getStatusColor()', () => {
       it('should return valid hex color codes', () => {
         const hexColorRegex = /^#[0-9A-F]{6}$/i;
-        
+
         expect(getStatusColor(ProjectStatus.ACTIVE)).toMatch(hexColorRegex);
         expect(getStatusColor(ProjectStatus.ARCHIVED)).toMatch(hexColorRegex);
         expect(getStatusColor(ProjectStatus.DELETED)).toMatch(hexColorRegex);
@@ -362,9 +398,11 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       });
 
       it('should return distinct colors for each status', () => {
-        const colors = Object.values(ProjectStatus).map(status => getStatusColor(status));
+        const colors = Object.values(ProjectStatus).map((status) =>
+          getStatusColor(status),
+        );
         const uniqueColors = [...new Set(colors)];
-        
+
         expect(uniqueColors).toHaveLength(colors.length);
       });
     });
@@ -395,13 +433,13 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       });
 
       it('should be mutually exclusive', () => {
-        Object.values(ProjectStatus).forEach(status => {
+        Object.values(ProjectStatus).forEach((status) => {
           const checks = [
             isActiveStatus(status),
             isArchivedStatus(status),
             isDeletedStatus(status),
           ];
-          
+
           const trueCount = checks.filter(Boolean).length;
           expect(trueCount).toBe(1);
         });
@@ -412,17 +450,19 @@ describe('ProjectStatus Enum - Unit Tests', () => {
   // ============================================================================
   // TESTS DE COHÉRENCE DES CONSTANTES
   // ============================================================================
-  
+
   describe('Constants Consistency', () => {
     describe('Metadata Consistency', () => {
       it('all statuses in metadata should exist in enum', () => {
-        Object.keys(PROJECT_STATUS_METADATA).forEach(status => {
-          expect(Object.values(ProjectStatus)).toContain(status as ProjectStatus);
+        Object.keys(PROJECT_STATUS_METADATA).forEach((status) => {
+          expect(Object.values(ProjectStatus)).toContain(
+            status as ProjectStatus,
+          );
         });
       });
 
       it('all enum values should have metadata', () => {
-        Object.values(ProjectStatus).forEach(status => {
+        Object.values(ProjectStatus).forEach((status) => {
           expect(PROJECT_STATUS_METADATA[status]).toBeDefined();
         });
       });
@@ -438,7 +478,7 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       it('all transitions should reference valid statuses', () => {
         Object.entries(VALID_STATUS_TRANSITIONS).forEach(([from, tos]) => {
           expect(Object.values(ProjectStatus)).toContain(from as ProjectStatus);
-          tos.forEach(to => {
+          tos.forEach((to) => {
             expect(Object.values(ProjectStatus)).toContain(to);
           });
         });
@@ -455,36 +495,44 @@ describe('ProjectStatus Enum - Unit Tests', () => {
       });
 
       it('transition matrix should match metadata', () => {
-        Object.entries(PROJECT_STATUS_METADATA).forEach(([status, metadata]) => {
-          expect(metadata.allowedTransitions).toEqual(VALID_STATUS_TRANSITIONS[status as ProjectStatus]);
-        });
+        Object.entries(PROJECT_STATUS_METADATA).forEach(
+          ([status, metadata]) => {
+            expect(metadata.allowedTransitions).toEqual(
+              VALID_STATUS_TRANSITIONS[status as ProjectStatus],
+            );
+          },
+        );
       });
     });
 
     describe('Labels and Colors Consistency', () => {
       it('all statuses should have labels', () => {
-        Object.values(ProjectStatus).forEach(status => {
+        Object.values(ProjectStatus).forEach((status) => {
           expect(PROJECT_STATUS_LABELS[status]).toBeTruthy();
           expect(typeof PROJECT_STATUS_LABELS[status]).toBe('string');
         });
       });
 
       it('all statuses should have colors', () => {
-        Object.values(ProjectStatus).forEach(status => {
+        Object.values(ProjectStatus).forEach((status) => {
           expect(PROJECT_STATUS_COLORS[status]).toBeTruthy();
           expect(PROJECT_STATUS_COLORS[status]).toMatch(/^#[0-9A-F]{6}$/i);
         });
       });
 
       it('labels should match metadata labels', () => {
-        Object.values(ProjectStatus).forEach(status => {
-          expect(PROJECT_STATUS_LABELS[status]).toBe(PROJECT_STATUS_METADATA[status].label);
+        Object.values(ProjectStatus).forEach((status) => {
+          expect(PROJECT_STATUS_LABELS[status]).toBe(
+            PROJECT_STATUS_METADATA[status].label,
+          );
         });
       });
 
       it('colors should match metadata colors', () => {
-        Object.values(ProjectStatus).forEach(status => {
-          expect(PROJECT_STATUS_COLORS[status]).toBe(PROJECT_STATUS_METADATA[status].color);
+        Object.values(ProjectStatus).forEach((status) => {
+          expect(PROJECT_STATUS_COLORS[status]).toBe(
+            PROJECT_STATUS_METADATA[status].color,
+          );
         });
       });
     });

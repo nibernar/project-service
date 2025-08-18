@@ -1,7 +1,10 @@
 // test/unit/project/dto/project-response.dto.security.spec.ts
 
 import { plainToInstance, instanceToPlain } from 'class-transformer';
-import { ProjectResponseDto, StatisticsResponseDto } from '../../../../src/project/dto/project-response.dto';
+import {
+  ProjectResponseDto,
+  StatisticsResponseDto,
+} from '../../../../src/project/dto/project-response.dto';
 import { ProjectStatus } from '../../../../src/common/enums/project-status.enum';
 
 describe('ProjectResponseDto - Tests de Sécurité', () => {
@@ -45,8 +48,10 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
   const createSensitiveProjectData = () => ({
     ...createValidProjectData(),
     name: 'Projet Secret Defense',
-    description: 'Information confidentielle client XYZ avec données personnelles',
-    initialPrompt: 'Créer un système pour gérer les données sensibles de nos clients incluant SSN, cartes de crédit et mots de passe',
+    description:
+      'Information confidentielle client XYZ avec données personnelles',
+    initialPrompt:
+      'Créer un système pour gérer les données sensibles de nos clients incluant SSN, cartes de crédit et mots de passe',
   });
 
   // ========================================================================
@@ -142,7 +147,8 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
           ...createValidProjectData(),
           name: 'Projet John Doe',
           description: 'Email: john.doe@company.com, Phone: +33-123-456-789',
-          initialPrompt: 'Create system for user SSN 123-45-6789 and credit card 4111-1111-1111-1111',
+          initialPrompt:
+            'Create system for user SSN 123-45-6789 and credit card 4111-1111-1111-1111',
         };
 
         const dto = plainToInstance(ProjectResponseDto, piiData);
@@ -198,7 +204,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
       it('devrait avoir des métadonnées consistantes entre appels', () => {
         const data = createValidProjectData();
         const dto = plainToInstance(ProjectResponseDto, data);
-        
+
         const metadata1 = dto.getMetadata();
         const metadata2 = dto.getMetadata();
 
@@ -207,7 +213,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
     });
 
     describe('toString() - Gestion sécurisée des données exposées', () => {
-      it('devrait limiter l\'exposition des données sensibles', () => {
+      it("devrait limiter l'exposition des données sensibles", () => {
         const sensitiveData = createSensitiveProjectData();
         const dto = plainToInstance(ProjectResponseDto, sensitiveData);
         const result = dto.toString();
@@ -239,7 +245,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
 
   describe('Transformations sécurisées', () => {
     describe('Filtrage des tableaux de fichiers', () => {
-      it('devrait filtrer les tentatives d\'injection dans les tableaux', () => {
+      it("devrait filtrer les tentatives d'injection dans les tableaux", () => {
         const maliciousData = {
           ...createValidProjectData(),
           uploadedFileIds: [
@@ -249,7 +255,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
             'data:text/html,<h1>Hack</h1>',
             null,
             undefined,
-            'another-valid-uuid'
+            'another-valid-uuid',
           ],
           generatedFileIds: [
             'valid-uuid',
@@ -257,18 +263,27 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
             ['nested', 'array'],
             'vbscript:msgbox("attack")',
             42,
-            'final-valid-uuid'
+            'final-valid-uuid',
           ],
         };
 
         const dto = plainToInstance(ProjectResponseDto, maliciousData);
-        
+
         // Vérifier que seules les chaînes valides sont conservées
-        expect(dto.uploadedFileIds).toEqual(['valid-uuid', 'another-valid-uuid']);
-        expect(dto.generatedFileIds).toEqual(['valid-uuid', 'final-valid-uuid']);
-        
+        expect(dto.uploadedFileIds).toEqual([
+          'valid-uuid',
+          'another-valid-uuid',
+        ]);
+        expect(dto.generatedFileIds).toEqual([
+          'valid-uuid',
+          'final-valid-uuid',
+        ]);
+
         // Vérifier qu'aucun contenu malveillant n'est présent
-        const allFileIds = [...dto.uploadedFileIds, ...dto.generatedFileIds].join('');
+        const allFileIds = [
+          ...dto.uploadedFileIds,
+          ...dto.generatedFileIds,
+        ].join('');
         expect(allFileIds).not.toContain('<script>');
         expect(allFileIds).not.toContain('javascript:');
         expect(allFileIds).not.toContain('data:');
@@ -278,31 +293,41 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
       it('devrait gérer les tentatives de pollution de prototype', () => {
         const maliciousData = {
           ...createValidProjectData(),
-          uploadedFileIds: ['__proto__', 'constructor', 'prototype', 'valid-id'],
-          generatedFileIds: ['toString', 'valueOf', '__defineGetter__', 'another-valid-id'],
+          uploadedFileIds: [
+            '__proto__',
+            'constructor',
+            'prototype',
+            'valid-id',
+          ],
+          generatedFileIds: [
+            'toString',
+            'valueOf',
+            '__defineGetter__',
+            'another-valid-id',
+          ],
         };
 
         const dto = plainToInstance(ProjectResponseDto, maliciousData);
-        
+
         // Les chaînes sont conservées mais ne peuvent pas polluer le prototype
         expect(dto.uploadedFileIds).toContain('valid-id');
         expect(dto.generatedFileIds).toContain('another-valid-id');
-        
+
         // Vérifier que l'objet fonctionne normalement
         expect(typeof dto.getTotalFilesCount).toBe('function');
         expect(dto.getTotalFilesCount()).toBeGreaterThan(0);
       });
 
-      it('devrait empêcher l\'injection de code via les noms de propriétés', () => {
+      it("devrait empêcher l'injection de code via les noms de propriétés", () => {
         const maliciousData = {
           ...createValidProjectData(),
-          'eval': 'malicious-code',
-          'Function': 'constructor-injection',
+          eval: 'malicious-code',
+          Function: 'constructor-injection',
           '__proto__.polluted': 'prototype-pollution',
         };
 
         const dto = plainToInstance(ProjectResponseDto, maliciousData);
-        
+
         // Vérifier que les propriétés malveillantes ne sont pas présentes
         expect((dto as any).eval).toBeUndefined();
         expect((dto as any).Function).toBeUndefined();
@@ -337,7 +362,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         };
 
         const dto = plainToInstance(StatisticsResponseDto, maliciousStatsData);
-        
+
         // Vérifier que seuls les champs attendus sont présents
         expect(dto.costs).toEqual({
           claudeApi: 0.5,
@@ -345,19 +370,19 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
           compute: 0.05,
           total: 0.65,
         });
-        
+
         expect(dto.performance).toEqual({
           generationTime: 1000,
           processingTime: 500,
           totalTime: 1500,
         });
-        
+
         expect(dto.usage).toEqual({
           documentsGenerated: 5,
           filesProcessed: 3,
           tokensUsed: 1000,
         });
-        
+
         // Vérifier qu'aucun champ malveillant n'est présent
         expect(dto.costs).not.toHaveProperty('maliciousField');
         expect(dto.costs).not.toHaveProperty('__proto__');
@@ -365,7 +390,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         expect(dto.usage).not.toHaveProperty('eval("malicious")');
       });
 
-      it('devrait empêcher l\'injection via les valeurs de coûts', () => {
+      it("devrait empêcher l'injection via les valeurs de coûts", () => {
         const maliciousData = {
           costs: {
             claudeApi: 'javascript:alert(1)',
@@ -379,7 +404,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         };
 
         const dto = plainToInstance(StatisticsResponseDto, maliciousData);
-        
+
         // Les valeurs non-numériques devraient être converties ou rejetées
         expect(typeof dto.costs.claudeApi).toBe('number');
         expect(typeof dto.costs.storage).toBe('number');
@@ -406,7 +431,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         expect(json).not.toHaveProperty('internalApiKey');
         expect(json).not.toHaveProperty('privateNotes');
         expect(json).not.toHaveProperty('debugInfo');
-        
+
         // Vérifier que les champs autorisés sont présents
         expect(json).toHaveProperty('id');
         expect(json).toHaveProperty('name');
@@ -431,7 +456,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         expect(json1).not.toHaveProperty('secretToken');
         expect(json2).not.toHaveProperty('hiddenField');
         expect(json2).not.toHaveProperty('secretToken');
-        
+
         // Vérifier que les méthodes de sécurité fonctionnent toujours
         expect(dto2.toLogSafeString()).not.toContain('Secret Defense');
         expect(dto2.getMetadata()).not.toHaveProperty('name');
@@ -444,8 +469,8 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
   // ========================================================================
 
   describe('Résistance aux attaques', () => {
-    describe('Protection contre l\'injection de code', () => {
-      it('devrait résister aux tentatives d\'injection JavaScript', () => {
+    describe("Protection contre l'injection de code", () => {
+      it("devrait résister aux tentatives d'injection JavaScript", () => {
         const jsInjectionData = {
           ...createValidProjectData(),
           name: 'alert(1); // Injection attempt',
@@ -454,7 +479,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, jsInjectionData);
-        
+
         // Les données sont stockées mais les méthodes sécurisées ne les exposent pas
         expect(dto.name).toBe('alert(1); // Injection attempt');
         expect(dto.toLogSafeString()).not.toContain('alert(1)');
@@ -462,7 +487,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         expect(dto.getMetadata()).not.toHaveProperty('name');
       });
 
-      it('devrait résister aux tentatives d\'injection SQL (bien que non applicable)', () => {
+      it("devrait résister aux tentatives d'injection SQL (bien que non applicable)", () => {
         const sqlInjectionData = {
           ...createValidProjectData(),
           name: "'; DROP TABLE projects; --",
@@ -471,14 +496,14 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, sqlInjectionData);
-        
+
         // Les données sont préservées mais pas exposées dans les logs
         expect(dto.toLogSafeString()).not.toContain('DROP TABLE');
         expect(dto.toLogSafeString()).not.toContain('UNION SELECT');
         expect(dto.toLogSafeString()).not.toContain("1'='1");
       });
 
-      it('devrait résister aux tentatives d\'injection de commandes', () => {
+      it("devrait résister aux tentatives d'injection de commandes", () => {
         const commandInjectionData = {
           ...createValidProjectData(),
           name: 'test; rm -rf /',
@@ -487,14 +512,14 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, commandInjectionData);
-        
+
         expect(dto.toLogSafeString()).not.toContain('rm -rf');
         expect(dto.toLogSafeString()).not.toContain('cat /etc/passwd');
         expect(dto.toLogSafeString()).not.toContain('curl malicious');
       });
     });
 
-    describe('Protection contre l\'injection HTML/XSS', () => {
+    describe("Protection contre l'injection HTML/XSS", () => {
       it('devrait résister aux attaques XSS basiques', () => {
         const xssData = {
           ...createValidProjectData(),
@@ -504,7 +529,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, xssData);
-        
+
         expect(dto.toLogSafeString()).not.toContain('<img');
         expect(dto.toLogSafeString()).not.toContain('onerror');
         expect(dto.toLogSafeString()).not.toContain('<svg');
@@ -517,13 +542,14 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         const advancedXssData = {
           ...createValidProjectData(),
           name: 'javascript:/*-/*`/*\\`/*\'/*"/**/(/* */onerror=alert() )//',
-          description: '</script><script>alert(String.fromCharCode(88,83,83))</script>',
+          description:
+            '</script><script>alert(String.fromCharCode(88,83,83))</script>',
           initialPrompt: '<img src="/" =_=" title="onerror=\'alert(1)\'">',
         };
 
         const dto = plainToInstance(ProjectResponseDto, advancedXssData);
         const safeString = dto.toLogSafeString();
-        
+
         expect(safeString).not.toContain('javascript:');
         expect(safeString).not.toContain('onerror');
         expect(safeString).not.toContain('</script>');
@@ -543,12 +569,12 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, longStringData);
-        
+
         // Vérifier que les méthodes sécurisées ne plantent pas
         expect(() => dto.toLogSafeString()).not.toThrow();
         expect(() => dto.getMetadata()).not.toThrow();
         expect(() => dto.toString()).not.toThrow();
-        
+
         // Vérifier que les méthodes de calcul fonctionnent toujours
         expect(() => dto.getComplexityEstimate()).not.toThrow();
         expect(() => dto.getTotalFilesCount()).not.toThrow();
@@ -558,16 +584,18 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         const manyPropsData = {
           ...createValidProjectData(),
         };
-        
+
         // Ajouter 10000 propriétés
         for (let i = 0; i < 10000; i++) {
           (manyPropsData as any)[`prop${i}`] = `value${i}`;
         }
 
         const dto = plainToInstance(ProjectResponseDto, manyPropsData);
-        
+
         expect(() => dto.toLogSafeString()).not.toThrow();
-        expect(() => instanceToPlain(dto, { excludeExtraneousValues: true })).not.toThrow();
+        expect(() =>
+          instanceToPlain(dto, { excludeExtraneousValues: true }),
+        ).not.toThrow();
       });
     });
 
@@ -580,7 +608,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, protoData);
-        
+
         // Vérifier que la pollution n'a pas eu lieu
         expect((Object.prototype as any).polluted).toBeUndefined();
         expect((Object.prototype as any).isAdmin).toBeUndefined();
@@ -596,7 +624,7 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         };
 
         const dto = plainToInstance(ProjectResponseDto, constructorData);
-        
+
         expect((ProjectResponseDto.prototype as any).polluted).toBeUndefined();
         expect((ProjectResponseDto.prototype as any).hack).toBeUndefined();
       });
@@ -615,11 +643,11 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
 
         // Tentative de modification directe
         (dto as any).uploadedFileIds = ['malicious-id', '<script>', null];
-        
+
         // Les méthodes utilisant les transformations devraient toujours fonctionner
         expect(dto.hasUploadedFiles()).toBe(true);
         expect(dto.getTotalFilesCount()).toBeGreaterThan(0);
-        
+
         // La sérialisation devrait appliquer les transformations
         const json = instanceToPlain(dto, { excludeExtraneousValues: true });
         expect(Array.isArray(json.uploadedFileIds)).toBe(true);
@@ -627,50 +655,50 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
 
       it('devrait maintenir la sécurité après transformation cyclique', () => {
         const sensitiveData = createSensitiveProjectData();
-        
+
         // Cycle complet avec transformations
         const dto1 = plainToInstance(ProjectResponseDto, sensitiveData);
         const json1 = instanceToPlain(dto1, { excludeExtraneousValues: true });
         const dto2 = plainToInstance(ProjectResponseDto, json1);
         const json2 = instanceToPlain(dto2, { excludeExtraneousValues: true });
         const dto3 = plainToInstance(ProjectResponseDto, json2);
-        
+
         // La sécurité doit être maintenue à chaque étape
         expect(dto1.toLogSafeString()).not.toContain('Secret Defense');
         expect(dto2.toLogSafeString()).not.toContain('Secret Defense');
         expect(dto3.toLogSafeString()).not.toContain('Secret Defense');
-        
+
         expect(json1).not.toHaveProperty('ownerId');
         expect(json2).not.toHaveProperty('ownerId');
       });
     });
 
-    describe('Validation de l\'isolation des données', () => {
+    describe("Validation de l'isolation des données", () => {
       it('devrait isoler les données entre instances', () => {
         const publicData = createValidProjectData();
         const sensitiveData = createSensitiveProjectData();
-        
+
         const publicDto = plainToInstance(ProjectResponseDto, publicData);
         const sensitiveDto = plainToInstance(ProjectResponseDto, sensitiveData);
-        
+
         // Vérifier que les données ne fuient pas entre instances
         expect(publicDto.name).toBe('Test Project');
         expect(sensitiveDto.name).toBe('Projet Secret Defense');
-        
+
         expect(publicDto.toLogSafeString()).not.toContain('Secret Defense');
         expect(sensitiveDto.toLogSafeString()).not.toContain('Test Project');
       });
 
-      it('devrait maintenir l\'isolation lors de modifications', () => {
+      it("devrait maintenir l'isolation lors de modifications", () => {
         const data1 = createValidProjectData();
         const data2 = createSensitiveProjectData();
-        
+
         const dto1 = plainToInstance(ProjectResponseDto, data1);
         const dto2 = plainToInstance(ProjectResponseDto, data2);
-        
+
         // Modifier une instance ne devrait pas affecter l'autre
         (dto1 as any).name = 'Modified Project';
-        
+
         expect(dto1.name).toBe('Test Project'); // Immutable
         expect(dto2.name).toBe('Projet Secret Defense'); // Non affecté
       });
@@ -680,17 +708,17 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
       it('devrait produire des logs cohérents et sécurisés', () => {
         const data = createSensitiveProjectData();
         const dto = plainToInstance(ProjectResponseDto, data);
-        
+
         // Appeler plusieurs fois pour vérifier la cohérence
         const log1 = dto.toLogSafeString();
         const log2 = dto.toLogSafeString();
         const log3 = dto.toLogSafeString();
-        
+
         expect(log1).toBe(log2);
         expect(log2).toBe(log3);
-        
+
         // Vérifier que tous sont sécurisés
-        [log1, log2, log3].forEach(log => {
+        [log1, log2, log3].forEach((log) => {
           expect(log).not.toContain('Secret Defense');
           expect(log).not.toContain('confidentielle');
           expect(log).toContain('id=550e8400-e29b-41d4-a716-446655440000');
@@ -701,9 +729,11 @@ describe('ProjectResponseDto - Tests de Sécurité', () => {
         const data = createValidProjectData();
         const dto = plainToInstance(ProjectResponseDto, data);
         const log = dto.toLogSafeString();
-        
+
         // Vérifier le format attendu
-        expect(log).toMatch(/^Project\[id=[a-f0-9-]+, status=\w+, age=\d+d, files=\d+, stats=(true|false), complexity=\w+\]$/);
+        expect(log).toMatch(
+          /^Project\[id=[a-f0-9-]+, status=\w+, age=\d+d, files=\d+, stats=(true|false), complexity=\w+\]$/,
+        );
       });
     });
   });

@@ -5,13 +5,16 @@ import { ExecutionContext, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { createMock } from '@golevelup/ts-jest';
 
-import { ProjectOwnerGuard, ProjectOwnerCheck } from '../../../../src/common/guards/project-owner.guard';
+import {
+  ProjectOwnerGuard,
+  ProjectOwnerCheck,
+} from '../../../../src/common/guards/project-owner.guard';
 import { DatabaseService } from '../../../../src/database/database.service';
 import { CacheService } from '../../../../src/cache/cache.service';
-import { 
+import {
   ProjectNotFoundException,
   UnauthorizedAccessException,
-  InvalidOperationException
+  InvalidOperationException,
 } from '../../../../src/common/exceptions';
 import { User } from '../../../../src/common/interfaces/user.interface';
 import { ProjectStatus } from '../../../../src/common/enums/project-status.enum';
@@ -77,7 +80,10 @@ describe('ProjectOwnerGuard - Main Tests', () => {
   // UUIDs pour les tests d'erreur
   const nonExistentProjectId = '123e4567-e89b-42d3-a456-426614174999';
 
-  const createMockExecutionContext = (params: any = {}, user: any = mockUser) => {
+  const createMockExecutionContext = (
+    params: any = {},
+    user: any = mockUser,
+  ) => {
     return createMock<ExecutionContext>({
       getType: () => 'http',
       switchToHttp: () => ({
@@ -155,10 +161,13 @@ describe('ProjectOwnerGuard - Main Tests', () => {
       it('should return true when user is project owner', async () => {
         // Arrange
         const context = createMockExecutionContext();
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry.mockImplementation((callback) => callback());
-        
-        databaseService.project.findFirst = jest.fn().mockResolvedValue(mockProject);
+
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockResolvedValue(mockProject);
         cacheService.get.mockResolvedValue(null);
 
         // Act
@@ -185,17 +194,20 @@ describe('ProjectOwnerGuard - Main Tests', () => {
             projectStatus: ProjectStatus.ACTIVE,
             timestamp: expect.any(Number),
           }),
-          300
+          300,
         );
       });
 
       it('should audit successful ownership verification', async () => {
         // Arrange
         const context = createMockExecutionContext();
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry.mockImplementation((callback) => callback());
-        
-        databaseService.project.findFirst = jest.fn().mockResolvedValue(mockProject);
+
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockResolvedValue(mockProject);
         cacheService.get.mockResolvedValue(null);
 
         // Act
@@ -203,7 +215,9 @@ describe('ProjectOwnerGuard - Main Tests', () => {
 
         // Assert
         expect(mockLogger.log).toHaveBeenCalledWith(
-          expect.stringContaining(`✅ Ownership verified for project ${mockProject.id} by user ${mockUser.email}`),
+          expect.stringContaining(
+            `✅ Ownership verified for project ${mockProject.id} by user ${mockUser.email}`,
+          ),
           expect.objectContaining({
             event: 'ownership_check',
             success: true,
@@ -213,7 +227,7 @@ describe('ProjectOwnerGuard - Main Tests', () => {
             cacheHit: false,
             checkDuration: expect.any(Number),
             projectStatus: ProjectStatus.ACTIVE,
-          })
+          }),
         );
       });
     });
@@ -235,7 +249,9 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         // Assert
         expect(result).toBe(true);
         expect(databaseService.project.findFirst).not.toHaveBeenCalled();
-        expect(cacheService.get).toHaveBeenCalledWith(`project_owner:${mockProject.id}:${mockUser.id}`);
+        expect(cacheService.get).toHaveBeenCalledWith(
+          `project_owner:${mockProject.id}:${mockUser.id}`,
+        );
       });
 
       it('should audit cache hit correctly', async () => {
@@ -257,7 +273,7 @@ describe('ProjectOwnerGuard - Main Tests', () => {
           expect.objectContaining({
             cacheHit: true,
             checkDuration: expect.any(Number),
-          })
+          }),
         );
       });
     });
@@ -265,13 +281,18 @@ describe('ProjectOwnerGuard - Main Tests', () => {
     describe('A3. Projets archivés avec option', () => {
       it('should allow access to archived project when allowArchived is true', async () => {
         // Arrange
-        const context = createMockExecutionContext({ id: mockArchivedProject.id });
+        const context = createMockExecutionContext({
+          id: mockArchivedProject.id,
+        });
         reflector.get.mockReturnValue({ allowArchived: true });
-        
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry.mockImplementation((callback) => callback());
-        
-        databaseService.project.findFirst = jest.fn().mockResolvedValue(mockArchivedProject);
+
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockResolvedValue(mockArchivedProject);
         cacheService.get.mockResolvedValue(null);
 
         // Act
@@ -295,36 +316,48 @@ describe('ProjectOwnerGuard - Main Tests', () => {
     });
   });
 
-  describe('❌ Cas d\'Erreur Standard', () => {
+  describe("❌ Cas d'Erreur Standard", () => {
     describe('B1. Projet non trouvé', () => {
       it('should throw ProjectNotFoundException when project does not exist', async () => {
         // Arrange
-        const context = createMockExecutionContext({ id: nonExistentProjectId });
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+        const context = createMockExecutionContext({
+          id: nonExistentProjectId,
+        });
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry
           .mockImplementationOnce((callback) => callback()) // Premier appel - pas trouvé pour cet utilisateur
           .mockImplementationOnce((callback) => callback()); // Deuxième appel - n'existe pas du tout
 
-        databaseService.project.findFirst = jest.fn()
+        databaseService.project.findFirst = jest
+          .fn()
           .mockResolvedValueOnce(null) // Pas de projet pour cet utilisateur
           .mockResolvedValueOnce(null); // Projet n'existe pas du tout
 
         cacheService.get.mockResolvedValue(null);
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(ProjectNotFoundException);
-        await expect(guard.canActivate(context)).rejects.toThrow(`Project with ID "${nonExistentProjectId}" not found`);
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          ProjectNotFoundException,
+        );
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          `Project with ID "${nonExistentProjectId}" not found`,
+        );
       });
 
       it('should audit failed attempt for non-existent project', async () => {
         // Arrange
-        const context = createMockExecutionContext({ id: nonExistentProjectId });
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+        const context = createMockExecutionContext({
+          id: nonExistentProjectId,
+        });
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry
           .mockImplementationOnce((callback) => callback())
           .mockImplementationOnce((callback) => callback());
 
-        databaseService.project.findFirst = jest.fn()
+        databaseService.project.findFirst = jest
+          .fn()
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce(null);
         cacheService.get.mockResolvedValue(null);
@@ -338,13 +371,15 @@ describe('ProjectOwnerGuard - Main Tests', () => {
 
         // Assert
         expect(mockLogger.warn).toHaveBeenCalledWith(
-          expect.stringContaining(`❌ Ownership check failed for project ${nonExistentProjectId}`),
+          expect.stringContaining(
+            `❌ Ownership check failed for project ${nonExistentProjectId}`,
+          ),
           expect.objectContaining({
             event: 'ownership_check',
             success: false,
             projectId: nonExistentProjectId,
             error: expect.stringContaining('not found'),
-          })
+          }),
         );
       });
     });
@@ -354,24 +389,36 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         // Arrange - Utiliser un ID de projet différent pour éviter les conflits
         const otherUserProjectId = '999e4567-e89b-42d3-a456-426614174003';
         const context = createMockExecutionContext({ id: otherUserProjectId });
-        
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
-        mockExecuteWithRetry.mockImplementation(async (callback) => await callback());
+
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
+        mockExecuteWithRetry.mockImplementation(
+          async (callback) => await callback(),
+        );
 
         // CORRECTION : Mock basé sur la logique exacte du guard
-        databaseService.project.findFirst = jest.fn().mockImplementation((query) => {
-          // Premier appel : recherche avec ownerId et status ACTIVE
-          if (query.where.ownerId === mockUser.id && query.where.status === ProjectStatus.ACTIVE) {
-            return Promise.resolve(null); // Pas trouvé pour cet utilisateur
-          }
-          // Deuxième appel : vérification d'existence avec status != DELETED
-          if (!query.where.ownerId && query.where.status && query.where.status.not === ProjectStatus.DELETED) {
-            return Promise.resolve({ 
-              id: otherUserProjectId
-            }); // Le projet existe mais appartient à quelqu'un d'autre
-          }
-          return Promise.resolve(null);
-        });
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockImplementation((query) => {
+            // Premier appel : recherche avec ownerId et status ACTIVE
+            if (
+              query.where.ownerId === mockUser.id &&
+              query.where.status === ProjectStatus.ACTIVE
+            ) {
+              return Promise.resolve(null); // Pas trouvé pour cet utilisateur
+            }
+            // Deuxième appel : vérification d'existence avec status != DELETED
+            if (
+              !query.where.ownerId &&
+              query.where.status &&
+              query.where.status.not === ProjectStatus.DELETED
+            ) {
+              return Promise.resolve({
+                id: otherUserProjectId,
+              }); // Le projet existe mais appartient à quelqu'un d'autre
+            }
+            return Promise.resolve(null);
+          });
 
         cacheService.get.mockResolvedValue(null);
 
@@ -385,11 +432,13 @@ describe('ProjectOwnerGuard - Main Tests', () => {
 
         // Vérifications
         expect(thrownError).toBeInstanceOf(UnauthorizedAccessException);
-        expect(thrownError?.message).toBe('You do not have permission to access this project');
-        
+        expect(thrownError?.message).toBe(
+          'You do not have permission to access this project',
+        );
+
         // Vérifier que les deux appels ont bien été faits (et pas plus)
         expect(databaseService.project.findFirst).toHaveBeenCalledTimes(2);
-        
+
         // Vérifier les paramètres du premier appel (avec ownerId)
         expect(databaseService.project.findFirst).toHaveBeenNthCalledWith(1, {
           where: {
@@ -403,12 +452,12 @@ describe('ProjectOwnerGuard - Main Tests', () => {
             status: true,
           },
         });
-        
+
         // Vérifier les paramètres du deuxième appel (vérification d'existence)
         expect(databaseService.project.findFirst).toHaveBeenNthCalledWith(2, {
-          where: { 
-            id: otherUserProjectId, 
-            status: { not: ProjectStatus.DELETED } 
+          where: {
+            id: otherUserProjectId,
+            status: { not: ProjectStatus.DELETED },
           },
           select: { id: true },
         });
@@ -418,24 +467,36 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         // Arrange
         const otherUserProjectId = '999e4567-e89b-42d3-a456-426614174004';
         const context = createMockExecutionContext({ id: otherUserProjectId });
-        
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
-        mockExecuteWithRetry.mockImplementation(async (callback) => await callback());
+
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
+        mockExecuteWithRetry.mockImplementation(
+          async (callback) => await callback(),
+        );
 
         // CORRECTION : Même logique que le test précédent
-        databaseService.project.findFirst = jest.fn().mockImplementation((query) => {
-          // Premier appel : avec ownerId - ne trouve rien
-          if (query.where.ownerId === mockUser.id && query.where.status === ProjectStatus.ACTIVE) {
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockImplementation((query) => {
+            // Premier appel : avec ownerId - ne trouve rien
+            if (
+              query.where.ownerId === mockUser.id &&
+              query.where.status === ProjectStatus.ACTIVE
+            ) {
+              return Promise.resolve(null);
+            }
+            // Deuxième appel : vérification d'existence - trouve le projet
+            if (
+              !query.where.ownerId &&
+              query.where.status &&
+              query.where.status.not === ProjectStatus.DELETED
+            ) {
+              return Promise.resolve({
+                id: otherUserProjectId,
+              });
+            }
             return Promise.resolve(null);
-          }
-          // Deuxième appel : vérification d'existence - trouve le projet
-          if (!query.where.ownerId && query.where.status && query.where.status.not === ProjectStatus.DELETED) {
-            return Promise.resolve({ 
-              id: otherUserProjectId
-            });
-          }
-          return Promise.resolve(null);
-        });
+          });
 
         cacheService.get.mockResolvedValue(null);
         cacheService.set.mockResolvedValue();
@@ -454,7 +515,7 @@ describe('ProjectOwnerGuard - Main Tests', () => {
             isOwner: false,
             timestamp: expect.any(Number),
           }),
-          60 // TTL réduit pour les échecs
+          60, // TTL réduit pour les échecs
         );
       });
     });
@@ -469,23 +530,34 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         '123',
       ];
 
-      test.each(invalidIds)('should throw InvalidOperationException for invalid UUID: %s', async (invalidId) => {
-        // Arrange
-        const context = createMockExecutionContext({ id: invalidId });
+      test.each(invalidIds)(
+        'should throw InvalidOperationException for invalid UUID: %s',
+        async (invalidId) => {
+          // Arrange
+          const context = createMockExecutionContext({ id: invalidId });
 
-        // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(InvalidOperationException);
-        await expect(guard.canActivate(context)).rejects.toThrow('Project ID must be a valid UUID');
-        expect(databaseService.project.findFirst).not.toHaveBeenCalled();
-      });
+          // Act & Assert
+          await expect(guard.canActivate(context)).rejects.toThrow(
+            InvalidOperationException,
+          );
+          await expect(guard.canActivate(context)).rejects.toThrow(
+            'Project ID must be a valid UUID',
+          );
+          expect(databaseService.project.findFirst).not.toHaveBeenCalled();
+        },
+      );
 
       it('should throw InvalidOperationException for empty UUID', async () => {
         // Arrange
         const context = createMockExecutionContext({ id: '' });
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(InvalidOperationException);
-        await expect(guard.canActivate(context)).rejects.toThrow('Project ID is required');
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          InvalidOperationException,
+        );
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          'Project ID is required',
+        );
         expect(databaseService.project.findFirst).not.toHaveBeenCalled();
       });
     });
@@ -496,8 +568,12 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         const context = createMockExecutionContextMissingId();
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(InvalidOperationException);
-        await expect(guard.canActivate(context)).rejects.toThrow('Project ID is required');
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          InvalidOperationException,
+        );
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          'Project ID is required',
+        );
         expect(databaseService.project.findFirst).not.toHaveBeenCalled();
       });
 
@@ -506,8 +582,12 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         const context = createMockExecutionContext({ id: 123 });
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(InvalidOperationException);
-        await expect(guard.canActivate(context)).rejects.toThrow('Project ID must be a string');
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          InvalidOperationException,
+        );
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          'Project ID must be a string',
+        );
       });
     });
 
@@ -526,8 +606,12 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         });
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(InvalidOperationException);
-        await expect(guard.canActivate(context)).rejects.toThrow('User authentication required');
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          InvalidOperationException,
+        );
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          'User authentication required',
+        );
         expect(databaseService.project.findFirst).not.toHaveBeenCalled();
       });
 
@@ -537,8 +621,12 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         const context = createMockExecutionContext({}, invalidUser);
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(InvalidOperationException);
-        await expect(guard.canActivate(context)).rejects.toThrow('Invalid user data');
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          InvalidOperationException,
+        );
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          'Invalid user data',
+        );
       });
     });
   });
@@ -549,11 +637,14 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         // Arrange
         const context = createMockExecutionContext();
         reflector.get.mockReturnValue({ skipCache: true });
-        
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry.mockImplementation((callback) => callback());
-        
-        databaseService.project.findFirst = jest.fn().mockResolvedValue(mockProject);
+
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockResolvedValue(mockProject);
 
         // Act
         const result = await guard.canActivate(context);
@@ -568,21 +659,27 @@ describe('ProjectOwnerGuard - Main Tests', () => {
     describe('C2. Option allowArchived par défaut', () => {
       it('should not allow access to archived projects by default', async () => {
         // Arrange
-        const context = createMockExecutionContext({ id: mockArchivedProject.id });
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+        const context = createMockExecutionContext({
+          id: mockArchivedProject.id,
+        });
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry
           .mockImplementationOnce((callback) => callback())
           .mockImplementationOnce((callback) => callback());
 
-        databaseService.project.findFirst = jest.fn()
+        databaseService.project.findFirst = jest
+          .fn()
           .mockResolvedValueOnce(null) // Pas trouvé avec status ACTIVE
           .mockResolvedValueOnce({ id: mockArchivedProject.id }); // Mais existe
 
         cacheService.get.mockResolvedValue(null);
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedAccessException);
-        
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          UnauthorizedAccessException,
+        );
+
         // Vérifier que la requête cherche seulement les projets ACTIVE
         expect(databaseService.project.findFirst).toHaveBeenCalledWith({
           where: {
@@ -602,38 +699,49 @@ describe('ProjectOwnerGuard - Main Tests', () => {
     describe('C3. Projets supprimés (soft delete)', () => {
       it('should never allow access to deleted projects even for owner', async () => {
         // Arrange
-        const context = createMockExecutionContext({ id: mockDeletedProject.id });
+        const context = createMockExecutionContext({
+          id: mockDeletedProject.id,
+        });
         reflector.get.mockReturnValue({ allowArchived: true }); // Même avec cette option
-        
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry
           .mockImplementationOnce((callback) => callback())
           .mockImplementationOnce((callback) => callback());
 
-        databaseService.project.findFirst = jest.fn()
+        databaseService.project.findFirst = jest
+          .fn()
           .mockResolvedValueOnce(null) // Pas trouvé (exclu par status != DELETED)
           .mockResolvedValueOnce(null); // N'existe pas (même requête)
 
         cacheService.get.mockResolvedValue(null);
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow(ProjectNotFoundException);
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          ProjectNotFoundException,
+        );
       });
     });
   });
 
-  describe('🏗️ Tests d\'Infrastructure', () => {
+  describe("🏗️ Tests d'Infrastructure", () => {
     describe('E1. Panne de base de données', () => {
       it('should throw InternalServerErrorException on database error', async () => {
         // Arrange
         const context = createMockExecutionContext();
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
-        mockExecuteWithRetry.mockRejectedValue(new Error('Database connection failed'));
-        
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
+        mockExecuteWithRetry.mockRejectedValue(
+          new Error('Database connection failed'),
+        );
+
         cacheService.get.mockResolvedValue(null);
 
         // Act & Assert
-        await expect(guard.canActivate(context)).rejects.toThrow('Database error occurred while checking project ownership');
+        await expect(guard.canActivate(context)).rejects.toThrow(
+          'Database error occurred while checking project ownership',
+        );
       });
     });
 
@@ -641,12 +749,17 @@ describe('ProjectOwnerGuard - Main Tests', () => {
       it('should handle cache errors gracefully and fallback to database', async () => {
         // Arrange
         const context = createMockExecutionContext();
-        cacheService.get.mockRejectedValue(new Error('Redis connection failed'));
-        
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+        cacheService.get.mockRejectedValue(
+          new Error('Redis connection failed'),
+        );
+
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry.mockImplementation((callback) => callback());
-        
-        databaseService.project.findFirst = jest.fn().mockResolvedValue(mockProject);
+
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockResolvedValue(mockProject);
 
         // Act
         const result = await guard.canActivate(context);
@@ -662,11 +775,14 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         // Arrange
         const context = createMockExecutionContext();
         cacheService.get.mockResolvedValue({ invalid: 'data' }); // Données corrompues
-        
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry.mockImplementation((callback) => callback());
-        
-        databaseService.project.findFirst = jest.fn().mockResolvedValue(mockProject);
+
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockResolvedValue(mockProject);
 
         // Act
         const result = await guard.canActivate(context);
@@ -686,11 +802,14 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         };
 
         cacheService.get.mockResolvedValue(expiredCacheEntry);
-        
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry.mockImplementation((callback) => callback());
-        
-        databaseService.project.findFirst = jest.fn().mockResolvedValue(mockProject);
+
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockResolvedValue(mockProject);
 
         // Act
         const result = await guard.canActivate(context);
@@ -713,9 +832,10 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         for (const projectId of similarIds) {
           // Arrange
           const context = createMockExecutionContext({ id: projectId });
-          const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+          const mockExecuteWithRetry =
+            databaseService.executeWithRetry as jest.Mock;
           mockExecuteWithRetry.mockImplementation((callback) => callback());
-          
+
           databaseService.project.findFirst = jest.fn().mockResolvedValue({
             id: projectId,
             ownerId: mockUser.id,
@@ -733,7 +853,7 @@ describe('ProjectOwnerGuard - Main Tests', () => {
               where: expect.objectContaining({
                 id: projectId, // ID exact
               }),
-            })
+            }),
           );
 
           jest.clearAllMocks();
@@ -749,7 +869,9 @@ describe('ProjectOwnerGuard - Main Tests', () => {
         });
 
         // Act & Assert
-        await expect(guard.canActivate(wsContext)).rejects.toThrow('ProjectOwnerGuard only supports HTTP context');
+        await expect(guard.canActivate(wsContext)).rejects.toThrow(
+          'ProjectOwnerGuard only supports HTTP context',
+        );
       });
     });
   });
@@ -773,9 +895,12 @@ describe('ProjectOwnerGuard - Main Tests', () => {
 
         // Test sans cache
         cacheService.get.mockResolvedValue(null);
-        const mockExecuteWithRetry = databaseService.executeWithRetry as jest.Mock;
+        const mockExecuteWithRetry =
+          databaseService.executeWithRetry as jest.Mock;
         mockExecuteWithRetry.mockImplementation((callback) => callback());
-        databaseService.project.findFirst = jest.fn().mockResolvedValue(mockProject);
+        databaseService.project.findFirst = jest
+          .fn()
+          .mockResolvedValue(mockProject);
 
         const startTime2 = Date.now();
         await guard.canActivate(context);

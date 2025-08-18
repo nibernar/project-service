@@ -1,6 +1,6 @@
 /**
  * Tests de sécurité pour l'interface User
- * 
+ *
  * @fileoverview Tests des aspects sécuritaires et de la validation robuste
  * @version 1.0.0
  * @since 2025-01-28
@@ -49,114 +49,144 @@ describe('User Interface - Tests de Sécurité', () => {
 
       it('devrait rejeter les objets avec propriétés manquantes', () => {
         // ID manquant
-        expect(isValidUser({
-          email: 'user@example.com',
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            email: 'user@example.com',
+            roles: ['user'],
+          }),
+        ).toBe(false);
 
         // Email manquant
-        expect(isValidUser({
-          id: '123',
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            roles: ['user'],
+          }),
+        ).toBe(false);
 
         // Roles manquant
-        expect(isValidUser({
-          id: '123',
-          email: 'user@example.com',
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            email: 'user@example.com',
+          }),
+        ).toBe(false);
       });
 
       it('devrait rejeter les IDs invalides', () => {
         // ID vide
-        expect(isValidUser({
-          id: '',
-          email: 'user@example.com',
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '',
+            email: 'user@example.com',
+            roles: ['user'],
+          }),
+        ).toBe(false);
 
         // ID null/undefined
-        expect(isValidUser({
-          id: null,
-          email: 'user@example.com',
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: null,
+            email: 'user@example.com',
+            roles: ['user'],
+          }),
+        ).toBe(false);
 
-        expect(isValidUser({
-          id: undefined,
-          email: 'user@example.com',
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: undefined,
+            email: 'user@example.com',
+            roles: ['user'],
+          }),
+        ).toBe(false);
 
         // ID non-string
-        expect(isValidUser({
-          id: 123,
-          email: 'user@example.com',
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: 123,
+            email: 'user@example.com',
+            roles: ['user'],
+          }),
+        ).toBe(false);
       });
 
       it('devrait rejeter les emails invalides', () => {
         // Email sans @
-        expect(isValidUser({
-          id: '123',
-          email: 'invalid-email',
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            email: 'invalid-email',
+            roles: ['user'],
+          }),
+        ).toBe(false);
 
         // Email vide
-        expect(isValidUser({
-          id: '123',
-          email: '',
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            email: '',
+            roles: ['user'],
+          }),
+        ).toBe(false);
 
         // Email null/undefined
-        expect(isValidUser({
-          id: '123',
-          email: null,
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            email: null,
+            roles: ['user'],
+          }),
+        ).toBe(false);
 
         // Email non-string
-        expect(isValidUser({
-          id: '123',
-          email: 123,
-          roles: ['user'],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            email: 123,
+            roles: ['user'],
+          }),
+        ).toBe(false);
       });
 
       it('devrait rejeter les roles invalides', () => {
         // Roles non-array
-        expect(isValidUser({
-          id: '123',
-          email: 'user@example.com',
-          roles: 'user',
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            email: 'user@example.com',
+            roles: 'user',
+          }),
+        ).toBe(false);
 
-        expect(isValidUser({
-          id: '123',
-          email: 'user@example.com',
-          roles: null,
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            email: 'user@example.com',
+            roles: null,
+          }),
+        ).toBe(false);
 
         // Roles avec éléments non-string
-        expect(isValidUser({
-          id: '123',
-          email: 'user@example.com',
-          roles: ['user', 123, null, undefined],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            email: 'user@example.com',
+            roles: ['user', 123, null, undefined],
+          }),
+        ).toBe(false);
 
-        expect(isValidUser({
-          id: '123',
-          email: 'user@example.com',
-          roles: [{}, []],
-        })).toBe(false);
+        expect(
+          isValidUser({
+            id: '123',
+            email: 'user@example.com',
+            roles: [{}, []],
+          }),
+        ).toBe(false);
       });
     });
 
-    describe('Protection contre l\'injection de code', () => {
-      it('devrait traiter les caractères d\'injection dans l\'email', () => {
+    describe("Protection contre l'injection de code", () => {
+      it("devrait traiter les caractères d'injection dans l'email", () => {
         const maliciousUser = {
           id: '123',
           email: 'user@example.com<script>alert("xss")</script>',
@@ -170,7 +200,7 @@ describe('User Interface - Tests de Sécurité', () => {
         // L'injection ne doit pas s'exécuter dans ce contexte
       });
 
-      it('devrait traiter les caractères d\'injection dans l\'ID', () => {
+      it("devrait traiter les caractères d'injection dans l'ID", () => {
         const maliciousUser = {
           id: '123<script>alert("xss")</script>',
           email: 'user@example.com',
@@ -181,7 +211,7 @@ describe('User Interface - Tests de Sécurité', () => {
         expect(typeof maliciousUser.id).toBe('string');
       });
 
-      it('devrait traiter les caractères d\'injection dans les rôles', () => {
+      it("devrait traiter les caractères d'injection dans les rôles", () => {
         const maliciousUser = {
           id: '123',
           email: 'user@example.com',
@@ -261,27 +291,27 @@ describe('User Interface - Tests de Sécurité', () => {
       });
     });
 
-    describe('Protection contre l\'escalade de privilèges', () => {
-      it('ne devrait pas permettre l\'ajout de rôles non autorisés', () => {
+    describe("Protection contre l'escalade de privilèges", () => {
+      it("ne devrait pas permettre l'ajout de rôles non autorisés", () => {
         // Cette protection doit être implémentée au niveau de l'application
         const user = createUser('123', 'user@example.com', [UserRole.USER]);
-        
+
         // Un utilisateur ne devrait pas pouvoir s'auto-attribuer des rôles
         expect(user.roles).toEqual(['user']);
         expect(user.roles).not.toContain('admin');
       });
 
-      it('devrait préserver l\'immutabilité des rôles', () => {
+      it("devrait préserver l'immutabilité des rôles", () => {
         const user = createUser('123', 'user@example.com', [UserRole.USER]);
         const originalRoles = [...user.roles];
 
         // Tentative de modification directe
         user.roles.push('admin');
-        
+
         // Vérifier que la modification a bien eu lieu (TypeScript n'empêche pas)
         expect(user.roles).toContain('admin');
         expect(user.roles).not.toEqual(originalRoles);
-        
+
         // Note: L'immutabilité devrait être gérée au niveau architectural
       });
     });
@@ -293,12 +323,12 @@ describe('User Interface - Tests de Sécurité', () => {
 
   describe('Sécurité des données étendues', () => {
     describe('Protection des informations sensibles', () => {
-      it('devrait gérer les URLs d\'avatar malveillantes', () => {
+      it("devrait gérer les URLs d'avatar malveillantes", () => {
         const userWithMaliciousAvatar = createExtendedUser(
           createUser('123', 'user@example.com'),
           {
             avatar: 'javascript:alert("xss")',
-          }
+          },
         );
 
         expect(userWithMaliciousAvatar.avatar).toBe('javascript:alert("xss")');
@@ -310,7 +340,7 @@ describe('User Interface - Tests de Sécurité', () => {
           createUser('123', 'user@example.com'),
           {
             name: '<script>alert("xss")</script>',
-          }
+          },
         );
 
         expect(userWithMaliciousName.name).toContain('<script>');
@@ -326,7 +356,7 @@ describe('User Interface - Tests de Sécurité', () => {
               language: 'a'.repeat(10000), // Très long string
               timezone: '<script>alert("xss")</script>',
             } as any,
-          }
+          },
         );
 
         const prefs = getUserPreferences(userWithExtremePrefs);
@@ -339,24 +369,24 @@ describe('User Interface - Tests de Sécurité', () => {
     describe('Protection contre les fuites de données', () => {
       it('ne devrait pas exposer de propriétés internes', () => {
         const user = createUser('123', 'user@example.com');
-        
+
         // Vérifier qu'aucune propriété interne n'est exposée
         expect((user as any).__proto__).toBeDefined(); // Normal pour les objets JS
         expect((user as any).constructor).toBeDefined(); // Normal pour les objets JS
-        
+
         // Mais pas de propriétés métier sensibles
         expect((user as any).password).toBeUndefined();
         expect((user as any).token).toBeUndefined();
         expect((user as any).secret).toBeUndefined();
       });
 
-      it('devrait préserver la confidentialité de l\'email dans les logs', () => {
+      it("devrait préserver la confidentialité de l'email dans les logs", () => {
         const user = createUser('123', 'sensitive@example.com');
-        
+
         // En production, l'email ne devrait pas apparaître dans toString
         const userString = JSON.stringify(user);
         expect(userString).toContain('sensitive@example.com');
-        
+
         // Note: L'anonymisation devrait être gérée au niveau des logs
       });
     });
@@ -370,7 +400,7 @@ describe('User Interface - Tests de Sécurité', () => {
     describe('Gestion des erreurs de type', () => {
       it('devrait gérer les paramètres undefined dans hasRole', () => {
         const user = createUser('123', 'user@example.com');
-        
+
         expect(() => hasRole(user, undefined as any)).not.toThrow();
         expect(hasRole(user, undefined as any)).toBe(false);
       });
@@ -399,7 +429,7 @@ describe('User Interface - Tests de Sécurité', () => {
 
         expect(() => isValidUser(circularObj)).not.toThrow();
         expect(isValidUser(circularObj)).toBe(true);
-        
+
         // JSON.stringify devrait échouer avec les références circulaires
         expect(() => JSON.stringify(circularObj)).toThrow();
       });
@@ -408,14 +438,17 @@ describe('User Interface - Tests de Sécurité', () => {
     describe('Gestion de la mémoire', () => {
       it('devrait gérer les très gros objets utilisateur', () => {
         const hugeName = 'A'.repeat(100000); // 100KB de nom
-        const hugeRolesList = Array.from({ length: 10000 }, (_, i) => `role_${i}`);
-        
+        const hugeRolesList = Array.from(
+          { length: 10000 },
+          (_, i) => `role_${i}`,
+        );
+
         const hugeUser = createExtendedUser(
           createUser('123', 'user@example.com'),
           {
             name: hugeName,
             roles: hugeRolesList,
-          } as any
+          } as any,
         );
 
         expect(() => isExtendedUser(hugeUser)).not.toThrow();
@@ -440,7 +473,7 @@ describe('User Interface - Tests de Sécurité', () => {
     describe('Concurrence et thread safety', () => {
       it('devrait gérer les modifications concurrentes des rôles', async () => {
         const user = createUser('123', 'user@example.com', [UserRole.USER]);
-        
+
         // Simulation de modifications concurrentes
         const promises = Array.from({ length: 100 }, async (_, i) => {
           return new Promise<void>((resolve) => {
@@ -452,7 +485,7 @@ describe('User Interface - Tests de Sécurité', () => {
         });
 
         await Promise.all(promises);
-        
+
         expect(user.roles.length).toBeGreaterThan(1);
         expect(user.roles).toContain('user');
       });
@@ -465,7 +498,7 @@ describe('User Interface - Tests de Sécurité', () => {
 
   describe('Conformité sécuritaire', () => {
     describe('Protection des données personnelles', () => {
-      it('ne devrait pas logger d\'informations sensibles', () => {
+      it("ne devrait pas logger d'informations sensibles", () => {
         const user = createExtendedUser(
           createUser('123', 'sensitive@company.com'),
           {
@@ -473,29 +506,26 @@ describe('User Interface - Tests de Sécurité', () => {
             preferences: {
               timezone: 'Europe/Paris',
             },
-          }
+          },
         );
 
         // En production, ces informations ne devraient pas apparaître dans les logs
         const consoleSpy = jest.spyOn(console, 'log');
-        
+
         // Opérations normales qui ne devraient pas logger d'infos sensibles
         isValidUser(user);
         hasRole(user, UserRole.USER);
         getUserPreferences(user);
-        
+
         expect(consoleSpy).not.toHaveBeenCalled();
         consoleSpy.mockRestore();
       });
 
-      it('devrait permettre l\'anonymisation des données', () => {
-        const user = createExtendedUser(
-          createUser('123', 'user@example.com'),
-          {
-            name: 'Real Name',
-            email: 'real.email@company.com',
-          } as any
-        );
+      it("devrait permettre l'anonymisation des données", () => {
+        const user = createExtendedUser(createUser('123', 'user@example.com'), {
+          name: 'Real Name',
+          email: 'real.email@company.com',
+        } as any);
 
         // Création d'une version anonymisée
         const anonymizedUser = {
@@ -511,22 +541,21 @@ describe('User Interface - Tests de Sécurité', () => {
     });
 
     describe('Audit et traçabilité', () => {
-      it('devrait maintenir l\'intégrité des données d\'audit', () => {
-        const user = createExtendedUser(
-          createUser('123', 'user@example.com'),
-          {
-            createdAt: new Date('2024-01-01'),
-            lastLoginAt: new Date('2024-01-15'),
-          }
-        );
+      it("devrait maintenir l'intégrité des données d'audit", () => {
+        const user = createExtendedUser(createUser('123', 'user@example.com'), {
+          createdAt: new Date('2024-01-01'),
+          lastLoginAt: new Date('2024-01-15'),
+        });
 
         // Les timestamps ne devraient pas être modifiables accidentellement
         expect(user.createdAt).toBeInstanceOf(Date);
         expect(user.lastLoginAt).toBeInstanceOf(Date);
-        expect(user.createdAt?.getTime()).toBeLessThan(user.lastLoginAt?.getTime() || 0);
+        expect(user.createdAt?.getTime()).toBeLessThan(
+          user.lastLoginAt?.getTime() || 0,
+        );
       });
 
-      it('devrait préserver l\'historique des modifications', () => {
+      it("devrait préserver l'historique des modifications", () => {
         const originalUser = createUser('123', 'user@example.com');
         const modifiedUser = createExtendedUser(originalUser, {
           name: 'Modified Name',

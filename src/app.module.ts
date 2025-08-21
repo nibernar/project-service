@@ -23,6 +23,9 @@ import { EventsModule } from './events/events.module';
 // Import du ProjectModule (module principal)
 import { ProjectModule } from './project/project.module';
 
+// Import du StatisticsModule (module de statistiques)
+import { StatisticsModule } from './statistics/statistics.module';
+
 @Module({
   imports: [
     // Configuration globale
@@ -42,6 +45,7 @@ import { ProjectModule } from './project/project.module';
 
     // Modules métier
     ProjectModule, // Gestion des projets (CRUD + logique métier)
+    StatisticsModule, // ← AJOUTÉ : Gestion des statistiques de projets
   ],
   controllers: [AppController],
   providers: [AppService],

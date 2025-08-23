@@ -52,6 +52,10 @@
     "test:project.repository": "jest test/unit/project/repositories/project.repository.spec.ts", 
     "test:project.controller": "jest test/unit/project/controllers/project.controller.spec.ts",
 
+    "test:statistics": "jest --config=jest.statistics.config.js",
+    "test:statistics:unit": "jest --config=jest.statistics.config.js --testPathPattern=unit",
+    "test:statistics:integration": "jest --config=jest.statistics.config.js --testPathPattern=integration",
+
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

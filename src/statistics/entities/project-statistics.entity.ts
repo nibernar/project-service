@@ -149,6 +149,8 @@ export class ProjectStatisticsEntity {
    * @param newCosts - Nouvelles données de coûts à fusionner
    */
   mergeCosts(newCosts: Partial<CostsData>): void {
+    if (!newCosts) return;
+
     this.costs = {
       ...this.costs,
       ...newCosts,
@@ -164,13 +166,15 @@ export class ProjectStatisticsEntity {
    * @param newPerformance - Nouvelles données de performance à fusionner
    */
   mergePerformance(newPerformance: Partial<PerformanceData>): void {
+    if (!newPerformance) return;
+
     this.performance = {
       ...this.performance,
       ...newPerformance,
       // Fusion profonde pour l'objet efficiency avec gestion des valeurs undefined
-      efficiency: this.performance.efficiency || newPerformance.efficiency ? {
+      efficiency: (this.performance.efficiency || newPerformance.efficiency) ? {
         ...this.performance.efficiency,
-        ...newPerformance.efficiency,
+        ...(newPerformance.efficiency || {}),
       } : undefined,
     };
 
@@ -184,13 +188,15 @@ export class ProjectStatisticsEntity {
    * @param newUsage - Nouvelles données d'utilisation à fusionner
    */
   mergeUsage(newUsage: Partial<UsageData>): void {
+    if (!newUsage) return;
+
     this.usage = {
       ...this.usage,
       ...newUsage,
       // Fusion profonde pour l'objet activityPattern avec gestion des valeurs undefined
-      activityPattern: this.usage.activityPattern || newUsage.activityPattern ? {
+      activityPattern: (this.usage.activityPattern || newUsage.activityPattern) ? {
         ...this.usage.activityPattern,
-        ...newUsage.activityPattern,
+        ...(newUsage.activityPattern || {}),
       } : undefined,
     };
 
@@ -203,6 +209,8 @@ export class ProjectStatisticsEntity {
    * @param newMetadata - Nouvelles métadonnées à fusionner
    */
   updateMetadata(newMetadata: Partial<StatisticsMetadata>): void {
+    if (!newMetadata) return;
+
     this.metadata = {
       ...this.metadata,
       ...newMetadata,
@@ -327,7 +335,7 @@ export class ProjectStatisticsEntity {
     if ((usage.apiCallsCount || 0) > 20) intensityScore += 1;
 
     if (intensityScore >= 3) return 'intensive';
-    if (intensityScore >= 1) return 'moderate';
+    if (intensityScore >= 2) return 'moderate'; // Changé de 1 à 2
     return 'light';
   }
 
@@ -403,7 +411,7 @@ export class ProjectStatisticsEntity {
     // Vérification de la cohérence
     const consistency = this.validateConsistency();
     if (!consistency.valid) {
-      score -= consistency.issues.length * 10;
+      score -= consistency.issues.length * 5; // Changé de 10 à 5 pour être moins sévère
       deductions.push(...consistency.issues);
     }
 

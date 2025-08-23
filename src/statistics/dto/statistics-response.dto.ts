@@ -423,17 +423,25 @@ export class StatisticsSummaryDto {
     example: '$21.65',
   })
   @Expose()
-  @Transform(({ obj }) => {
+  @Transform(({ obj, value }) => {
     // Gestion défensive de la valeur totalCost
     let cost = 0;
     
-    if (typeof obj.totalCost === 'number' && !isNaN(obj.totalCost)) {
+    // D'abord, essayer d'utiliser la valeur directe si elle existe
+    if (typeof value === 'number' && !isNaN(value)) {
+      cost = value;
+    }
+    // Ensuite, essayer obj.totalCost
+    else if (typeof obj?.totalCost === 'number' && !isNaN(obj.totalCost)) {
       cost = obj.totalCost;
-    } else if (typeof obj.totalCost === 'string') {
+    }
+    // Ensuite, essayer de parser obj.totalCost comme string
+    else if (typeof obj?.totalCost === 'string') {
       const parsed = parseFloat(obj.totalCost);
       cost = !isNaN(parsed) ? parsed : 0;
-    } else if (obj.costs && typeof obj.costs.total === 'number') {
-      // Fallback vers costs.total si totalCost n'est pas disponible
+    }
+    // Fallback vers costs.total si disponible
+    else if (obj?.costs && typeof obj.costs.total === 'number' && !isNaN(obj.costs.total)) {
       cost = obj.costs.total;
     }
     
@@ -689,9 +697,12 @@ export class StatisticsResponseDto {
    * Formate la durée en format lisible
    */
   static formatDuration(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
+    // Gérer les valeurs négatives en les convertissant à 0
+    const safeSeconds = Math.max(0, seconds);
+    
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const secs = Math.floor(safeSeconds % 60);
 
     const parts: string[] = [];
     if (hours > 0) parts.push(`${hours}h`);

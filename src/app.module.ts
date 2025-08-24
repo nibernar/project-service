@@ -26,6 +26,9 @@ import { ProjectModule } from './project/project.module';
 // Import du StatisticsModule (module de statistiques)
 import { StatisticsModule } from './statistics/statistics.module';
 
+// Import du ExportModule (module d'export de documents)
+import { ExportModule } from './export/export.module';
+
 @Module({
   imports: [
     // Configuration globale
@@ -45,7 +48,8 @@ import { StatisticsModule } from './statistics/statistics.module';
 
     // Modules métier
     ProjectModule, // Gestion des projets (CRUD + logique métier)
-    StatisticsModule, // ← AJOUTÉ : Gestion des statistiques de projets
+    StatisticsModule, // Gestion des statistiques de projets
+    ExportModule, // Export des documents de projets (Markdown, PDF)
   ],
   controllers: [AppController],
   providers: [AppService],

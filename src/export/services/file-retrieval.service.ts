@@ -249,10 +249,10 @@ export class FileRetrievalService {
   async getFileContent(fileId: string): Promise<FileRetrievalResult> {
     const startTime = Date.now();
     
-    // SÉCURITÉ : Validation stricte UUID v4
+    // SÉCURITÉ : Validation stricte UUID v4 AVANT tout appel HTTP
     if (!this.isValidUuidV4(fileId)) {
       throw new HttpException(
-        `Invalid file ID format: must be UUID v4`,
+        'Invalid file ID format: must be UUID v4',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -303,7 +303,8 @@ export class FileRetrievalService {
       // Extraction et validation des données
       const { content, metadata } = response.data;
       
-      if (!content || typeof content !== 'string') {
+      // CORRECTION : Permettre les chaînes vides, mais rejeter null/undefined
+      if (content === null || content === undefined || typeof content !== 'string') {
         throw new HttpException(
           'Missing or invalid content in storage response',
           HttpStatus.INTERNAL_SERVER_ERROR,
@@ -399,7 +400,14 @@ export class FileRetrievalService {
     
     this.logger.log(`Starting batch file retrieval for ${fileIds.length} files`);
 
-    // VALIDATION : Vérification des IDs
+    // VALIDATION : Vérification des IDs AVANT tout traitement
+    if (!Array.isArray(fileIds)) {
+      throw new HttpException(
+        'File IDs must be an array',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const invalidIds = fileIds.filter(id => !this.isValidUuidV4(id));
     if (invalidIds.length > 0) {
       throw new HttpException(
@@ -501,7 +509,7 @@ export class FileRetrievalService {
    * ```
    */
   async validateFileExists(fileId: string): Promise<boolean> {
-    // SÉCURITÉ : Validation UUID v4
+    // SÉCURITÉ : Validation UUID v4 AVANT tout appel HTTP
     if (!this.isValidUuidV4(fileId)) {
       return false;
     }
@@ -520,12 +528,7 @@ export class FileRetrievalService {
       await firstValueFrom(
         this.httpService.head(url, requestConfig).pipe(
           timeout(5000),
-          catchError((error: AxiosError) => {
-            if (error.response?.status === 404) {
-              return Promise.resolve({ status: 404 }); // Fichier n'existe pas
-            }
-            throw error;
-          }),
+          // CORRECTION : Ne pas "avaler" les erreurs, les laisser passer au catch
         ),
       );
 
@@ -620,8 +623,22 @@ export class FileRetrievalService {
       return false;
     }
 
+    // Regex plus stricte pour UUID v4 avec validation explicite du variant
     const uuidV4Regex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidV4Regex.test(uuid.trim());
+    const trimmed = uuid.trim();
+    
+    if (!uuidV4Regex.test(trimmed)) {
+      return false;
+    }
+    
+    // Double vérification : le 4e groupe doit commencer par 8, 9, a, ou b
+    const parts = trimmed.split('-');
+    if (parts.length !== 5) {
+      return false;
+    }
+    
+    const variant = parts[3].charAt(0).toLowerCase();
+    return ['8', '9', 'a', 'b'].includes(variant);
   }
 
   /**
@@ -656,7 +673,7 @@ export class FileRetrievalService {
     const metadata: FileMetadata = {
       id: fileId,
       name: this.sanitizeString(rawMetadata.name || `file-${fileId.substring(0, 8)}.txt`),
-      size: Math.max(0, parseInt(rawMetadata.size) || 0),
+      size: this.parseSize(rawMetadata.size),
       contentType: this.validateContentType(rawMetadata.contentType || 'text/plain'),
       lastModified: this.parseDate(rawMetadata.lastModified) || new Date(),
     };
@@ -687,6 +704,7 @@ export class FileRetrievalService {
   /**
    * Sanitise une chaîne de caractères
    * SÉCURITÉ : Nettoyage pour éviter les injections
+   * CORRECTION : Ajout du caractère '/' dans la regex
    */
   private sanitizeString(str: string, maxLength: number = 255): string {
     if (!str || typeof str !== 'string') {
@@ -695,7 +713,8 @@ export class FileRetrievalService {
 
     return str
       .trim()
-      .replace(/[<>'"&]/g, '') // Caractères HTML dangereux
+      .replace(/[<>'"&/]/g, '') // CORRECTION : Suppression des caractères dangereux
+      .replace(/script/gi, '') // CORRECTION : Suppression explicite du mot "script"
       .substring(0, maxLength);
   }
 
@@ -728,6 +747,27 @@ export class FileRetrievalService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Parse et valide une taille de fichier avec validation stricte
+   * SÉCURITÉ : Rejette les valeurs avec caractères non-numériques
+   */
+  private parseSize(sizeValue: any): number {
+    if (typeof sizeValue === 'number' && isFinite(sizeValue)) {
+      return Math.max(0, Math.floor(sizeValue));
+    }
+    
+    if (typeof sizeValue === 'string') {
+      const trimmed = sizeValue.trim();
+      // Validation stricte : que des chiffres
+      if (/^\d+$/.test(trimmed)) {
+        const parsed = parseInt(trimmed, 10);
+        return Math.max(0, parsed);
+      }
+    }
+    
+    return 0; // Invalide -> 0
   }
 
   /**

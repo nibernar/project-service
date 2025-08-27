@@ -56,6 +56,19 @@
     "test:statistics:unit": "jest --config=jest.statistics.config.js --testPathPattern=unit",
     "test:statistics:integration": "jest --config=jest.statistics.config.js --testPathPattern=integration",
 
+    "test:export": "jest --config=jest.export.config.js",
+    "test:controller": "jest test/unit/export/controllers/export.controller.spec.ts --config=jest.export.config.js --runInBand",
+    "test:pdf-export": "jest test/unit/export/services/pdf-export.service.spec.ts --config=jest.export.config.js --runInBand",
+    "test:markdown-export": "jest test/unit/export/services/markdown-export.service.spec.ts --config=jest.export.config.js --runInBand",
+    "test:file-retrieval": "jest test/unit/export/services/file-retrieval.service.spec.ts --config=jest.export.config.js --runInBand",
+    "test:export-service": "jest test/unit/export/services/export.service.spec.ts --config=jest.export.config.js --runInBand",
+    "test:export-security": "jest test/unit/export/security/export.security.spec.ts --config=jest.export.config.js --runInBand",
+    "test:export-egde-case": "jest test/unit/export/edge-cases/export.edge-cases.spec.ts --config=jest.export.config.js --runInBand",
+    "test:export-response": "jest test/unit/export/dto/export-response.dto.spec.ts --config=jest.export.config.js --runInBand",
+    "test:export-performance": "jest test/unit/export/performance/export.performance.spec.ts --config=jest.export.config.js --runInBand",
+    "test:export-options": "jest test/unit/export/dto/export-options.dto.spec.ts --config=jest.export.config.js --runInBand",
+
+
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",

@@ -405,9 +405,9 @@ process.on('uncaughtException', (error) => {
 import { useContainer } from 'class-validator';
 
 // Utiliser un container vide pour éviter les conflits
-useContainer({
-  get: () => undefined,
-});
+// useContainer({
+//   get: () => undefined,
+// });
 
 // =============================================================================
 // UTILITAIRES DE DEBUGGING

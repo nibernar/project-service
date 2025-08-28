@@ -29,6 +29,7 @@ import { StatisticsModule } from './statistics/statistics.module';
 // Import du ExportModule (module d'export de documents)
 import { ExportModule } from './export/export.module';
 
+
 @Module({
   imports: [
     // Configuration globale
@@ -51,7 +52,9 @@ import { ExportModule } from './export/export.module';
     StatisticsModule, // Gestion des statistiques de projets
     ExportModule, // Export des documents de projets (Markdown, PDF)
   ],
-  controllers: [AppController],
+  controllers: [
+    AppController,
+  ],
   providers: [AppService],
 })
 export class AppModule {}

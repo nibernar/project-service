@@ -27,27 +27,22 @@ function getRedisConfiguration(configService: ConfigService): RedisModuleOptions
     keyPrefix: configService.get('REDIS_KEY_PREFIX', DEFAULT_CACHE_CONFIG.DEFAULT_PREFIX) + ':',
   };
 
-  // Configuration par environnement
   const environmentConfigs = {
     production: {
       ...baseConfig,
-      // Configuration production - priorité à la fiabilité
       connectTimeout: 15000,
       commandTimeout: 10000,
-      lazyConnect: false, // Connexion immédiate en production
+      lazyConnect: false,
       maxRetriesPerRequest: 5,
       retryDelayOnFailover: 200,
       enableReadyCheck: true,
-      // Pool de connexions optimisé
-      family: 4, // IPv4 pour la stabilité
+      family: 4,
       keepAlive: 30000,
-      // Monitoring renforcé
       enableOfflineQueue: true,
     },
     
     staging: {
       ...baseConfig,
-      // Configuration staging - équilibre performance/fiabilité
       connectTimeout: 10000,
       commandTimeout: 8000,
       lazyConnect: true,
@@ -61,21 +56,19 @@ function getRedisConfiguration(configService: ConfigService): RedisModuleOptions
     
     test: {
       ...baseConfig,
-      // Configuration test - priorité à la rapidité
-      connectTimeout: 2000,
-      commandTimeout: 1000,
-      lazyConnect: true,
-      maxRetriesPerRequest: 1,
-      retryDelayOnFailover: 50,
-      enableReadyCheck: false,
+      connectTimeout: 5000,
+      commandTimeout: 3000,
+      lazyConnect: false,
+      maxRetriesPerRequest: 3,
+      retryDelayOnFailover: 100,
+      enableReadyCheck: true,
       family: 4,
-      keepAlive: 5000,
-      enableOfflineQueue: false,
+      keepAlive: 10000,
+      enableOfflineQueue: true,
     },
     
     development: {
       ...baseConfig,
-      // Configuration développement - équilibrée avec logging
       connectTimeout: 5000,
       commandTimeout: 5000,
       lazyConnect: true,
@@ -100,13 +93,11 @@ function getRedisConfiguration(configService: ConfigService): RedisModuleOptions
     };
   }
 
-  // Validation de la configuration
   if (!config.host || !config.port) {
     logger.error('Invalid Redis configuration: host and port are required');
     throw new Error('Redis configuration error: missing host or port');
   }
 
-  // Logging de la configuration (sans les informations sensibles)
   logger.log(`Redis configuration for ${env}:`);
   logger.log(`  Host: ${config.host}:${config.port}`);
   logger.log(`  Database: ${config.db}`);

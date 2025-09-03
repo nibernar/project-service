@@ -138,34 +138,54 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    */
   async get<T>(key: string, options?: CacheOptions): Promise<T | null> {
     const startTime = Date.now();
+    const maxRetries = 3;
     
-    try {
-      if (!CacheUtils.validateKey(key)) {
-        this.logger.warn(`Invalid cache key: ${key}`);
-        return null;
-      }
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        if (!CacheUtils.validateKey(key)) {
+          this.logger.warn(`Invalid cache key: ${key}`);
+          return null;
+        }
 
-      const fullKey = this.getFullKey(key);
-      const rawValue = await this.redis.get(fullKey);
-      
-      if (rawValue === null) {
-        this.updateStats('miss', Date.now() - startTime);
-        return null;
-      }
+        // Vérifier la connexion
+        if (this.redis.status !== 'ready') {
+          this.logger.warn(`Redis not ready (status: ${this.redis.status}), attempt ${attempt}/${maxRetries}`);
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+            continue;
+          }
+          return null;
+        }
 
-      const serializationOptions: SerializationOptions = {
-        compress: options?.compression,
-        encoding: 'json'
-      };
-      const value = await this.deserialize<T>(rawValue, serializationOptions);
-      this.updateStats('hit', Date.now() - startTime);
-      
-      return value;
-    } catch (error) {
-      this.updateStats('error', Date.now() - startTime);
-      this.logger.error(`Cache get error for key ${key}:`, error);
-      return null;
+        const fullKey = this.getFullKey(key);
+        const rawValue = await this.redis.get(fullKey);
+        
+        if (rawValue === null) {
+          this.updateStats('miss', Date.now() - startTime);
+          return null;
+        }
+
+        const serializationOptions: SerializationOptions = {
+          compress: options?.compression,
+          encoding: 'json'
+        };
+        const value = await this.deserialize<T>(rawValue, serializationOptions);
+        this.updateStats('hit', Date.now() - startTime);
+        
+        return value;
+      } catch (error) {
+        this.logger.error(`Cache get error for key ${key} (attempt ${attempt}/${maxRetries}):`, error);
+        
+        if (attempt === maxRetries) {
+          this.updateStats('error', Date.now() - startTime);
+          return null;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+      }
     }
+    
+    return null;
   }
 
   /**
@@ -173,30 +193,51 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    */
   async set<T>(key: string, value: T, ttl?: number, options?: CacheOptions): Promise<boolean> {
     const startTime = Date.now();
+    const maxRetries = 3;
     
-    try {
-      if (!CacheUtils.validateKey(key)) {
-        this.logger.warn(`Invalid cache key: ${key}`);
-        return false;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        if (!CacheUtils.validateKey(key)) {
+          this.logger.warn(`Invalid cache key: ${key}`);
+          return false;
+        }
+
+        // Vérifier la connexion avant l'opération
+        if (this.redis.status !== 'ready') {
+          this.logger.warn(`Redis not ready (status: ${this.redis.status}), attempt ${attempt}/${maxRetries}`);
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+            continue;
+          }
+          return false;
+        }
+
+        const finalTtl = ttl !== undefined ? ttl : DEFAULT_CACHE_CONFIG.DEFAULT_TTL;
+        const fullKey = this.getFullKey(key);
+        const serializationOptions: SerializationOptions = {
+          compress: options?.compression,
+          encoding: 'json'
+        };
+        const serializedValue = await this.serialize(value, serializationOptions);
+
+        await this.redis.setex(fullKey, finalTtl, serializedValue);
+        
+        this.updateStats('set', Date.now() - startTime);
+        return true;
+      } catch (error) {
+        this.logger.error(`Cache set error for key ${key} (attempt ${attempt}/${maxRetries}):`, error);
+        
+        if (attempt === maxRetries) {
+          this.updateStats('error', Date.now() - startTime);
+          return false;
+        }
+        
+        // Attendre avant le retry
+        await new Promise(resolve => setTimeout(resolve, 100 * attempt));
       }
-
-      const finalTtl = ttl || DEFAULT_CACHE_CONFIG.DEFAULT_TTL;
-      const fullKey = this.getFullKey(key);
-      const serializationOptions: SerializationOptions = {
-        compress: options?.compression,
-        encoding: 'json'
-      };
-      const serializedValue = await this.serialize(value, serializationOptions);
-
-      await this.redis.setex(fullKey, finalTtl, serializedValue);
-      
-      this.updateStats('set', Date.now() - startTime);
-      return true;
-    } catch (error) {
-      this.updateStats('error', Date.now() - startTime);
-      this.logger.error(`Cache set error for key ${key}:`, error);
-      return false;
     }
+    
+    return false;
   }
 
   /**
@@ -464,8 +505,13 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   /**
    * Invalide tous les caches liés à un projet
    */
+  // CORRECTION DES MÉTHODES D'INVALIDATION dans cache.service.ts
+
   async invalidateProjectCache(projectId: string, userId: string): Promise<void> {
     try {
+      console.log(`🧹 Invalidating project caches for: ${projectId}`); // Debug log
+      
+      // Clés individuelles à supprimer
       const keysToDelete = [
         CACHE_KEYS.PROJECT(projectId),
         CACHE_KEYS.PROJECT_WITH_STATS(projectId),
@@ -473,13 +519,27 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         CACHE_KEYS.PROJECT_FILES_LIST(projectId),
       ];
 
-      // Invalide les listes utilisateur avec patterns
-      const userListsDeleted = await this.deleteByPattern(CACHE_PATTERNS.USER_PROJECTS(userId));
-      
-      // Supprime les clés individuelles
+      console.log(`🧹 Deleting individual keys:`, keysToDelete); // Debug log
       const individualDeleted = await this.del(keysToDelete);
+      console.log(`🧹 Individual keys deleted: ${individualDeleted}`); // Debug log
+
+      // Invalide les listes utilisateur avec patterns CORRECTS
+      const userListPatterns = [
+        CACHE_PATTERNS.USER_PROJECT_LISTS(userId),
+        CACHE_PATTERNS.USER_PROJECT_COUNTS(userId),
+      ];
       
-      this.logger.debug(`Project cache invalidated: ${projectId}, deleted ${individualDeleted + userListsDeleted} keys`);
+      let patternDeleted = 0;
+      for (const pattern of userListPatterns) {
+        console.log(`🧹 Processing pattern: ${pattern}`); // Debug log
+        const deleted = await this.deleteByPattern(pattern);
+        patternDeleted += deleted;
+        console.log(`🧹 Pattern ${pattern} deleted: ${deleted} keys`); // Debug log
+      }
+      
+      const totalDeleted = individualDeleted + patternDeleted;
+      console.log(`🧹 Project cache invalidation completed: ${projectId}, deleted ${totalDeleted} keys`);
+      this.logger.debug(`Project cache invalidated: ${projectId}, deleted ${totalDeleted} keys`);
     } catch (error) {
       this.logger.error(`Project cache invalidation error for ${projectId}:`, error);
     }
@@ -490,21 +550,30 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    */
   async invalidateUserProjectsCache(userId: string): Promise<void> {
     try {
+      console.log(`🧹 Invalidating user caches for: ${userId}`);
+      
+      // CORRECTION : Utiliser les nouveaux patterns corrects
       const patterns = [
-        CACHE_PATTERNS.USER_PROJECTS(userId),
-        CACHE_PATTERNS.USER_SESSIONS(userId),
+        CACHE_PATTERNS.USER_PROJECT_LISTS(userId),   // projects:list:{userId}:*
+        CACHE_PATTERNS.USER_PROJECT_COUNTS(userId),  // projects:count:{userId}:*
+        CACHE_PATTERNS.USER_SESSIONS(userId),        // auth:session:{userId}:*
       ];
 
       let totalDeleted = 0;
       for (const pattern of patterns) {
+        console.log(`🧹 Processing pattern: ${pattern}`);
         const deleted = await this.deleteByPattern(pattern);
         totalDeleted += deleted;
+        console.log(`🧹 Pattern ${pattern} deleted: ${deleted} keys`);
       }
 
       // Invalide aussi le résumé des statistiques utilisateur
-      await this.del(CACHE_KEYS.USER_STATISTICS_SUMMARY(userId));
+      const userSummaryKey = CACHE_KEYS.USER_STATISTICS_SUMMARY(userId);
+      console.log(`🧹 Deleting user summary: ${userSummaryKey}`);
+      await this.del(userSummaryKey);
       totalDeleted += 1;
 
+      console.log(`🧹 User cache invalidation completed: ${userId}, deleted ${totalDeleted} keys`);
       this.logger.debug(`User projects cache invalidated: ${userId}, deleted ${totalDeleted} keys`);
     } catch (error) {
       this.logger.error(`User projects cache invalidation error for ${userId}:`, error);
@@ -517,15 +586,26 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   async invalidateStatisticsCache(projectId?: string): Promise<void> {
     try {
       if (projectId) {
+        console.log(`🧹 Invalidating stats for project: ${projectId}`);
+        
         // Invalide les statistiques d'un projet spécifique
-        await this.del([
+        const keysToDelete = [
           CACHE_KEYS.PROJECT_STATISTICS(projectId),
           CACHE_KEYS.PROJECT_WITH_STATS(projectId),
-        ]);
+        ];
+        
+        console.log(`🧹 Deleting specific keys:`, keysToDelete);
+        const deleted = await this.del(keysToDelete);
+        console.log(`🧹 Deleted ${deleted} specific stats keys`);
+        
         this.logger.debug(`Statistics cache invalidated for project: ${projectId}`);
       } else {
-        // Invalide toutes les statistiques
+        console.log(`🧹 Invalidating ALL statistics`);
+        
+        // CORRECTION : Utiliser le pattern correct pour toutes les statistiques
         const deleted = await this.deleteByPattern(CACHE_PATTERNS.ALL_STATISTICS());
+        console.log(`🧹 Deleted ${deleted} statistics keys globally`);
+        
         this.logger.debug(`All statistics cache invalidated, deleted ${deleted} keys`);
       }
     } catch (error) {
@@ -620,7 +700,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
         memory: {
           used: getInfoValue('used_memory'),
           peak: getInfoValue('used_memory_peak'),
-          fragmentation: getInfoValue('mem_fragmentation_ratio') / 100,
+          fragmentation: getInfoValue('mem_fragmentation_ratio') / 100 || 1.0,
         },
       };
     } catch (error) {
@@ -634,8 +714,19 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    */
   async healthCheck(): Promise<boolean> {
     try {
+      // Vérifier d'abord l'état de la connexion
+      if (!this.redis || this.redis.status !== 'ready') {
+        return false;
+      }
+
       const start = Date.now();
-      const result = await this.redis.ping();
+      const result = await Promise.race([
+        this.redis.ping(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Ping timeout')), 2000)
+        )
+      ]);
+      
       const latency = Date.now() - start;
       
       if (result !== 'PONG') {
@@ -690,11 +781,16 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   private shouldCompress(data: string, options?: SerializationOptions): boolean {
+    // Vérification plus robuste
+    if (!data || typeof data !== 'string' || data.length === 0) {
+      return false;
+    }
+    
     if (options?.compress === false) return false;
     if (options?.compress === true) return true;
     
     return this.options.compression.enabled && 
-           data.length >= this.options.compression.threshold;
+          data.length >= this.options.compression.threshold;
   }
 
   // ============================================================================
@@ -757,10 +853,23 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
    */
   async disconnect(): Promise<void> {
     try {
-      await this.redis.quit();
-      this.logger.log('Redis connection closed');
+      // Vérifier l'état de la connexion avant de tenter la déconnexion
+      if (this.redis && this.redis.status === 'ready') {
+        await this.redis.quit();
+        this.logger.log('Redis connection closed');
+      } else {
+        this.logger.warn('Redis connection was already closed or not ready');
+      }
     } catch (error) {
       this.logger.error('Error closing Redis connection:', error);
+      // Force la déconnexion même en cas d'erreur
+      if (this.redis) {
+        try {
+          await this.redis.disconnect();
+        } catch (disconnectError) {
+          this.logger.error('Error forcing Redis disconnection:', disconnectError);
+        }
+      }
     }
   }
 }

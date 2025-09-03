@@ -27,7 +27,20 @@
     "test:user-interface": "./scripts/test-user-interface.sh --all",
     "test:pagination": "jest --config jest.config.pagination.js",
     "test:config": "jest app.config.spec.ts",
-    "test:cache": "./scripts/test-cache.sh all",
+
+
+    "test:cache-service": "jest test/unit/cache/cache.service.spec.ts --config=jest.cache-events.config.js --runInBand",
+    "test:cache-edge-cases": "jest test/unit/cache/cache.edge-cases.spec.ts --config=jest.cache-events.config.js --runInBand",
+    "test:cache-security-unit": "jest test/unit/cache/cache.security.spec.ts --config=jest.cache-events.config.js --runInBand",
+    "test:events-service": "jest test/unit/events/events.service.spec.ts --config=jest.cache-events.config.js --runInBand",
+    "test:cache-integration": "jest test/integration/cache.integration.spec.ts --config=jest.cache-events.config.js --runInBand",
+    "test:events-integration": "jest test/integration/events.integration.spec.ts --config=jest.cache-events.config.js --runInBand",
+    "test:cache-e2e": "jest test/e2e/cache.e2e-spec.ts --config=jest.cache-events.config.js --runInBand",
+    "test:cache-events-e2e": "jest test/e2e/cache-events.e2e-spec.ts --config=jest.cache-events.config.js --runInBand",
+    "test:cache-events-security": "jest test/security/cache-events.security.spec.ts --config=jest.cache-events.config.js --runInBand",
+    "test:cache-events-full": "./scripts/test-cache.sh all --coverage",
+
+
     "test:decorators": "./scripts/test-current-user.sh full",
     "test:project-owner-unit": "npm test test/unit/common/guards/project-owner.guard.spec.ts",
     "test:project-owner-security": "npm test test/unit/common/guards/project-owner.guard.security.spec.ts",

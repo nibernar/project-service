@@ -1,301 +1,351 @@
 // test/setup/cache-test-setup.ts
-
 import { config } from 'dotenv';
 import Redis from 'ioredis';
 
-// ============================================================================
-// CONFIGURATION D'ENVIRONNEMENT POUR LES TESTS
-// ============================================================================
-
-// Charger les variables d'environnement de test
 config({ path: '.env.test' });
 
 // Configuration forcée pour les tests
 process.env.NODE_ENV = 'test';
-process.env.REDIS_DB = '1'; // Base dédiée aux tests
-process.env.CACHE_TTL = '30'; // TTL court pour les tests
-process.env.REDIS_MAX_CONNECTIONS = '3';
-process.env.REDIS_ENABLE_METRICS = 'false';
-
-// ============================================================================
-// UTILITAIRES DE TEST REDIS
-// ============================================================================
+process.env.REDIS_DB = '12';
+process.env.REDIS_KEY_PREFIX = 'integration-test';
+process.env.REDIS_CONNECT_TIMEOUT = '15000';
+process.env.REDIS_COMMAND_TIMEOUT = '10000';
+process.env.REDIS_RESPONSE_TIMEOUT = '10000';
+process.env.REDIS_ENABLE_OFFLINE_QUEUE = 'true';
+process.env.REDIS_MAX_RETRIES_PER_REQUEST = '5';
+process.env.REDIS_RETRY_DELAY = '200';
+process.env.REDIS_KEEP_ALIVE = '30000';
+process.env.REDIS_LAZY_CONNECT = 'false';
+process.env.REDIS_ENABLE_READY_CHECK = 'true';
+process.env.REDIS_FAMILY = '4';
+process.env.CACHE_COMPRESSION_ENABLED = 'true';
+process.env.CACHE_COMPRESSION_THRESHOLD = '1024';
 
 export class RedisTestHelper {
   private static redis: Redis | null = null;
   private static connectionCount = 0;
+  private static logger = console;
 
-  /**
-   * Obtenir une connexion Redis pour les tests
-   */
-  static async getRedis(): Promise<Redis> {
-    if (!this.redis) {
-      this.redis = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        db: parseInt(process.env.REDIS_DB || '1'),
-        retryDelayOnFailover: 100,
-        maxRetriesPerRequest: 3,
-        lazyConnect: true,
-      });
-      this.connectionCount++;
-    }
-
-    return this.redis;
+  private static getRedisConfig(): any {
+    return {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      db: parseInt(process.env.REDIS_DB || '12'),
+      keyPrefix: `${process.env.REDIS_KEY_PREFIX || 'integration-test'}:`, // CRITIQUE: même préfixe
+      
+      connectTimeout: 15000,
+      commandTimeout: 10000,
+      responseTimeout: 10000,
+      lazyConnect: false,
+      family: 4,
+      maxRetriesPerRequest: 5,
+      retryDelayOnFailover: 200,
+      retryDelayOnClusterDown: 300,
+      enableReadyCheck: true,
+      enableOfflineQueue: true,
+      keepAlive: 30000,
+      maxLoadingTimeout: 15000,
+      showFriendlyErrorStack: true,
+      
+      reconnectOnError: (err: Error) => {
+        this.logger.warn('Redis reconnectOnError triggered:', err.message);
+        const targetError = err.message.slice(0, 'READONLY'.length);
+        return targetError === 'READONLY';
+      },
+    };
   }
 
-  /**
-   * Vérifier si Redis est disponible
-   */
+  static async getRedis(retries = 3): Promise<Redis> {
+    if (this.redis && this.redis.status === 'ready') {
+      return this.redis;
+    }
+
+    if (this.redis && this.redis.status !== 'ready') {
+      try {
+        await this.redis.disconnect(false); // Force disconnect
+      } catch (error) {
+        this.logger.warn('Error disconnecting stale Redis connection:', (error as Error).message);
+      }
+      this.redis = null;
+    }
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        this.logger.log(`Creating Redis connection (attempt ${attempt}/${retries})...`);
+        
+        this.redis = new Redis(this.getRedisConfig());
+        this.connectionCount++;
+
+        this.setupConnectionEvents(this.redis);
+
+        await this.waitForConnection(this.redis, 20000);
+        
+        const pingResult = await this.redis.ping();
+        if (pingResult !== 'PONG') {
+          throw new Error(`Ping failed: ${pingResult}`);
+        }
+
+        this.logger.log(`Redis connection established successfully (attempt ${attempt})`);
+        return this.redis;
+
+      } catch (error) {
+        this.logger.error(`Redis connection attempt ${attempt}/${retries} failed:`, (error as Error).message);
+        
+        if (this.redis) {
+          try {
+            await this.redis.disconnect(false);
+          } catch (disconnectError) {
+            this.logger.warn('Error disconnecting failed connection:', (disconnectError as Error).message);
+          }
+          this.redis = null;
+        }
+
+        if (attempt < retries) {
+          const delay = Math.min(1000 * attempt, 5000);
+          this.logger.log(`Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    throw new Error(`Failed to establish Redis connection after ${retries} attempts`);
+  }
+
+  private static setupConnectionEvents(redis: Redis): void {
+    redis.on('connect', () => {
+      this.logger.log('Redis: Connected to server');
+    });
+
+    redis.on('ready', () => {
+      this.logger.log('Redis: Ready to receive commands');
+    });
+
+    redis.on('error', (error) => {
+      this.logger.error('Redis connection error:', error.message);
+    });
+
+    redis.on('close', () => {
+      this.logger.warn('Redis: Connection closed');
+    });
+
+    redis.on('reconnecting', (delay: number) => {
+      this.logger.log(`Redis: Reconnecting in ${delay}ms...`);
+    });
+
+    redis.on('end', () => {
+      this.logger.warn('Redis: Connection ended');
+    });
+  }
+
+  private static async waitForConnection(redis: Redis, timeoutMs: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error(`Connection timeout after ${timeoutMs}ms`));
+      }, timeoutMs);
+
+      const checkReady = () => {
+        if (redis.status === 'ready') {
+          clearTimeout(timeout);
+          resolve();
+        } else if (redis.status === 'close' || redis.status === 'end') {
+          clearTimeout(timeout);
+          reject(new Error(`Connection failed with status: ${redis.status}`));
+        } else {
+          setTimeout(checkReady, 100);
+        }
+      };
+
+      checkReady();
+    });
+  }
+
   static async isRedisAvailable(): Promise<boolean> {
     try {
-      const redis = await this.getRedis();
-      await redis.ping();
-      return true;
+      const redis = await this.getRedis(2);
+      
+      const pingResult = await redis.ping();
+      if (pingResult !== 'PONG') return false;
+      
+      const testKey = `availability-test-${Date.now()}`;
+      const testValue = 'test-value';
+      
+      await redis.setex(testKey, 5, testValue);
+      const getValue = await redis.get(testKey);
+      await redis.del(testKey);
+      
+      return getValue === testValue;
+      
     } catch (error) {
+      this.logger.warn('Redis availability check failed:', (error as Error).message);
       return false;
     }
   }
 
-  /**
-   * Nettoyer la base de données de test
-   */
-  static async flushTestDb(): Promise<void> {
-    try {
-      const redis = await this.getRedis();
-      await redis.flushdb();
-    } catch (error) {
-      console.warn('Could not flush test database:', error.message);
-    }
-  }
-
-  /**
-   * Fermer la connexion Redis
-   */
-  static async closeRedis(): Promise<void> {
-    if (this.redis) {
+  static async flushTestDb(retries = 3): Promise<void> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        await this.redis.quit();
-        this.connectionCount--;
+        const redis = await this.getRedis();
+        await redis.flushdb();
+        this.logger.log('Test database flushed successfully');
+        return;
       } catch (error) {
-        console.warn('Error closing Redis connection:', error.message);
-      } finally {
-        this.redis = null;
+        this.logger.warn(`Flush attempt ${attempt}/${retries} failed:`, (error as Error).message);
+        if (attempt === retries) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
   }
 
-  /**
-   * Créer des données de test dans Redis
-   */
-  static async seedTestData(): Promise<void> {
-    const redis = await this.getRedis();
+  static async closeRedis(): Promise<void> {
+    if (!this.redis) return;
 
-    const testData = {
-      'test:project:1': { id: '1', name: 'Test Project 1' },
-      'test:project:2': { id: '2', name: 'Test Project 2' },
-      'test:user:123:projects:count': 2,
-      'test:statistics:1': { costs: { total: 10.5 } },
-    };
+    try {
+      const currentRedis = this.redis;
+      this.redis = null;
 
-    for (const [key, value] of Object.entries(testData)) {
-      await redis.setex(key, 300, JSON.stringify(value));
+      if (currentRedis.status === 'ready') {
+        // CORRECTION: Quit synchrone sans Promise.race pour éviter les handles ouverts
+        await currentRedis.quit();
+        this.logger.log('Redis connection closed gracefully');
+      } else {
+        await currentRedis.disconnect(false);
+        this.logger.log('Redis connection force-closed');
+      }
+      
+      this.connectionCount = Math.max(0, this.connectionCount - 1);
+    } catch (error) {
+      this.logger.error('Error closing Redis connection:', (error as Error).message);
+      
+      try {
+        if (this.redis) {
+          await this.redis.disconnect(false);
+        }
+      } catch (forceError) {
+        this.logger.error('Force disconnect also failed:', (forceError as Error).message);
+      }
     }
   }
 
-  /**
-   * Vérifier l'existence d'une clé
-   */
+  // Méthodes utilitaires avec gestion d'erreurs améliorée
   static async keyExists(key: string): Promise<boolean> {
-    const redis = await this.getRedis();
-    const exists = await redis.exists(key);
-    return exists === 1;
+    try {
+      const redis = await this.getRedis();
+      return (await redis.exists(key)) === 1;
+    } catch (error) {
+      this.logger.warn(`keyExists error for ${key}:`, (error as Error).message);
+      return false;
+    }
   }
 
-  /**
-   * Obtenir la valeur d'une clé
-   */
   static async getValue(key: string): Promise<any> {
-    const redis = await this.getRedis();
-    const value = await redis.get(key);
-    return value ? JSON.parse(value) : null;
+    try {
+      const redis = await this.getRedis();
+      const value = await redis.get(key);
+      return value ? JSON.parse(value) : null;
+    } catch (error) {
+      this.logger.warn(`getValue error for ${key}:`, (error as Error).message);
+      return null;
+    }
   }
 
-  /**
-   * Définir une valeur avec TTL
-   */
-  static async setValue(
-    key: string,
-    value: any,
-    ttl: number = 300,
-  ): Promise<void> {
-    const redis = await this.getRedis();
-    await redis.setex(key, ttl, JSON.stringify(value));
+  static async setValue(key: string, value: any, ttl: number = 300): Promise<boolean> {
+    try {
+      const redis = await this.getRedis();
+      const result = await redis.setex(key, ttl, JSON.stringify(value));
+      return result === 'OK';
+    } catch (error) {
+      this.logger.warn(`setValue error for ${key}:`, (error as Error).message);
+      return false;
+    }
   }
 
-  /**
-   * Obtenir le nombre de connexions actives
-   */
+  static async reset(): Promise<void> {
+    try {
+      await this.flushTestDb();
+      this.logger.log('Redis test state reset complete');
+    } catch (error) {
+      this.logger.error('Redis reset failed:', (error as Error).message);
+      throw error;
+    }
+  }
+
   static getConnectionCount(): number {
     return this.connectionCount;
   }
-}
 
-// ============================================================================
-// HELPERS DE MOCK
-// ============================================================================
-
-export class CacheMockHelper {
-  /**
-   * Créer un mock de Redis avec comportement par défaut
-   */
-  static createRedisMock(): jest.Mocked<Redis> {
-    return {
-      get: jest.fn(),
-      setex: jest.fn(),
-      del: jest.fn(),
-      keys: jest.fn(),
-      ping: jest.fn(),
-      info: jest.fn(),
-      exists: jest.fn(),
-      ttl: jest.fn(),
-      flushdb: jest.fn(),
-      quit: jest.fn(),
-    } as any;
-  }
-
-  /**
-   * Configurer un mock Redis avec des réponses par défaut
-   */
-  static setupDefaultRedisMock(mockRedis: jest.Mocked<Redis>): void {
-    mockRedis.get.mockResolvedValue(null);
-    mockRedis.setex.mockResolvedValue('OK');
-    mockRedis.del.mockResolvedValue(1);
-    mockRedis.keys.mockResolvedValue([]);
-    mockRedis.ping.mockResolvedValue('PONG');
-    mockRedis.info.mockResolvedValue('# Server\nredis_version:7.2.5');
-    mockRedis.exists.mockResolvedValue(0);
-    mockRedis.ttl.mockResolvedValue(-1);
-    mockRedis.flushdb.mockResolvedValue('OK');
-    mockRedis.quit.mockResolvedValue('OK');
-  }
-
-  /**
-   * Créer un mock de ConfigService pour les tests cache
-   */
-  static createConfigServiceMock(overrides: any = {}): jest.Mocked<any> {
-    const defaultConfig = {
-      performance: {
-        defaultTtl: 300,
-        maxConnections: 10,
-        minConnections: 2,
-      },
-      serialization: {
-        keyPrefix: 'test:',
-        compression: false,
-      },
-      connection: {
-        host: 'localhost',
-        port: 6379,
-        db: 1,
-      },
-      monitoring: {
-        enabled: false,
-      },
-      ...overrides,
-    };
-
-    return {
-      get: jest.fn().mockReturnValue(defaultConfig),
-    } as any;
-  }
-}
-
-// ============================================================================
-// SETUP ET TEARDOWN GLOBAUX
-// ============================================================================
-
-// Variable pour tracker si c'est un test E2E (qui gère ses propres connexions)
-let isE2ETest = false;
-
-// Détecter si c'est un test E2E
-beforeAll(async () => {
-  const testPath = expect.getState().testPath || '';
-  isE2ETest = testPath.includes('e2e') || testPath.includes('E2E');
-
-  // Ne setup Redis que si ce n'est pas un test E2E
-  if (!isE2ETest) {
-    const isAvailable = await RedisTestHelper.isRedisAvailable();
-
-    if (!isAvailable) {
-      console.warn(`
-      ⚠️  Redis server is not available for testing!
-      
-      Integration tests will be skipped.
-      Only unit tests will run.
-      
-      To run all tests, start Redis:
-      - redis-server (local)
-      - docker run -d -p 6379:6379 redis:7-alpine
-      `);
-    } else {
-      console.log('✅ Redis server is available for testing');
-      await RedisTestHelper.flushTestDb();
+  // NOUVELLE MÉTHODE: Diagnostic des clés
+  static async debugKeys(pattern = '*'): Promise<string[]> {
+    try {
+      const redis = await this.getRedis();
+      const keys = await redis.keys(pattern);
+      this.logger.log(`Debug keys matching "${pattern}":`, keys);
+      return keys;
+    } catch (error) {
+      this.logger.error('Error debugging keys:', (error as Error).message);
+      return [];
     }
   }
-});
+}
 
-// Nettoyer après chaque test (sauf pour les tests E2E)
-afterEach(async () => {
-  if (!isE2ETest) {
+// Fonctions utilitaires
+export async function setupRedisForTests(): Promise<boolean> {
+  console.log('Setting up Redis for tests...');
+  
+  try {
+    const isAvailable = await RedisTestHelper.isRedisAvailable();
+    
+    if (!isAvailable) {
+      console.warn(`Redis server is not available for testing!`);
+      return false;
+    }
+
+    console.log('Redis server is available');
     await RedisTestHelper.flushTestDb();
+    console.log('Redis test environment ready');
+    return true;
+    
+  } catch (error) {
+    console.error('Redis setup failed:', (error as Error).message);
+    return false;
   }
-});
+}
 
-// Fermer les connexions après tous les tests (sauf pour les tests E2E)
-afterAll(async () => {
-  if (!isE2ETest) {
+export async function cleanupRedisAfterTest(): Promise<void> {
+  try {
+    await RedisTestHelper.reset();
+  } catch (error) {
+    console.warn('Redis cleanup warning:', (error as Error).message);
+  }
+}
+
+export async function teardownRedisAfterTests(): Promise<void> {
+  console.log('Tearing down Redis connections...');
+  try {
     await RedisTestHelper.closeRedis();
+    console.log('Redis connections closed');
+  } catch (error) {
+    console.error('Redis teardown error:', (error as Error).message);
   }
-});
+}
 
-// ============================================================================
-// CONFIGURATION DES LOGS POUR LES TESTS
-// ============================================================================
-
-// Réduire les logs pendant les tests
-const originalConsoleError = console.error;
-const originalConsoleWarn = console.warn;
-
-console.error = (...args: any[]) => {
-  // Ne log que les erreurs importantes pendant les tests
-  if (process.env.TEST_VERBOSE === 'true') {
-    originalConsoleError(...args);
-  }
-};
-
-console.warn = (...args: any[]) => {
-  // Ne log que les warnings importants pendant les tests
-  if (process.env.TEST_VERBOSE === 'true') {
-    originalConsoleWarn(...args);
-  }
-};
-
-// Restaurer les logs après les tests
-afterAll(() => {
-  console.error = originalConsoleError;
-  console.warn = originalConsoleWarn;
-});
-
-// ============================================================================
-// GESTIONNAIRE D'ERREURS POUR LES CONNEXIONS
-// ============================================================================
-
-// Capturer les erreurs de connexion non gérées
+// Gestion des erreurs process
 process.on('unhandledRejection', (reason, promise) => {
   if (reason && typeof reason === 'object' && 'code' in reason) {
-    // Ignorer les erreurs de connexion Redis lors de l'arrêt des tests
-    if (['ECONNRESET', 'EPIPE', 'ENOTFOUND'].includes((reason as any).code)) {
+    const ignoredErrors = ['ECONNRESET', 'EPIPE', 'ENOTFOUND', 'ECONNREFUSED'];
+    if (ignoredErrors.includes((reason as any).code)) {
+      console.warn('Ignored Redis connection error during tests:', (reason as any).code);
+      return;
+    }
+  }
+
+  if (reason && typeof reason === 'object' && 'message' in reason) {
+    const message = (reason as any).message;
+    if (message.includes('Connection is closed') || 
+        message.includes('Redis connection lost') ||
+        message.includes('Connection timeout')) {
+      console.warn('Ignored Redis disconnection during test cleanup');
       return;
     }
   }
@@ -305,22 +355,5 @@ process.on('unhandledRejection', (reason, promise) => {
   }
 });
 
-// Gestionnaire pour les erreurs SIGTERM/SIGINT pendant les tests
-const cleanupOnExit = async () => {
-  await RedisTestHelper.closeRedis();
-  process.exit(0);
-};
-
-process.on('SIGTERM', cleanupOnExit);
-process.on('SIGINT', cleanupOnExit);
-
-// ============================================================================
-// EXPORT DES UTILITAIRES
-// ============================================================================
-
-export { RedisTestHelper, CacheMockHelper };
-
-export default {
-  RedisTestHelper,
-  CacheMockHelper,
-};
+// Export des classes utilitaires
+export { CacheMockHelper } from './cache-test-setup'; // Référence à l'ancien contenu si nécessaire

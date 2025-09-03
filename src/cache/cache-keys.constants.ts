@@ -253,22 +253,26 @@ export const CACHE_TTL = {
  */
 export const CACHE_PATTERNS = {
   /**
-   * Pattern pour tous les caches d'un utilisateur
-   * Format: projects:*:{userId}:*
+   * Pattern pour toutes les listes de projets d'un utilisateur
+   * Format: projects:list:{userId}:*
    */
-  USER_PROJECTS: (userId: string): string => `projects:*:${userId}:*`,
+  USER_PROJECT_LISTS: (userId: string): string => `projects:list:${userId}:*`,
   
   /**
-   * Pattern pour tous les caches d'un projet
-   * Format: *:*:{projectId}*
+   * Pattern pour tous les compteurs de projets d'un utilisateur  
+   * Format: projects:count:{userId}:*
    */
-  PROJECT_ALL: (projectId: string): string => `*:*:${projectId}*`,
+  USER_PROJECT_COUNTS: (userId: string): string => `projects:count:${userId}:*`,
   
   /**
-   * Pattern pour les exports expirés
-   * Format: export:result:*
+   * Pattern pour tous les caches d'un projet (plus spécifique)
+   * Format: projects:*:{projectId} + stats:project:{projectId} + files:*:{projectId}
    */
-  EXPIRED_EXPORTS: (): string => 'export:result:*',
+  PROJECT_ALL: (projectId: string): string[] => [
+    `projects:*:${projectId}`,
+    `stats:project:${projectId}`, 
+    `files:*:${projectId}`,
+  ],
   
   /**
    * Pattern pour toutes les sessions d'un utilisateur
@@ -288,6 +292,11 @@ export const CACHE_PATTERNS = {
    */
   ALL_FILES: (): string => 'files:*',
   
+  /**
+   * Pattern pour les exports expirés
+   * Format: export:result:*
+   */
+  EXPIRED_EXPORTS: (): string => 'export:result:*',
 } as const;
 
 // ============================================================================

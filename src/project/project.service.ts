@@ -66,10 +66,8 @@ import {
 } from './entities/project.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import {
-  ProjectResponseDto,
-  StatisticsResponseDto,
-} from './dto/project-response.dto';
+import { ProjectResponseDto } from './dto/project-response.dto';
+import { StatisticsResponseDto } from '../statistics/dto/statistics-response.dto'
 import { ProjectListItemDto } from './dto/project-list.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import {

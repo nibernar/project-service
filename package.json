@@ -27,8 +27,6 @@
     "test:user-interface": "./scripts/test-user-interface.sh --all",
     "test:pagination": "jest --config jest.config.pagination.js",
     "test:config": "jest app.config.spec.ts",
-
-
     "test:cache-service": "jest test/unit/cache/cache.service.spec.ts --config=jest.cache-events.config.js --runInBand",
     "test:cache-edge-cases": "jest test/unit/cache/cache.edge-cases.spec.ts --config=jest.cache-events.config.js --runInBand",
     "test:cache-security-unit": "jest test/unit/cache/cache.security.spec.ts --config=jest.cache-events.config.js --runInBand",
@@ -39,8 +37,6 @@
     "test:cache-events-e2e": "jest test/e2e/cache-events.e2e-spec.ts --config=jest.cache-events.config.js --runInBand",
     "test:cache-events-security": "jest test/security/cache-events.security.spec.ts --config=jest.cache-events.config.js --runInBand",
     "test:cache-events-full": "./scripts/test-cache.sh all --coverage",
-
-
     "test:decorators": "./scripts/test-current-user.sh full",
     "test:project-owner-unit": "npm test test/unit/common/guards/project-owner.guard.spec.ts",
     "test:project-owner-security": "npm test test/unit/common/guards/project-owner.guard.security.spec.ts",
@@ -60,15 +56,12 @@
     "test:project-response-dto": "jest --config=jest.project-response-dto.config.js",
     "test:update-project-dto": "./scripts/test-update-project-dto.sh",
     "test:project-list-dot": "jest --config=jest.project-list-dto.config.js --verbose --coverage",
-
     "test:project.service": "jest test/unit/project/services/project.service.spec.ts",
-    "test:project.repository": "jest test/unit/project/repositories/project.repository.spec.ts", 
+    "test:project.repository": "jest test/unit/project/repositories/project.repository.spec.ts",
     "test:project.controller": "jest test/unit/project/controllers/project.controller.spec.ts",
-
     "test:statistics": "jest --config=jest.statistics.config.js",
     "test:statistics:unit": "jest --config=jest.statistics.config.js --testPathPattern=unit",
     "test:statistics:integration": "jest --config=jest.statistics.config.js --testPathPattern=integration",
-
     "test:export": "jest --config=jest.export.config.js",
     "test:controller": "jest test/unit/export/controllers/export.controller.spec.ts --config=jest.export.config.js --runInBand",
     "test:pdf-export": "jest test/unit/export/services/pdf-export.service.spec.ts --config=jest.export.config.js --runInBand",
@@ -80,8 +73,6 @@
     "test:export-response": "jest test/unit/export/dto/export-response.dto.spec.ts --config=jest.export.config.js --runInBand",
     "test:export-performance": "jest test/unit/export/performance/export.performance.spec.ts --config=jest.export.config.js --runInBand",
     "test:export-options": "jest test/unit/export/dto/export-options.dto.spec.ts --config=jest.export.config.js --runInBand",
-
-
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
@@ -90,6 +81,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@fastify/static": "^8.2.0",
     "@nestjs-modules/ioredis": "^2.0.2",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.6",
@@ -121,7 +113,7 @@
     "@swc/core": "^1.10.7",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.17.1",
+    "@types/node": "^22.18.1",
     "@types/pg": "^8.15.4",
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.38.0",

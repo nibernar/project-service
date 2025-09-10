@@ -29,6 +29,8 @@ import { StatisticsModule } from './statistics/statistics.module';
 // Import du ExportModule (module d'export de documents)
 import { ExportModule } from './export/export.module';
 
+// Import du HealthModule (module de surveillance)
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -42,6 +44,7 @@ import { ExportModule } from './export/export.module';
     // Modules d'infrastructure
     DatabaseModule,
     CacheModule,
+    HealthModule, // Surveillance de l'état des services et dépendances
 
     // Modules de support
     CommonModule, // AuthGuard, decorators, utilitaires communs

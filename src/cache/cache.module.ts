@@ -1,118 +1,105 @@
-// src/cache/cache.module.ts
+// src/cache/cache.module.ts - Configuration progressive avec les options vraiment utiles
 import { Global, Module, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import type { RedisModuleOptions } from '@nestjs-modules/ioredis';
 import { CacheService } from './cache.service';
-import { DEFAULT_CACHE_CONFIG } from './cache-keys.constants';
-
-// ============================================================================
-// CONFIGURATION REDIS PAR ENVIRONNEMENT
-// ============================================================================
 
 /**
- * Génère la configuration Redis optimisée selon l'environnement
+ * Configuration Redis progressive par environnement
+ * Réintroduit les options utiles sans over-engineering
  */
 function getRedisConfiguration(configService: ConfigService): RedisModuleOptions {
   const logger = new Logger('CacheModule');
   const env = configService.get('NODE_ENV', 'development');
   
-  // Configuration de base
+  // Configuration de base (qui fonctionne)
   const baseConfig = {
     host: configService.get('REDIS_HOST', 'localhost'),
     port: parseInt(configService.get('REDIS_PORT', '6379'), 10),
-    password: configService.get('REDIS_PASSWORD'),
-    username: configService.get('REDIS_USERNAME'),
     db: parseInt(configService.get('REDIS_DB', '0'), 10),
-    keyPrefix: configService.get('REDIS_KEY_PREFIX', DEFAULT_CACHE_CONFIG.DEFAULT_PREFIX) + ':',
+    password: configService.get('REDIS_PASSWORD'),
+    connectTimeout: 10000,
+    retryDelayOnFailover: 100,
+    maxRetriesPerRequest: 3,
+    enableReadyCheck: true,
   };
 
+  // Ajout progressif des options par environnement
   const environmentConfigs = {
-    production: {
+    development: {
       ...baseConfig,
-      connectTimeout: 15000,
-      commandTimeout: 10000,
-      lazyConnect: false,
-      maxRetriesPerRequest: 5,
-      retryDelayOnFailover: 200,
-      enableReadyCheck: true,
-      family: 4,
-      keepAlive: 30000,
-      enableOfflineQueue: true,
-    },
-    
-    staging: {
-      ...baseConfig,
-      connectTimeout: 10000,
-      commandTimeout: 8000,
-      lazyConnect: true,
-      maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 150,
-      enableReadyCheck: true,
-      family: 4,
-      keepAlive: 20000,
-      enableOfflineQueue: true,
+      // Options spécifiques au développement
+      lazyConnect: false,      // Connection immédiate pour debugging
+      keepAlive: 15000,
+      // keyPrefix: configService.get('REDIS_KEY_PREFIX', 'project-service') + ':dev:', // Désactivé - géré par CacheService
     },
     
     test: {
       ...baseConfig,
-      connectTimeout: 5000,
-      commandTimeout: 3000,
+      // Options optimisées pour les tests
+      db: parseInt(configService.get('REDIS_DB', '1'), 10), // DB séparée pour tests
       lazyConnect: false,
-      maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
-      enableReadyCheck: true,
-      family: 4,
       keepAlive: 10000,
+      maxRetriesPerRequest: 2,  // Moins de retries en test
+      keyPrefix: configService.get('REDIS_KEY_PREFIX', 'project-service') + ':test:',
+    },
+    
+    staging: {
+      ...baseConfig,
+      // Options intermédiaires pour staging
+      lazyConnect: true,
+      keepAlive: 20000,
+      commandTimeout: 8000,
+      keyPrefix: configService.get('REDIS_KEY_PREFIX', 'project-service') + ':staging:',
+      // Ajout du monitoring en staging
       enableOfflineQueue: true,
     },
     
-    development: {
+    production: {
       ...baseConfig,
-      connectTimeout: 5000,
-      commandTimeout: 5000,
-      lazyConnect: true,
-      maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
-      enableReadyCheck: true,
-      family: 4,
-      keepAlive: 15000,
+      // Options robustes pour production
+      lazyConnect: false,       // Connection immédiate en prod
+      keepAlive: 30000,
+      commandTimeout: 10000,
+      maxRetriesPerRequest: 5,  // Plus de retries en prod
+      retryDelayOnFailover: 200,
+      keyPrefix: configService.get('REDIS_KEY_PREFIX', 'project-service') + ':prod:',
       enableOfflineQueue: true,
+      family: 4,                // Force IPv4 en production
     },
   };
 
   const config = environmentConfigs[env as keyof typeof environmentConfigs] || environmentConfigs.development;
-  
-  // Configuration TLS pour la production
-  if (env === 'production' && configService.get('REDIS_TLS_ENABLED', false)) {
+
+  // Ajout conditionnel du TLS pour la production
+  if (env === 'production' && configService.get('REDIS_TLS_ENABLED', 'false') === 'true') {
     (config as any).tls = {
-      rejectUnauthorized: configService.get('REDIS_TLS_REJECT_UNAUTHORIZED', true),
+      rejectUnauthorized: configService.get('REDIS_TLS_REJECT_UNAUTHORIZED', 'true') === 'true',
       ca: configService.get('REDIS_TLS_CA'),
       cert: configService.get('REDIS_TLS_CERT'),
       key: configService.get('REDIS_TLS_KEY'),
     };
+    logger.log('TLS enabled for Redis connection');
   }
 
+  // Validation de la configuration
   if (!config.host || !config.port) {
     logger.error('Invalid Redis configuration: host and port are required');
     throw new Error('Redis configuration error: missing host or port');
   }
 
+  // Logging de la configuration appliquée
   logger.log(`Redis configuration for ${env}:`);
   logger.log(`  Host: ${config.host}:${config.port}`);
   logger.log(`  Database: ${config.db}`);
-  logger.log(`  Key Prefix: ${config.keyPrefix}`);
+  // logger.log(`  Key Prefix: ${config.keyPrefix}`);
   logger.log(`  Connection Timeout: ${config.connectTimeout}ms`);
-  logger.log(`  Command Timeout: ${config.commandTimeout}ms`);
   logger.log(`  Max Retries: ${config.maxRetriesPerRequest}`);
   logger.log(`  Lazy Connect: ${config.lazyConnect}`);
   
   if (config.password) {
     logger.log('  Authentication: enabled');
-  }
-  
-  if ((config as any).tls) {
-    logger.log('  TLS: enabled');
   }
 
   return {
@@ -121,105 +108,33 @@ function getRedisConfiguration(configService: ConfigService): RedisModuleOptions
   };
 }
 
-// ============================================================================
-// HEALTH CHECK PROVIDER (OPTIONNEL)
-// ============================================================================
-
 /**
- * Provider pour les health checks Redis
- * À utiliser si le module @nestjs/terminus est installé
+ * Provider pour les événements Redis (optionnel)
+ * Utile pour le monitoring et debugging
  */
-/*
-@Injectable()
-export class CacheHealthIndicator extends HealthIndicator {
+class RedisEventsLogger {
+  private readonly logger = new Logger('RedisEvents');
+
   constructor(private readonly cacheService: CacheService) {
-    super();
+    // Se connecter aux événements Redis si disponible
+    this.setupEventLogging();
   }
 
-  async isHealthy(key: string): Promise<HealthIndicatorResult> {
+  private setupEventLogging(): void {
+    // Note: L'accès direct à l'instance Redis dépend de l'implémentation
+    // Cette partie peut être ajustée selon vos besoins de monitoring
     try {
-      const isHealthy = await this.cacheService.healthCheck();
-      const result = this.getStatus(key, isHealthy, { 
-        status: isHealthy ? 'up' : 'down' 
-      });
-
-      if (isHealthy) {
-        return result;
+      const env = process.env.NODE_ENV;
+      if (env === 'development') {
+        this.logger.log('Redis event logging enabled for development');
+        // Ici on pourrait ajouter des listeners d'événements Redis
       }
-      
-      throw new HealthCheckError('Redis health check failed', result);
     } catch (error) {
-      const result = this.getStatus(key, false, { 
-        status: 'down',
-        error: error.message 
-      });
-      throw new HealthCheckError('Redis health check failed', result);
-    }
-  }
-}
-*/
-
-// ============================================================================
-// LOGGER DE MODULE
-// ============================================================================
-
-/**
- * Logger spécialisé pour le module de cache
- */
-class CacheModuleLogger {
-  private readonly logger = new Logger('CacheModule');
-
-  onModuleInit(): void {
-    this.logger.log('CacheModule initialized successfully');
-    this.logger.debug('Redis connection pool created');
-  }
-
-  onModuleDestroy(): void {
-    this.logger.log('CacheModule shutting down');
-    this.logger.debug('Redis connection pool destroyed');
-  }
-
-  logConnectionEvent(event: 'connect' | 'ready' | 'error' | 'close', details?: any): void {
-    switch (event) {
-      case 'connect':
-        this.logger.log('Redis connection established');
-        break;
-      case 'ready':
-        this.logger.log('Redis client ready for commands');
-        break;
-      case 'error':
-        this.logger.error('Redis connection error:', details);
-        break;
-      case 'close':
-        this.logger.warn('Redis connection closed');
-        break;
+      this.logger.warn('Could not setup Redis event logging:', error.message);
     }
   }
 }
 
-// ============================================================================
-// MODULE PRINCIPAL
-// ============================================================================
-
-/**
- * Module Cache global pour la gestion de Redis
- * 
- * Ce module configure Redis de manière optimisée selon l'environnement
- * et expose le CacheService dans toute l'application.
- * 
- * Variables d'environnement supportées:
- * - REDIS_HOST (défaut: localhost)
- * - REDIS_PORT (défaut: 6379)
- * - REDIS_PASSWORD (optionnel)
- * - REDIS_USERNAME (optionnel)
- * - REDIS_DB (défaut: 0)
- * - REDIS_KEY_PREFIX (défaut: project-service)
- * - REDIS_TLS_ENABLED (défaut: false, production seulement)
- * - REDIS_TLS_REJECT_UNAUTHORIZED (défaut: true)
- * - REDIS_TLS_CA (certificat CA pour TLS)
- * - REDIS_TLS_CERT (certificat client pour TLS)
- * - REDIS_TLS_KEY (clé privée pour TLS)
- */
 @Global()
 @Module({
   imports: [
@@ -230,49 +145,46 @@ class CacheModuleLogger {
   ],
   providers: [
     CacheService,
-    CacheModuleLogger,
-    // Décommentez si vous utilisez @nestjs/terminus pour les health checks
-    // CacheHealthIndicator,
+    RedisEventsLogger, // Monitoring optionnel
   ],
-  exports: [
-    CacheService,
-    // CacheHealthIndicator,
-  ],
+  exports: [CacheService],
 })
 export class CacheModule {
   private readonly logger = new Logger(CacheModule.name);
 
   constructor(
     private readonly cacheService: CacheService,
-    private readonly moduleLogger: CacheModuleLogger,
+    private readonly redisEvents: RedisEventsLogger,
   ) {}
 
-  /**
-   * Initialisation du module
-   */
   async onModuleInit(): Promise<void> {
-    this.moduleLogger.onModuleInit();
+    this.logger.log('CacheModule initialized successfully');
     
-    // Test de connexion initial en développement
-    if (process.env.NODE_ENV === 'development') {
+    // Test de santé initial selon l'environnement
+    const env = process.env.NODE_ENV || 'development';
+    const shouldTestConnection = ['development', 'test'].includes(env);
+    
+    if (shouldTestConnection) {
       try {
         const isHealthy = await this.cacheService.healthCheck();
         if (isHealthy) {
-          this.logger.log('Initial Redis connection test: SUCCESS');
+          this.logger.log('Redis connection health check: SUCCESS');
+          
+          // Test des fonctionnalités de base en développement
+          if (env === 'development') {
+            await this.performDevelopmentTests();
+          }
         } else {
-          this.logger.warn('Initial Redis connection test: FAILED');
+          this.logger.warn('Redis connection health check: FAILED');
         }
       } catch (error) {
-        this.logger.error('Initial Redis connection test error:', error.message);
+        this.logger.error('Redis health check error:', error.message);
       }
     }
   }
 
-  /**
-   * Nettoyage lors de la destruction du module
-   */
   async onModuleDestroy(): Promise<void> {
-    this.moduleLogger.onModuleDestroy();
+    this.logger.log('CacheModule shutting down');
     
     try {
       await this.cacheService.disconnect();
@@ -281,12 +193,38 @@ export class CacheModule {
       this.logger.error('Error during Redis disconnection:', error.message);
     }
   }
+
+  /**
+   * Tests de fonctionnalités en développement
+   */
+  private async performDevelopmentTests(): Promise<void> {
+    try {
+      this.logger.debug('Running development cache tests...');
+      
+      // Test SET/GET basique
+      const testKey = 'dev-test';
+      const testValue = { test: 'value', timestamp: Date.now() };
+      
+      await this.cacheService.set(testKey, testValue, 60);
+      const retrieved = await this.cacheService.get(testKey);
+      
+      if (JSON.stringify(retrieved) === JSON.stringify(testValue)) {
+        this.logger.debug('Cache SET/GET test: PASSED');
+      } else {
+        this.logger.warn('Cache SET/GET test: FAILED');
+      }
+      
+      // Nettoyage
+      await this.cacheService.del(testKey);
+      
+      // Test des statistiques
+      const stats = await this.cacheService.getStats();
+      this.logger.debug(`Cache stats: ${stats.operations.hits} hits, ${stats.operations.misses} misses`);
+      
+    } catch (error) {
+      this.logger.warn('Development cache tests failed:', error.message);
+    }
+  }
 }
 
-// ============================================================================
-// EXPORTS POUR FACILITER L'UTILISATION
-// ============================================================================
-
 export { CacheService } from './cache.service';
-export { CacheModuleLogger };
-// export { CacheHealthIndicator }; // Si health checks utilisés

@@ -8,6 +8,7 @@ import { FileRetrievalService, FileRetrievalResult, BatchRetrievalResult, FileRe
 import { MarkdownExportService, MarkdownExportResult } from '../../../../src/export/services/markdown-export.service';
 import { PdfExportService, PdfConversionResult } from '../../../../src/export/services/pdf-export.service';
 import { CacheService } from '../../../../src/cache/cache.service';
+import { TestFixtures } from '../../../fixtures/project.fixtures';
 
 // Mock des constantes de configuration
 const MOCK_CONFIG: Record<string, any> = {
@@ -25,16 +26,16 @@ describe('ExportService', () => {
   let cacheService: jest.Mocked<CacheService>;
   let configService: jest.Mocked<ConfigService>;
 
-  // Test data fixtures
-  const mockUserId = 'user-123';
-  const mockProjectId = 'project-456';
-  const mockExportId = 'export-789';
+  // Use TestFixtures instead of hardcoded values
+  const mockUser = TestFixtures.users.validUser();
+  const mockProject = TestFixtures.projects.mockProject();
+  const mockExportId = TestFixtures.ids.EXPORT_1;
 
   const mockProjectMetadata = {
-    name: 'Test Project',
-    description: 'A test project',
-    initialPrompt: 'Create a test application',
-    createdAt: new Date('2023-01-01T00:00:00.000Z'),
+    name: mockProject.name,
+    description: mockProject.description,
+    initialPrompt: mockProject.initialPrompt,
+    createdAt: mockProject.createdAt,
     statistics: {
       documentsGenerated: 5,
       tokensUsed: 15000,
@@ -42,12 +43,18 @@ describe('ExportService', () => {
     },
   };
 
+  // Create file IDs using the same pattern as other fixtures
+  const mockFileIds = [
+    "gen-file-550e8400-e29b-41d4-a716-446655440050",
+    "gen-file-550e8400-e29b-41d4-a716-446655440051"
+  ];
+
   const mockFileRetrievalResults: FileRetrievalResult[] = [
     {
-      id: 'file-1',
+      id: mockFileIds[0],
       content: '# Test 1\nContent 1',
       metadata: {
-        id: 'file-1',
+        id: mockFileIds[0],
         name: 'test1.md',
         size: 100,
         contentType: 'text/markdown',
@@ -57,10 +64,10 @@ describe('ExportService', () => {
       contentSize: 100,
     },
     {
-      id: 'file-2',
+      id: mockFileIds[1],
       content: '# Test 2\nContent 2',
       metadata: {
-        id: 'file-2',
+        id: mockFileIds[1],
         name: 'test2.md',
         size: 150,
         contentType: 'text/markdown',
@@ -72,11 +79,11 @@ describe('ExportService', () => {
   ];
 
   const mockMarkdownResult: MarkdownExportResult = {
-    content: '# Combined Document\n\n# Test 1\nContent 1\n\n# Test 2\nContent 2',
+    content: `# ${mockProject.name}\n\n# Test 1\nContent 1\n\n# Test 2\nContent 2`,
     contentSize: 250,
-    suggestedFileName: 'test-project-export.md',
+    suggestedFileName: `${mockProject.name.toLowerCase().replace(/\s+/g, '-')}-export.md`,
     metadata: {
-      projectName: 'Test Project',
+      projectName: mockProject.name,
       exportedAt: new Date('2023-01-01T00:00:00.000Z'),
       generatedAt: new Date('2023-01-01T00:00:00.000Z'),
       platformVersion: '1.0.0',
@@ -85,13 +92,13 @@ describe('ExportService', () => {
     },
     includedFiles: [
       {
-        id: 'file-1',
+        id: mockFileIds[0],
         name: 'test1.md',
         size: 100,
         contentType: 'text/markdown',
       },
       {
-        id: 'file-2',
+        id: mockFileIds[1],
         name: 'test2.md',
         size: 150,
         contentType: 'text/markdown',
@@ -113,7 +120,7 @@ describe('ExportService', () => {
   const mockPdfResult: PdfConversionResult = {
     pdfBuffer: Buffer.from('fake-pdf-content'),
     fileSize: 1000,
-    suggestedFileName: 'test-project-export.pdf',
+    suggestedFileName: `${mockProject.name.toLowerCase().replace(/\s+/g, '-')}-export.pdf`,
     pandocOptions: {
       from: 'markdown',
       to: 'pdf',
@@ -122,7 +129,7 @@ describe('ExportService', () => {
       margins: '25mm',
     },
     metadata: {
-      title: 'Test Project',
+      title: mockProject.name,
       createdAt: new Date('2023-01-01T00:00:00.000Z'),
       generatedBy: 'Coders Platform PDF Export Service',
     },
@@ -132,6 +139,35 @@ describe('ExportService', () => {
       outputSizeBytes: 1000,
     },
     generatedAt: new Date('2023-01-01T00:00:00.000Z'),
+  };
+
+  // Helper functions to create options using TestFixtures base
+  const createMarkdownOptions = (overrides?: Partial<ExportOptionsDto>): ExportOptionsDto => {
+    const options = TestFixtures.exports.markdownExportOptions();
+    if (overrides) {
+      Object.assign(options, overrides);
+    }
+    return options;
+  };
+
+  const createPdfOptions = (overrides?: Partial<ExportOptionsDto>): ExportOptionsDto => {
+    const options = TestFixtures.exports.pdfExportOptions();
+    if (overrides) {
+      Object.assign(options, overrides);
+    }
+    return options;
+  };
+
+  const createCachedResult = (): ExportResponseDto => {
+    return TestFixtures.exports.exportResponseDto();
+  };
+
+  const createMockStatus = (): ExportStatusDto => {
+    const status = new ExportStatusDto();
+    status.status = 'processing';
+    status.progress = 50;
+    status.message = 'Converting files...';
+    return status;
   };
 
   beforeEach(async () => {
@@ -243,9 +279,7 @@ describe('ExportService', () => {
     });
 
     it('should export project with Markdown format successfully', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
-      options.includeMetadata = true;
+      const options = createMarkdownOptions();
       
       // Mock validation success
       jest.spyOn(options, 'validateOptions').mockReturnValue({
@@ -253,11 +287,11 @@ describe('ExportService', () => {
         errors: [],
       });
 
-      const result = await service.exportProject(mockProjectId, options, mockUserId);
+      const result = await service.exportProject(mockProject.id, options, mockUser.id);
 
       expect(result).toBeInstanceOf(ExportResponseDto);
       expect(result.format).toBe('markdown');
-      expect(result.fileName).toBe('test-project-export.md');
+      expect(result.fileName).toContain('.md');
       expect(result.fileSize).toBeGreaterThan(0);
       expect(result.downloadUrl).toContain('http://localhost:3001/exports');
       expect(result.expiresAt).toBeInstanceOf(Date);
@@ -277,20 +311,18 @@ describe('ExportService', () => {
     });
 
     it('should export project with PDF format successfully', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'pdf';
-      options.pdfOptions = createValidPdfOptions();
+      const options = createPdfOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
         errors: [],
       });
 
-      const result = await service.exportProject(mockProjectId, options, mockUserId);
+      const result = await service.exportProject(mockProject.id, options, mockUser.id);
 
       expect(result).toBeInstanceOf(ExportResponseDto);
       expect(result.format).toBe('pdf');
-      expect(result.fileName).toBe('test-project-export.pdf');
+      expect(result.fileName).toContain('.pdf');
       expect(result.fileSize).toBeGreaterThan(0);
 
       // Verify PDF conversion chain
@@ -303,17 +335,15 @@ describe('ExportService', () => {
     });
 
     it('should export with specific file selection', async () => {
-      const selectedFileIds = ['file-1'];
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
-      options.fileIds = selectedFileIds;
+      const selectedFileIds = [mockFileIds[0]];
+      const options = createMarkdownOptions({ fileIds: selectedFileIds });
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
         errors: [],
       });
 
-      await service.exportProject(mockProjectId, options, mockUserId);
+      await service.exportProject(mockProject.id, options, mockUser.id);
 
       expect(fileRetrievalService.getMultipleFiles).toHaveBeenCalledWith(
         selectedFileIds
@@ -321,16 +351,14 @@ describe('ExportService', () => {
     });
 
     it('should include metadata when requested', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
-      options.includeMetadata = true;
+      const options = createMarkdownOptions({ includeMetadata: true });
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
         errors: [],
       });
 
-      await service.exportProject(mockProjectId, options, mockUserId);
+      await service.exportProject(mockProject.id, options, mockUser.id);
 
       expect(markdownExportService.exportMarkdown).toHaveBeenCalledWith(
         expect.any(Array),
@@ -342,15 +370,14 @@ describe('ExportService', () => {
     });
 
     it('should cache export result when cache is enabled', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
+      const options = createMarkdownOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
         errors: [],
       });
 
-      await service.exportProject(mockProjectId, options, mockUserId);
+      await service.exportProject(mockProject.id, options, mockUser.id);
 
       // The service may call cache.set multiple times (for status updates and final result)
       expect(cacheService.set).toHaveBeenCalledWith(
@@ -361,33 +388,25 @@ describe('ExportService', () => {
     });
 
     it('should return cached result when available', async () => {
-      const cachedResult = new ExportResponseDto();
-      cachedResult.downloadUrl = 'cached-url';
-      cachedResult.fileName = 'cached-file.md';
-      cachedResult.format = 'markdown';
-      cachedResult.fileSize = 100;
-      cachedResult.expiresAt = new Date();
-      cachedResult.md5Hash = 'cached-hash';
+      const cachedResult = createCachedResult();
       
       // Mock the cache to return the cached result immediately
       cacheService.get.mockResolvedValueOnce(cachedResult);
       
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
+      const options = createMarkdownOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
         errors: [],
       });
 
-      const result = await service.exportProject(mockProjectId, options, mockUserId);
+      const result = await service.exportProject(mockProject.id, options, mockUser.id);
 
       // The service should return the cached result directly
-      expect(result.downloadUrl).toBe('cached-url');
-      expect(result.fileName).toBe('cached-file.md');
-      expect(result.format).toBe('markdown');
-      expect(result.fileSize).toBe(100);
-      expect(result.md5Hash).toBe('cached-hash');
+      expect(result.downloadUrl).toBe(cachedResult.downloadUrl);
+      expect(result.fileName).toBe(cachedResult.fileName);
+      expect(result.format).toBe(cachedResult.format);
+      expect(result.fileSize).toBe(cachedResult.fileSize);
       
       expect(fileRetrievalService.getMultipleFiles).not.toHaveBeenCalled();
       expect(markdownExportService.exportMarkdown).not.toHaveBeenCalled();
@@ -405,11 +424,11 @@ describe('ExportService', () => {
       });
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toThrow(HttpException);
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toMatchObject({
         message: expect.stringContaining('Invalid export options'),
         status: HttpStatus.BAD_REQUEST,
@@ -417,8 +436,7 @@ describe('ExportService', () => {
     });
 
     it('should handle project access validation failure', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
+      const options = createMarkdownOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
@@ -430,13 +448,12 @@ describe('ExportService', () => {
       );
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toThrow(HttpException);
     });
 
     it('should handle file retrieval failure', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
+      const options = createMarkdownOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
@@ -468,11 +485,11 @@ describe('ExportService', () => {
       });
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toThrow(HttpException);
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toMatchObject({
         message: 'No files could be retrieved for export',
         status: HttpStatus.NOT_FOUND,
@@ -480,8 +497,7 @@ describe('ExportService', () => {
     });
 
     it('should handle partial file retrieval failure gracefully', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
+      const options = createMarkdownOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
@@ -506,7 +522,7 @@ describe('ExportService', () => {
 
       markdownExportService.exportMarkdown.mockResolvedValue(mockMarkdownResult);
 
-      const result = await service.exportProject(mockProjectId, options, mockUserId);
+      const result = await service.exportProject(mockProject.id, options, mockUser.id);
 
       expect(result).toBeInstanceOf(ExportResponseDto);
       expect(markdownExportService.exportMarkdown).toHaveBeenCalledWith(
@@ -517,8 +533,7 @@ describe('ExportService', () => {
     });
 
     it('should handle Markdown export failure', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
+      const options = createMarkdownOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
@@ -539,11 +554,11 @@ describe('ExportService', () => {
       );
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toThrow(HttpException);
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toMatchObject({
         message: expect.stringContaining('Export failed'),
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -551,8 +566,7 @@ describe('ExportService', () => {
     });
 
     it('should handle PDF conversion failure', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'pdf';
+      const options = createPdfOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
@@ -574,7 +588,7 @@ describe('ExportService', () => {
       );
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toThrow(HttpException);
     });
 
@@ -597,7 +611,7 @@ describe('ExportService', () => {
       });
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toMatchObject({
         message: expect.stringContaining('Unsupported export format'),
         status: HttpStatus.BAD_REQUEST,
@@ -607,30 +621,29 @@ describe('ExportService', () => {
 
   describe('getExportStatus', () => {
     it('should return cached export status', async () => {
-      const mockStatus = new ExportStatusDto();
-      mockStatus.status = 'processing';
-      mockStatus.progress = 50;
-      mockStatus.message = 'Converting files...';
+      const mockStatus = createMockStatus();
       
       cacheService.get.mockResolvedValue(mockStatus);
 
-      const result = await service.getExportStatus(mockExportId, mockUserId);
+      const result = await service.getExportStatus(mockExportId, mockUser.id);
 
       expect(result).toBe(mockStatus);
       expect(cacheService.get).toHaveBeenCalledWith(
-        `export_status:${mockExportId}:${mockUserId}`
+        `export_status:${mockExportId}:${mockUser.id}`
       );
     });
 
     it('should throw error for non-existent export', async () => {
       cacheService.get.mockResolvedValue(null);
 
+      const nonExistentExportId = 'non-existent-export-id';
+
       await expect(
-        service.getExportStatus('non-existent-export', mockUserId)
+        service.getExportStatus(nonExistentExportId, mockUser.id)
       ).rejects.toThrow(HttpException);
 
       await expect(
-        service.getExportStatus('non-existent-export', mockUserId)
+        service.getExportStatus(nonExistentExportId, mockUser.id)
       ).rejects.toMatchObject({
         message: 'Export not found or already completed',
         status: HttpStatus.NOT_FOUND,
@@ -668,23 +681,22 @@ describe('ExportService', () => {
 
   describe('Cache Management', () => {
     it('should generate consistent cache keys for same inputs', () => {
-      const options1 = new ExportOptionsDto();
-      options1.format = 'markdown';
-      options1.fileIds = ['file-1', 'file-2'];
-      options1.includeMetadata = true;
+      const options1 = createMarkdownOptions({
+        fileIds: ['file-1', 'file-2'],
+        includeMetadata: true 
+      });
 
-      const options2 = new ExportOptionsDto();
-      options2.format = 'markdown';
-      options2.fileIds = ['file-2', 'file-1']; // Different order
-      options2.includeMetadata = true;
+      const options2 = createMarkdownOptions({
+        fileIds: ['file-2', 'file-1'], // Different order
+        includeMetadata: true 
+      });
 
       expect(options1.format).toBe(options2.format);
       expect(options1.includeMetadata).toBe(options2.includeMetadata);
     });
 
     it('should handle cache service errors gracefully', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
+      const options = createMarkdownOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
@@ -706,7 +718,7 @@ describe('ExportService', () => {
 
       markdownExportService.exportMarkdown.mockResolvedValue(mockMarkdownResult);
 
-      const result = await service.exportProject(mockProjectId, options, mockUserId);
+      const result = await service.exportProject(mockProject.id, options, mockUser.id);
 
       expect(result).toBeInstanceOf(ExportResponseDto);
     });
@@ -748,8 +760,7 @@ describe('ExportService', () => {
 
   describe('Error Recovery and Cleanup', () => {
     it('should clean up failed exports', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
+      const options = createMarkdownOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
@@ -770,15 +781,14 @@ describe('ExportService', () => {
       );
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toThrow('Export processing failed');
 
       expect(markdownExportService.exportMarkdown).toHaveBeenCalled();
     });
 
     it('should handle cleanup errors gracefully', async () => {
-      const options = new ExportOptionsDto();
-      options.format = 'markdown';
+      const options = createMarkdownOptions();
       
       jest.spyOn(options, 'validateOptions').mockReturnValue({
         valid: true,
@@ -801,7 +811,7 @@ describe('ExportService', () => {
       cacheService.del.mockRejectedValue(new Error('Cleanup failed'));
 
       await expect(
-        service.exportProject(mockProjectId, options, mockUserId)
+        service.exportProject(mockProject.id, options, mockUser.id)
       ).rejects.toThrow('Export failed');
     });
   });

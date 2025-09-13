@@ -1,44 +1,52 @@
-// jest.config.js
+// ================================================================
+// jest.config.js - Configuration PRINCIPALE (Tests unitaires)
+// ================================================================
 module.exports = {
-  moduleFileExtensions: ['js', 'json', 'ts'],
-  rootDir: '.',
+  displayName: 'Unit Tests',
+  preset: 'ts-jest',
+  testEnvironment: 'node',
   
-  // ✅ Ajout des patterns testMatch pour reconnaître TOUS les types de tests
+  // Pattern pour tests UNITAIRES uniquement
   testMatch: [
-    '**/__tests__/**/*.[jt]s?(x)',           // Tests dans dossier __tests__
-    '**/?(*.)+(spec|test).[tj]s?(x)',        // Fichiers .spec.ts et .test.ts
-    '**/*.e2e-spec.[tj]s?(x)',               // ✅ Fichiers .e2e-spec.ts
-    '**/*.e2e.spec.[tj]s?(x)',               // ✅ Fichiers .e2e.spec.ts
-    '**/*.integration-spec.[tj]s?(x)',       // ✅ Fichiers .integration-spec.ts
-    '**/*.performance-spec.[tj]s?(x)',       // ✅ Fichiers .performance-spec.ts
+    '<rootDir>/test/unit/**/*.spec.ts'
   ],
   
+  // Extensions et transformation
+  moduleFileExtensions: ['js', 'json', 'ts'],
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
   
-  collectCoverageFrom: [
-    'src/**/*.(t|j)s',
-    '!src/**/*.spec.ts',
-    '!src/**/*.interface.ts',
-    '!src/**/*.d.ts',
-  ],
-  
-  coverageDirectory: 'coverage',
-  testEnvironment: 'node',
-  
+  // Résolution modules
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@test/(.*)$': '<rootDir>/test/$1',
   },
   
-  // ✅ Configuration pour éviter les problèmes de fermeture
-  forceExit: false,
-  detectOpenHandles: true,
-  
-  // ✅ Setup pour les variables d'environnement
+  // Setup
   setupFiles: ['<rootDir>/test/setup/env-setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/setup/jest.setup.ts'],
   
-  // ✅ Timeout global
+  // Coverage
+  collectCoverageFrom: [
+    'src/**/*.(t|j)s',
+    '!src/**/*.spec.ts',
+    '!src/**/*.interface.ts',
+    '!src/**/*.d.ts',
+    '!src/main.ts',
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  
+  // Performance
   testTimeout: 30000,
+  maxWorkers: '50%',
+  
+  // Nettoyage
+  clearMocks: true,
+  restoreMocks: true,
+  
+  // Gestion fermeture
+  detectOpenHandles: true,
+  forceExit: false,
 };

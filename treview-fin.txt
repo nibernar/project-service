@@ -1,0 +1,284 @@
+.
+├── docker
+│   ├── docker-compose.dev.yml
+│   ├── Dockerfile
+│   └── init-db.sql
+├── docs
+│   ├── api
+│   │   └── project-api.md
+│   ├── architecture
+│   │   └── overview.md
+│   └── development
+│       └── setup.md
+├── dump.rdb
+├── eslint.config.mjs
+├── jest.config.js
+├── jest.e2e.config.js
+├── jest.integration.config.js
+├── migrate.sh
+├── nest-cli.json
+├── package-lock.json
+├── package.json
+├── prisma
+│   ├── dbml
+│   │   └── schema.dbml
+│   ├── migrations
+│   │   ├── 20250725113459_data_init_1
+│   │   │   └── migration.sql
+│   │   └── migration_lock.toml
+│   ├── schema.prisma
+│   └── seed.ts
+├── project-response-dto-report.html
+├── README.md
+├── scripts
+│   ├── test-integration.sh
+│   ├── test-unit.sh
+│   ├── test.sh
+│   ├── validate-coverage.ts
+│   └── validate-current-user-coverage.ts
+├── setup-dev.sh
+├── src
+│   ├── app.controller.spec.ts
+│   ├── app.controller.ts
+│   ├── app.module.ts
+│   ├── app.service.ts
+│   ├── cache
+│   │   ├── cache-keys.constants.ts
+│   │   ├── cache.module.ts
+│   │   └── cache.service.ts
+│   ├── common
+│   │   ├── common.module.ts
+│   │   ├── decorators
+│   │   │   ├── auth.decorator.ts
+│   │   │   └── current-user.decorator.ts
+│   │   ├── dto
+│   │   │   └── pagination.dto.ts
+│   │   ├── enums
+│   │   │   └── project-status.enum.ts
+│   │   ├── exceptions
+│   │   │   ├── index.ts
+│   │   │   ├── invalid-operation.exception.ts
+│   │   │   ├── project-not-found.exception.ts
+│   │   │   └── unauthorized-access.exception.ts
+│   │   ├── guards
+│   │   │   ├── auth.guard.ts
+│   │   │   └── project-owner.guard.ts
+│   │   ├── interfaces
+│   │   │   ├── paginated-result.interface.ts
+│   │   │   └── user.interface.ts
+│   │   └── utils
+│   │       ├── index.ts
+│   │       └── validation.utils.ts
+│   ├── config
+│   │   ├── app.config.ts
+│   │   ├── cache.config.ts
+│   │   └── database.config.ts
+│   ├── database
+│   │   ├── database.module.ts
+│   │   └── database.service.ts
+│   ├── events
+│   │   ├── dto
+│   │   │   └── project-created.dto.ts
+│   │   ├── event-types.constants.ts
+│   │   ├── events.module.ts
+│   │   └── events.service.ts
+│   ├── export
+│   │   ├── dto
+│   │   │   ├── export-options.dto.ts
+│   │   │   └── export-response.dto.ts
+│   │   ├── export.controller.ts
+│   │   ├── export.module.ts
+│   │   ├── export.service.ts
+│   │   └── services
+│   │       ├── file-retrieval.service.ts
+│   │       ├── markdown-export.service.ts
+│   │       └── pdf-export.service.ts
+│   ├── health
+│   │   ├── health.controller.ts
+│   │   ├── health.module.ts
+│   │   └── health.service.ts
+│   ├── main.ts
+│   ├── project
+│   │   ├── dto
+│   │   │   ├── create-project.dto.ts
+│   │   │   ├── project-list.dto.ts
+│   │   │   ├── project-response.dto.ts
+│   │   │   └── update-project.dto.ts
+│   │   ├── entities
+│   │   │   └── project.entity.ts
+│   │   ├── project.controller.ts
+│   │   ├── project.module.ts
+│   │   ├── project.repository.ts
+│   │   └── project.service.ts
+│   └── statistics
+│       ├── dto
+│       │   ├── statistics-response.dto.ts
+│       │   └── update-statistics.dto.ts
+│       ├── entities
+│       │   └── project-statistics.entity.ts
+│       ├── statistics.controller.ts
+│       ├── statistics.module.ts
+│       ├── statistics.repository.ts
+│       └── statistics.service.ts
+├── test
+│   ├── app.e2e-spec.ts
+│   ├── e2e
+│   │   ├── cache-events.e2e-spec.ts
+│   │   ├── cache.e2e-spec.ts
+│   │   ├── common
+│   │   │   └── guards
+│   │   │       └── project-owner.guarde2e.spec.ts
+│   │   ├── project
+│   │   │   └── dto
+│   │   │       ├── create-project.e2e.spec.ts
+│   │   │       └── project-list.dto.e2e.spec.ts
+│   │   └── project.e2e-spec.ts
+│   ├── fixtures
+│   │   └── project.fixtures.ts
+│   ├── integration
+│   │   ├── cache.integration.spec.ts
+│   │   ├── common
+│   │   │   └── guards
+│   │   │       ├── auth.guard.integration.spec.ts
+│   │   │       └── project-owner.guard.integration.spec.ts
+│   │   ├── events.integration.spec.ts
+│   │   ├── project
+│   │   │   └── dto
+│   │   │       ├── create-project.integration.spec.ts
+│   │   │       ├── project-list.dto.integration.spec.ts
+│   │   │       └── update-project.dto.integration.spec.ts
+│   │   ├── project-status.enum.integration.spec.ts
+│   │   ├── project.integration.spec.ts
+│   │   └── statistics
+│   │       └── statistics.integration.spec.ts
+│   ├── jest-e2e.json
+│   ├── performance
+│   │   ├── common
+│   │   │   └── guards
+│   │   │       └── project-owner.guard.performance.spec.ts
+│   │   └── statistics
+│   │       ├── statistics.performance.spec.ts
+│   │       └── statistics.security.spec.ts
+│   ├── security
+│   │   └── cache-events.security.spec.ts
+│   ├── setup
+│   │   ├── cache-test-setup.ts
+│   │   ├── current-user-test-setup.ts
+│   │   ├── database-test-setup.ts
+│   │   ├── enum-test-setup.ts
+│   │   ├── env-setup.ts
+│   │   ├── exceptions-test-setup.ts
+│   │   ├── global-setup.ts
+│   │   ├── global-teardown.ts
+│   │   ├── jest.setup.ts
+│   │   ├── pagination-test-setup.ts
+│   │   ├── performance-global-setup.js
+│   │   └── performance-global-teardown.js
+│   └── unit
+│       ├── cache
+│       │   ├── cache.edge-cases.spec.ts
+│       │   ├── cache.security.spec.ts
+│       │   └── cache.service.spec.ts
+│       ├── common
+│       │   ├── database
+│       │   │   ├── database.service.lifecycle.spec.ts
+│       │   │   ├── database.service.security.spec.ts
+│       │   │   ├── database.service.spec.ts
+│       │   │   └── database.service.utilities.spec.ts
+│       │   ├── decorators
+│       │   │   ├── current-user.decorator.edge-cases.spec.ts
+│       │   │   ├── current-user.decorator.performance.spec.ts
+│       │   │   ├── current-user.decorator.regression.spec.ts
+│       │   │   ├── current-user.decorator.security.spec.ts
+│       │   │   └── current-user.decorator.spec.ts
+│       │   ├── dto
+│       │   │   └── pagination.dto.spec.ts
+│       │   ├── enums
+│       │   │   └── project-status.enum.spec.ts
+│       │   ├── exceptions
+│       │   │   ├── project-not-found.exception.spec.ts
+│       │   │   └── unauthorized-access.exception.spec.ts
+│       │   ├── guards
+│       │   │   ├── auth.guard.edge-cases.spec.ts
+│       │   │   ├── auth.guard.performance.spec.ts
+│       │   │   ├── auth.guard.regression.spec.ts
+│       │   │   ├── auth.guard.security.spec.ts
+│       │   │   ├── auth.guard.spec.ts
+│       │   │   ├── project-owner.guard.security.spec.ts
+│       │   │   └── project-owner.guard.spec.ts
+│       │   ├── interfaces
+│       │   │   └── user.interface.spec.ts
+│       │   └── utils
+│       │       └── validation.utils.spec.ts
+│       ├── config
+│       │   ├── app.config.spec.ts
+│       │   ├── cache.config.spec.ts
+│       │   ├── database-config-errors.spec.ts
+│       │   ├── database-config-factory.spec.ts
+│       │   ├── database-config-integration.spec.ts
+│       │   └── database-config-validator.spec.ts
+│       ├── events
+│       │   └── events.service.spec.ts
+│       ├── export
+│       │   ├── controllers
+│       │   │   └── export.controller.spec.ts
+│       │   ├── dto
+│       │   │   ├── export-options.dto.spec.ts
+│       │   │   └── export-response.dto.spec.ts
+│       │   ├── edge-cases
+│       │   │   └── export.edge-cases.spec.ts
+│       │   ├── performance
+│       │   │   └── export.performance.spec.ts
+│       │   ├── security
+│       │   │   └── export.security.spec.ts
+│       │   └── services
+│       │       ├── export.service.spec.ts
+│       │       ├── file-retrieval.service.spec.ts
+│       │       ├── markdown-export.service.spec.ts
+│       │       └── pdf-export.service.spec.ts
+│       ├── project
+│       │   ├── controllers
+│       │   │   └── project.controller.spec.ts
+│       │   ├── dto
+│       │   │   ├── create-project.dto.edge-cases.spec.ts
+│       │   │   ├── create-project.dto.performance.spec.ts
+│       │   │   ├── create-project.dto.security.spec.ts
+│       │   │   ├── create-project.dto.spec.ts
+│       │   │   ├── project-list.dto.edge-cases.spec.ts
+│       │   │   ├── project-list.dto.performance.spec.ts
+│       │   │   ├── project-list.dto.regression.spec.ts
+│       │   │   ├── project-list.dto.security.spec.ts
+│       │   │   ├── project-list.dto.spec.ts
+│       │   │   ├── project-response.dto.edge-cases.spec.ts
+│       │   │   ├── project-response.dto.performance.spec.ts
+│       │   │   ├── project-response.dto.regression.spec.ts
+│       │   │   ├── project-response.dto.security.spec.ts
+│       │   │   ├── project-response.dto.spec.ts
+│       │   │   ├── update-project.dto.edge-cases.spec.ts
+│       │   │   ├── update-project.dto.performance.spec.ts
+│       │   │   ├── update-project.dto.security.spec.ts
+│       │   │   └── update-project.dto.spec.ts
+│       │   ├── repositories
+│       │   │   └── project.repository.spec.ts
+│       │   └── services
+│       │       └── project.service.spec.ts
+│       └── statistics
+│           ├── controllers
+│           │   └── statistics.controller.spec.ts
+│           ├── dto
+│           │   ├── statistics-response.dto.spec.ts
+│           │   └── update-statistics.dto.spec.ts
+│           ├── edge-cases
+│           │   └── statistics.edge-cases.spec.ts
+│           ├── entities
+│           │   └── project-statistics.entity.spec.ts
+│           ├── repositories
+│           │   └── statistics.repository.spec.ts
+│           └── services
+│               └── statistics.service.spec.ts
+├── treview-base.txt
+├── treview-fin.txt
+├── tsconfig.build.json
+└── tsconfig.json
+
+86 directories, 196 files

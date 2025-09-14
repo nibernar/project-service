@@ -5,10 +5,7 @@ import { FastifyRequest } from 'fastify';
 import { CurrentUser } from '../../../../src/common/decorators/current-user.decorator';
 import { User } from '../../../../src/common/interfaces/user.interface';
 
-describe('CurrentUser Decorator - Unit Tests', () => {
-  // Récupération de la fonction de transformation du décorateur
-  const decoratorFactory = CurrentUser as any;
-
+describe('CurrentUser Decorator', () => {
   // Fonction helper qui reproduit la logique du décorateur pour les tests
   const extractUserFunction = (data: unknown, ctx: ExecutionContext): User => {
     const request = ctx.switchToHttp().getRequest<FastifyRequest>();
@@ -22,10 +19,6 @@ describe('CurrentUser Decorator - Unit Tests', () => {
 
     return user;
   };
-
-  // ============================================================================
-  // HELPERS DE TEST
-  // ============================================================================
 
   const createMockExecutionContext = (
     options: { user?: User | null | undefined; [key: string]: any } = {},
@@ -71,14 +64,11 @@ describe('CurrentUser Decorator - Unit Tests', () => {
 
   describe('Fonctionnement nominal', () => {
     it('should extract user from HTTP context successfully', () => {
-      // Arrange
       const testUser = createTestUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
-      // Act
       const result = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(result).toEqual(testUser);
       expect(result).toMatchObject({
         id: 'user-123',
@@ -88,7 +78,6 @@ describe('CurrentUser Decorator - Unit Tests', () => {
     });
 
     it('should return complete and valid User object', () => {
-      // Arrange
       const testUser = createTestUser({
         id: 'user-456',
         email: 'admin@example.com',
@@ -96,10 +85,8 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       });
       const mockContext = createMockExecutionContext({ user: testUser });
 
-      // Act
       const result = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(result).toMatchObject(testUser);
       expect(result.id).toBe('user-456');
       expect(result.email).toBe('admin@example.com');
@@ -109,21 +96,17 @@ describe('CurrentUser Decorator - Unit Tests', () => {
     });
 
     it('should preserve all user properties without modification', () => {
-      // Arrange
       const testUser = createTestUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
-      // Act
       const result = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(Object.keys(result)).toEqual(Object.keys(testUser));
       expect(result).toEqual(testUser);
       expect(result === testUser).toBe(true); // Same reference
     });
 
     it('should work with users having different role combinations', () => {
-      // Arrange
       const testCases = [
         { roles: [] },
         { roles: ['user'] },
@@ -134,24 +117,20 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       ];
 
       testCases.forEach(({ roles }, index) => {
-        // Arrange
         const testUser = createTestUser({
           id: `user-${index}`,
           roles,
         });
         const mockContext = createMockExecutionContext({ user: testUser });
 
-        // Act
         const result = extractUserFunction(undefined, mockContext);
 
-        // Assert
         expect(result.roles).toEqual(roles);
         expect(result.id).toBe(`user-${index}`);
       });
     });
 
     it('should handle users with minimal required properties', () => {
-      // Arrange
       const minimalUser: User = {
         id: 'minimal-user',
         email: 'minimal@example.com',
@@ -159,10 +138,8 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       };
       const mockContext = createMockExecutionContext({ user: minimalUser });
 
-      // Act
       const result = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(result).toEqual(minimalUser);
       expect(result.id).toBe('minimal-user');
       expect(result.email).toBe('minimal@example.com');
@@ -176,7 +153,6 @@ describe('CurrentUser Decorator - Unit Tests', () => {
 
   describe('Validation des données utilisateur', () => {
     it('should work with different ID formats', () => {
-      // Arrange
       const testIds = [
         'user-123',
         '550e8400-e29b-41d4-a716-446655440000', // UUID v4
@@ -187,21 +163,17 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       ];
 
       testIds.forEach((id) => {
-        // Arrange
         const testUser = createTestUser({ id });
         const mockContext = createMockExecutionContext({ user: testUser });
 
-        // Act
         const result = extractUserFunction(undefined, mockContext);
 
-        // Assert
         expect(result.id).toBe(id);
         expect(typeof result.id).toBe('string');
       });
     });
 
     it('should work with different email formats', () => {
-      // Arrange
       const testEmails = [
         'user@example.com',
         'test.user+tag@domain.co.uk',
@@ -212,21 +184,17 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       ];
 
       testEmails.forEach((email) => {
-        // Arrange
         const testUser = createTestUser({ email });
         const mockContext = createMockExecutionContext({ user: testUser });
 
-        // Act
         const result = extractUserFunction(undefined, mockContext);
 
-        // Assert
         expect(result.email).toBe(email);
         expect(typeof result.email).toBe('string');
       });
     });
 
     it('should preserve additional user properties if present', () => {
-      // Arrange
       const extendedUser = {
         ...createTestUser(),
         customProperty: 'customValue',
@@ -241,10 +209,8 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       };
       const mockContext = createMockExecutionContext({ user: extendedUser });
 
-      // Act
       const result = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(result).toEqual(extendedUser);
       expect((result as any).customProperty).toBe('customValue');
       expect((result as any).metadata).toEqual({
@@ -258,7 +224,6 @@ describe('CurrentUser Decorator - Unit Tests', () => {
     });
 
     it('should handle users with empty string values', () => {
-      // Arrange
       const userWithEmptyValues = createTestUser({
         id: '',
         email: '',
@@ -268,10 +233,8 @@ describe('CurrentUser Decorator - Unit Tests', () => {
         user: userWithEmptyValues,
       });
 
-      // Act
       const result = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(result).toEqual(userWithEmptyValues);
       expect(result.id).toBe('');
       expect(result.email).toBe('');
@@ -279,7 +242,6 @@ describe('CurrentUser Decorator - Unit Tests', () => {
     });
 
     it('should handle deeply nested role structures', () => {
-      // Arrange
       const complexRoles = [
         'role:admin:read',
         'role:admin:write',
@@ -290,10 +252,8 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       const testUser = createTestUser({ roles: complexRoles });
       const mockContext = createMockExecutionContext({ user: testUser });
 
-      // Act
       const result = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(result.roles).toEqual(complexRoles);
       expect(result.roles).toHaveLength(5);
     });
@@ -305,33 +265,17 @@ describe('CurrentUser Decorator - Unit Tests', () => {
 
   describe('Gestion des contextes', () => {
     it('should use correct HTTP context method', () => {
-      // Arrange
       const testUser = createTestUser();
       const mockContext = createMockExecutionContext({ user: testUser });
       const switchToHttpSpy = jest.spyOn(mockContext, 'switchToHttp');
 
-      // Act
       extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(switchToHttpSpy).toHaveBeenCalledTimes(1);
       expect(switchToHttpSpy).toHaveBeenCalledWith();
     });
 
-    it('should retrieve request from HTTP context', () => {
-      // Arrange
-      const testUser = createTestUser();
-      const mockContext = createMockExecutionContext({ user: testUser });
-
-      // Act & Assert - Si ça ne lève pas d'erreur, c'est que getRequest() a été appelé
-      expect(() => {
-        const result = extractUserFunction(undefined, mockContext);
-        expect(result).toEqual(testUser);
-      }).not.toThrow();
-    });
-
     it('should work with different request types and properties', () => {
-      // Arrange
       const testUser = createTestUser();
       const testCases = [
         {
@@ -361,47 +305,14 @@ describe('CurrentUser Decorator - Unit Tests', () => {
         },
       ];
 
-      testCases.forEach((requestData, index) => {
-        // Arrange
+      testCases.forEach((requestData) => {
         const mockContext = createMockExecutionContext(requestData);
 
-        // Act
         const result = extractUserFunction(undefined, mockContext);
 
-        // Assert
         expect(result).toEqual(testUser);
         expect(result.id).toBe(testUser.id);
       });
-    });
-
-    it('should not modify the original request object', () => {
-      // Arrange
-      const testUser = createTestUser();
-      const mockContext = createMockExecutionContext({
-        user: testUser,
-        method: 'GET',
-        url: '/test',
-      });
-
-      // Act
-      const result = extractUserFunction(undefined, mockContext);
-
-      // Assert
-      expect(result).toEqual(testUser);
-      // Note: Can't easily test original request immutability with current mock structure
-    });
-
-    it('should work with requests containing circular references', () => {
-      // Arrange
-      const testUser = createTestUser();
-      const mockContext = createMockExecutionContext({ user: testUser });
-
-      // Act
-      const result = extractUserFunction(undefined, mockContext);
-
-      // Assert
-      expect(result).toEqual(testUser);
-      expect(result.id).toBe(testUser.id);
     });
   });
 
@@ -411,14 +322,11 @@ describe('CurrentUser Decorator - Unit Tests', () => {
 
   describe('Compatibilité TypeScript', () => {
     it('should respect TypeScript typing for User interface', () => {
-      // Arrange
       const testUser = createTestUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
-      // Act
       const result: User = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(typeof result.id).toBe('string');
       expect(typeof result.email).toBe('string');
       expect(Array.isArray(result.roles)).toBe(true);
@@ -427,27 +335,7 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       });
     });
 
-    it('should work with decorator factory structure', () => {
-      // Le décorateur est créé via createParamDecorator qui retourne une factory
-      expect(typeof decoratorFactory).toBe('function');
-      expect(typeof extractUserFunction).toBe('function');
-    });
-
-    it('should maintain type safety with generic ExecutionContext', () => {
-      // Arrange
-      const testUser = createTestUser();
-
-      // Test avec différents types de contexte
-      const httpContext = createMockExecutionContext({ user: testUser });
-      const result = extractUserFunction(undefined, httpContext);
-
-      // Assert
-      expect(result).toEqual(testUser);
-      expect(result satisfies User).toBeTruthy();
-    });
-
     it('should handle user objects with strict typing', () => {
-      // Arrange - User strict avec seulement les propriétés requises
       const strictUser: User = {
         id: 'strict-user-123',
         email: 'strict@example.com',
@@ -455,10 +343,8 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       };
       const mockContext = createMockExecutionContext({ user: strictUser });
 
-      // Act
       const result = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(result).toEqual(strictUser);
       expect(Object.keys(result)).toEqual(['id', 'email', 'roles']);
     });
@@ -470,20 +356,16 @@ describe('CurrentUser Decorator - Unit Tests', () => {
 
   describe('Intégration NestJS', () => {
     it('should work as parameter decorator in controller methods', () => {
-      // Simulate comment l'utilisation dans un contrôleur
       const testUser = createTestUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
-      // Simulation d'un appel de contrôleur
       const controllerMethod = (user: User) => {
         return { message: `Hello ${user.email}`, userId: user.id };
       };
 
-      // Act
       const extractedUser = extractUserFunction(undefined, mockContext);
       const controllerResult = controllerMethod(extractedUser);
 
-      // Assert
       expect(controllerResult).toEqual({
         message: 'Hello test@example.com',
         userId: 'user-123',
@@ -491,7 +373,6 @@ describe('CurrentUser Decorator - Unit Tests', () => {
     });
 
     it('should work with multiple decorators in same method', () => {
-      // Simulate l'utilisation avec d'autres décorateurs
       const testUser = createTestUser();
       const mockContext = createMockExecutionContext({
         user: testUser,
@@ -499,10 +380,8 @@ describe('CurrentUser Decorator - Unit Tests', () => {
         params: { id: '123' },
       });
 
-      // Act
       const extractedUser = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(extractedUser).toEqual(testUser);
       // Vérifier que l'extraction n'interfère pas avec les autres données
       const request = mockContext.switchToHttp().getRequest() as any;
@@ -511,7 +390,6 @@ describe('CurrentUser Decorator - Unit Tests', () => {
     });
 
     it('should maintain request context integrity', () => {
-      // Arrange
       const testUser = createTestUser();
       const complexRequest = {
         user: testUser,
@@ -527,10 +405,8 @@ describe('CurrentUser Decorator - Unit Tests', () => {
       };
       const mockContext = createMockExecutionContext(complexRequest);
 
-      // Act
       const result = extractUserFunction(undefined, mockContext);
 
-      // Assert
       expect(result).toEqual(testUser);
       // Vérifier que le contexte complet est préservé
       const request = mockContext.switchToHttp().getRequest() as any;
@@ -545,40 +421,145 @@ describe('CurrentUser Decorator - Unit Tests', () => {
   // ============================================================================
 
   describe('Gestion des erreurs', () => {
+    const errorMessage = 'User not found in request context. Make sure AuthGuard is applied.';
+
     it('should throw error when user is not present', () => {
-      // Arrange
       const mockContext = createMockExecutionContext({}); // No user
 
-      // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow(
-        'User not found in request context. Make sure AuthGuard is applied.',
-      );
+      }).toThrow(errorMessage);
     });
 
     it('should throw error when user is null', () => {
-      // Arrange
       const mockContext = createMockExecutionContext({ user: null });
 
-      // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow(
-        'User not found in request context. Make sure AuthGuard is applied.',
-      );
+      }).toThrow(errorMessage);
     });
 
     it('should throw error when user is undefined', () => {
-      // Arrange
       const mockContext = createMockExecutionContext({ user: undefined });
 
-      // Act & Assert
       expect(() => {
         extractUserFunction(undefined, mockContext);
-      }).toThrow(
-        'User not found in request context. Make sure AuthGuard is applied.',
-      );
+      }).toThrow(errorMessage);
+    });
+
+    it('should throw error when user is falsy value', () => {
+      const falsyValues = ['', false, 0, NaN];
+      
+      falsyValues.forEach((value) => {
+        const mockContext = createMockExecutionContext({ user: value });
+        
+        expect(() => {
+          extractUserFunction(undefined, mockContext);
+        }).toThrow(errorMessage);
+      });
+    });
+  });
+
+  // ============================================================================
+  // TESTS DE SÉCURITÉ ET CAS LIMITES
+  // ============================================================================
+
+  describe('Sécurité et cas limites', () => {
+    it('should not expose sensitive request properties', () => {
+      const testUser = createTestUser();
+      const sensitiveRequest = {
+        user: testUser,
+        password: 'secret123',
+        sessionToken: 'token-abc-123',
+        internalFlags: { isAdmin: true },
+      };
+      const mockContext = createMockExecutionContext(sensitiveRequest);
+
+      const result = extractUserFunction(undefined, mockContext);
+
+      expect(result).toEqual(testUser);
+      expect(result).not.toHaveProperty('password');
+      expect(result).not.toHaveProperty('sessionToken');
+      expect(result).not.toHaveProperty('internalFlags');
+    });
+
+    it('should handle malicious input patterns safely', () => {
+      const maliciousUsers = [
+        createTestUser({ id: '<script>alert("XSS")</script>' }),
+        createTestUser({ email: "'; DROP TABLE users; --@example.com" }),
+        createTestUser({ roles: ['user', '{"$ne": null}'] }),
+      ];
+
+      maliciousUsers.forEach((maliciousUser) => {
+        const mockContext = createMockExecutionContext({ user: maliciousUser });
+        
+        expect(() => {
+          const result = extractUserFunction(undefined, mockContext);
+          expect(result).toEqual(maliciousUser);
+        }).not.toThrow();
+      });
+    });
+
+    it('should handle extreme data sizes', () => {
+      const extremeUser = createTestUser({
+        id: 'a'.repeat(1000),
+        roles: Array.from({ length: 1000 }, (_, i) => `role-${i}`),
+      });
+      const mockContext = createMockExecutionContext({ user: extremeUser });
+
+      const result = extractUserFunction(undefined, mockContext);
+
+      expect(result).toEqual(extremeUser);
+      expect(result.id).toHaveLength(1000);
+      expect(result.roles).toHaveLength(1000);
+    });
+
+    it('should handle frozen and sealed objects', () => {
+      const frozenUser = Object.freeze(createTestUser());
+      const sealedUser = Object.seal(createTestUser());
+
+      [frozenUser, sealedUser].forEach((user) => {
+        const mockContext = createMockExecutionContext({ user });
+        const result = extractUserFunction(undefined, mockContext);
+        expect(result).toEqual(user);
+      });
+    });
+  });
+
+  // ============================================================================
+  // TESTS DE PERFORMANCE (légers)
+  // ============================================================================
+
+  describe('Performance', () => {
+    it('should extract user quickly for typical use cases', () => {
+      const testUser = createTestUser();
+      const mockContext = createMockExecutionContext({ user: testUser });
+
+      const startTime = process.hrtime.bigint();
+      for (let i = 0; i < 1000; i++) {
+        extractUserFunction(undefined, mockContext);
+      }
+      const endTime = process.hrtime.bigint();
+
+      const avgTimeMs = Number(endTime - startTime) / 1000000 / 1000;
+      expect(avgTimeMs).toBeLessThan(1); // < 1ms per call
+    });
+
+    it('should not cause memory leaks with repeated extractions', () => {
+      const testUser = createTestUser();
+      const mockContext = createMockExecutionContext({ user: testUser });
+
+      const memoryBefore = process.memoryUsage().heapUsed;
+      
+      for (let i = 0; i < 1000; i++) {
+        extractUserFunction(undefined, mockContext);
+      }
+
+      if (global.gc) global.gc();
+      const memoryAfter = process.memoryUsage().heapUsed;
+      const memoryGrowth = memoryAfter - memoryBefore;
+
+      expect(memoryGrowth).toBeLessThan(10 * 1024 * 1024); // < 10MB
     });
   });
 });

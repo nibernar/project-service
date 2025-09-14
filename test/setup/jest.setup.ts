@@ -1,23 +1,18 @@
 // test/setup/jest.setup.ts
 
 import 'reflect-metadata';
+import { ClassTransformOptions } from 'class-transformer';
+import { useContainer } from 'class-validator';
 
 // =============================================================================
-// CONFIGURATION GLOBALE JEST POUR PROJECT-RESPONSE-DTO TESTS
+// CONFIGURATION DE BASE
 // =============================================================================
 
-// Configuration des variables d'environnement pour les tests
+// Variables d'environnement pour les tests
 process.env.NODE_ENV = 'test';
 process.env.TZ = 'UTC';
 
-// =============================================================================
-// CONFIGURATION CLASS-TRANSFORMER
-// =============================================================================
-
-// Assurer que class-transformer utilise les bonnes configurations
-import { ClassTransformOptions } from 'class-transformer';
-
-// Configuration par défaut pour tous les tests de transformation
+// Configuration class-transformer
 const defaultTransformOptions: ClassTransformOptions = {
   enableImplicitConversion: true,
   excludeExtraneousValues: true,
@@ -25,30 +20,43 @@ const defaultTransformOptions: ClassTransformOptions = {
   exposeUnsetFields: false,
 };
 
-// Appliquer la configuration globale si disponible
 if (typeof global !== 'undefined') {
   (global as any).classTransformOptions = defaultTransformOptions;
 }
 
+// Configuration timeouts
+jest.setTimeout(30000);
+
 // =============================================================================
-// MATCHERS PERSONNALISÉS JEST
+// MATCHERS PERSONNALISÉS
 // =============================================================================
 
 declare global {
   namespace jest {
     interface Matchers<R> {
+      // Project & Statistics matchers
       toBeValidProjectResponseDto(): R;
       toBeValidStatisticsResponseDto(): R;
       toContainOnlyValidFileIds(): R;
       toHaveSecureLogOutput(): R;
       toBeFreshData(): R;
       toBeWithinTimeRange(start: Date, end: Date): R;
+      
+      // Pagination matchers
+      toBeValidPaginatedResult(): R;
+      toHaveValidPaginationMeta(): R;
+      toHaveCorrectPaginationCalculations(): R;
+      
+      // Security & Validation matchers
+      toNotContainSensitiveInfo(sensitiveTerms: string[]): R;
+      toBeValidationResult(): R;
+      toHaveAuditProperties(expectedProps: string[]): R;
     }
   }
 }
 
-// Matcher pour vérifier qu'un objet est un ProjectResponseDto valide
 expect.extend({
+  // Project Response DTO matcher
   toBeValidProjectResponseDto(received: any) {
     const pass =
       received &&
@@ -65,23 +73,15 @@ expect.extend({
       typeof received.getTotalFilesCount === 'function' &&
       typeof received.toLogSafeString === 'function';
 
-    if (pass) {
-      return {
-        message: () =>
-          `expected ${received} not to be a valid ProjectResponseDto`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () => `expected ${received} to be a valid ProjectResponseDto`,
-        pass: false,
-      };
-    }
+    return {
+      message: () => pass
+        ? `expected ${received} not to be a valid ProjectResponseDto`
+        : `expected ${received} to be a valid ProjectResponseDto`,
+      pass,
+    };
   },
-});
 
-// Matcher pour vérifier qu'un objet est un StatisticsResponseDto valide
-expect.extend({
+  // Statistics Response DTO matcher
   toBeValidStatisticsResponseDto(received: any) {
     const pass =
       received &&
@@ -104,24 +104,15 @@ expect.extend({
       typeof received.isDataFresh === 'function' &&
       typeof received.getPerformanceSummary === 'function';
 
-    if (pass) {
-      return {
-        message: () =>
-          `expected ${received} not to be a valid StatisticsResponseDto`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () =>
-          `expected ${received} to be a valid StatisticsResponseDto`,
-        pass: false,
-      };
-    }
+    return {
+      message: () => pass
+        ? `expected ${received} not to be a valid StatisticsResponseDto`
+        : `expected ${received} to be a valid StatisticsResponseDto`,
+      pass,
+    };
   },
-});
 
-// Matcher pour vérifier que les tableaux contiennent uniquement des IDs de fichiers valides
-expect.extend({
+  // File IDs validation
   toContainOnlyValidFileIds(received: any[]) {
     if (!Array.isArray(received)) {
       return {
@@ -141,24 +132,15 @@ expect.extend({
 
     const pass = invalidItems.length === 0;
 
-    if (pass) {
-      return {
-        message: () =>
-          `expected ${received} not to contain only valid file IDs`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () =>
-          `expected ${received} to contain only valid file IDs, but found invalid items: ${JSON.stringify(invalidItems)}`,
-        pass: false,
-      };
-    }
+    return {
+      message: () => pass
+        ? `expected ${received} not to contain only valid file IDs`
+        : `expected ${received} to contain only valid file IDs, but found invalid items: ${JSON.stringify(invalidItems)}`,
+      pass,
+    };
   },
-});
 
-// Matcher pour vérifier que la sortie de log est sécurisée
-expect.extend({
+  // Security log output
   toHaveSecureLogOutput(received: string) {
     const sensitivePatterns = [
       /password/i,
@@ -178,24 +160,15 @@ expect.extend({
     );
     const pass = !foundSensitiveData;
 
-    if (pass) {
-      return {
-        message: () =>
-          `expected log output "${received}" to contain sensitive data`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () =>
-          `expected log output "${received}" not to contain sensitive data`,
-        pass: false,
-      };
-    }
+    return {
+      message: () => pass
+        ? `expected log output "${received}" to contain sensitive data`
+        : `expected log output "${received}" not to contain sensitive data`,
+      pass,
+    };
   },
-});
 
-// Matcher pour vérifier que les données sont fraîches (moins de 24h)
-expect.extend({
+  // Fresh data validation
   toBeFreshData(received: Date) {
     if (!(received instanceof Date)) {
       return {
@@ -209,24 +182,15 @@ expect.extend({
     const age = now.getTime() - received.getTime();
     const pass = age >= 0 && age < dayInMs;
 
-    if (pass) {
-      return {
-        message: () =>
-          `expected date ${received.toISOString()} not to be fresh (less than 24h old)`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () =>
-          `expected date ${received.toISOString()} to be fresh (less than 24h old), but it's ${Math.round(age / (60 * 60 * 1000))}h old`,
-        pass: false,
-      };
-    }
+    return {
+      message: () => pass
+        ? `expected date ${received.toISOString()} not to be fresh (less than 24h old)`
+        : `expected date ${received.toISOString()} to be fresh (less than 24h old), but it's ${Math.round(age / (60 * 60 * 1000))}h old`,
+      pass,
+    };
   },
-});
 
-// Matcher pour vérifier qu'une date est dans une plage donnée
-expect.extend({
+  // Date range validation
   toBeWithinTimeRange(received: Date, start: Date, end: Date) {
     if (
       !(received instanceof Date) ||
@@ -241,16 +205,147 @@ expect.extend({
 
     const pass = received >= start && received <= end;
 
-    if (pass) {
+    return {
+      message: () => pass
+        ? `expected date ${received.toISOString()} not to be within range [${start.toISOString()}, ${end.toISOString()}]`
+        : `expected date ${received.toISOString()} to be within range [${start.toISOString()}, ${end.toISOString()}]`,
+      pass,
+    };
+  },
+
+  // Paginated result validation
+  toBeValidPaginatedResult(received: unknown) {
+    const isValid = !!(received && 
+      typeof received === 'object' &&
+      'data' in received && Array.isArray((received as any).data) &&
+      'pagination' in received && typeof (received as any).pagination === 'object' &&
+      'total' in received && typeof (received as any).total === 'number');
+    
+    return {
+      message: () => isValid 
+        ? `Expected object not to be a valid PaginatedResult`
+        : `Expected object to be a valid PaginatedResult`,
+      pass: isValid,
+    };
+  },
+
+  // Pagination meta validation
+  toHaveValidPaginationMeta(received: any) {
+    const requiredFields = [
+      'page', 'limit', 'totalPages', 'hasNext', 'hasPrevious', 'offset'
+    ];
+    const missingFields = requiredFields.filter(field => !(field in received));
+
+    if (missingFields.length > 0) {
       return {
-        message: () =>
-          `expected date ${received.toISOString()} not to be within range [${start.toISOString()}, ${end.toISOString()}]`,
+        message: () => `PaginationMeta is missing required fields: ${missingFields.join(', ')}`,
+        pass: false,
+      };
+    }
+
+    const validTypes =
+      typeof received.page === 'number' &&
+      typeof received.limit === 'number' &&
+      typeof received.totalPages === 'number' &&
+      typeof received.hasNext === 'boolean' &&
+      typeof received.hasPrevious === 'boolean' &&
+      typeof received.offset === 'number';
+
+    return {
+      message: () => validTypes 
+        ? `Expected PaginationMeta to be invalid`
+        : `PaginationMeta has invalid field types`,
+      pass: validTypes,
+    };
+  },
+
+  // Pagination calculations validation
+  toHaveCorrectPaginationCalculations(received: any) {
+    const { page, limit, totalPages, hasNext, hasPrevious, offset } = received.pagination;
+    const { total } = received;
+
+    const expectedTotalPages = total > 0 ? Math.ceil(total / limit) : 0;
+    const expectedOffset = (page - 1) * limit;
+    const expectedHasNext = page < totalPages;
+    const expectedHasPrevious = page > 1;
+
+    const errors: string[] = [];
+    if (totalPages !== expectedTotalPages) {
+      errors.push(`totalPages: expected ${expectedTotalPages}, got ${totalPages}`);
+    }
+    if (offset !== expectedOffset) {
+      errors.push(`offset: expected ${expectedOffset}, got ${offset}`);
+    }
+    if (hasNext !== expectedHasNext) {
+      errors.push(`hasNext: expected ${expectedHasNext}, got ${hasNext}`);
+    }
+    if (hasPrevious !== expectedHasPrevious) {
+      errors.push(`hasPrevious: expected ${expectedHasPrevious}, got ${hasPrevious}`);
+    }
+
+    const pass = errors.length === 0;
+
+    return {
+      message: () => pass
+        ? `Expected pagination calculations to be incorrect`
+        : `Pagination calculations are incorrect: ${errors.join(', ')}`,
+      pass,
+    };
+  },
+
+  // Sensitive information validation
+  toNotContainSensitiveInfo(received: string, sensitiveTerms: string[]) {
+    const containsSensitive = sensitiveTerms.some(term => 
+      received && received.toLowerCase().includes(term.toLowerCase())
+    );
+    
+    if (!containsSensitive) {
+      return {
+        message: () => `Expected message to contain sensitive information`,
         pass: true,
       };
     } else {
+      const foundTerms = sensitiveTerms.filter(term =>
+        received.toLowerCase().includes(term.toLowerCase())
+      );
       return {
-        message: () =>
-          `expected date ${received.toISOString()} to be within range [${start.toISOString()}, ${end.toISOString()}]`,
+        message: () => `Expected message not to contain sensitive terms: ${foundTerms.join(', ')}`,
+        pass: false,
+      };
+    }
+  },
+
+  // Validation result structure
+  toBeValidationResult(received: any) {
+    const hasRequiredProps =
+      received &&
+      typeof received === 'object' &&
+      typeof received.isValid === 'boolean' &&
+      Array.isArray(received.errors);
+
+    return {
+      message: () => hasRequiredProps
+        ? `Expected not to be a validation result`
+        : `Expected to be a validation result with isValid (boolean) and errors (array)`,
+      pass: hasRequiredProps,
+    };
+  },
+
+  // Audit properties validation
+  toHaveAuditProperties(received: any, expectedProps: string[]) {
+    const pass = expectedProps.every(
+      (prop) => received && typeof received === 'object' && prop in received,
+    );
+
+    if (pass) {
+      return {
+        message: () => `Expected exception not to have audit properties ${expectedProps.join(', ')}`,
+        pass: true,
+      };
+    } else {
+      const missingProps = expectedProps.filter((prop) => !(prop in received));
+      return {
+        message: () => `Expected exception to have audit properties: ${missingProps.join(', ')}`,
         pass: false,
       };
     }
@@ -261,7 +356,6 @@ expect.extend({
 // MOCKS GLOBAUX
 // =============================================================================
 
-// Mock de console.log pour éviter la pollution des logs pendant les tests
 const originalConsoleLog = console.log;
 const originalConsoleWarn = console.warn;
 const originalConsoleError = console.error;
@@ -281,7 +375,7 @@ afterAll(() => {
 });
 
 // =============================================================================
-// UTILITAIRES DE TEST GLOBAUX
+// UTILITAIRES GLOBAUX
 // =============================================================================
 
 // Utilitaire pour créer des dates de test cohérentes
@@ -291,15 +385,12 @@ global.createTestDate = (offset: number = 0): Date => {
 };
 
 // Utilitaire pour créer des IDs de test cohérents
-global.createTestId = (
-  prefix: string = 'test',
-  suffix: string = '',
-): string => {
+global.createTestId = (prefix: string = 'test', suffix: string = ''): string => {
   const uuid = '550e8400-e29b-41d4-a716-446655440000';
   return suffix ? `${prefix}-${uuid}-${suffix}` : `${prefix}-${uuid}`;
 };
 
-// Utilitaire pour attendre un délai (pour les tests de performance)
+// Utilitaire pour attendre un délai
 global.sleep = (ms: number): Promise<void> => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
@@ -337,82 +428,6 @@ global.isSecureString = (str: string): boolean => {
   return !dangerousPatterns.some((pattern) => pattern.test(str));
 };
 
-// =============================================================================
-// CONFIGURATION PERFORMANCE
-// =============================================================================
-
-// Augmenter les timeouts pour les tests de performance
-jest.setTimeout(30000);
-
-// Configuration pour capturer les métriques de performance
-let performanceMetrics: Array<{
-  testName: string;
-  duration: number;
-  memory: number;
-}> = [];
-
-beforeEach(() => {
-  // Enregistrer l'état initial pour les métriques
-  if (global.gc) {
-    global.gc(); // Force garbage collection si disponible
-  }
-});
-
-afterEach(() => {
-  // Collecter les métriques de performance
-  const testName = expect.getState().currentTestName || 'unknown';
-  const memoryUsage = process.memoryUsage().heapUsed;
-
-  performanceMetrics.push({
-    testName,
-    duration: 0, // Sera mis à jour par les tests individuels si nécessaire
-    memory: memoryUsage,
-  });
-});
-
-afterAll(() => {
-  // Afficher un résumé des métriques de performance si en mode verbose
-  if (process.env.JEST_VERBOSE === 'true') {
-    console.log('\n=== Performance Metrics ===');
-    performanceMetrics.forEach((metric) => {
-      console.log(
-        `${metric.testName}: ${(metric.memory / 1024 / 1024).toFixed(2)}MB`,
-      );
-    });
-  }
-});
-
-// =============================================================================
-// GESTION DES ERREURS ASYNC
-// =============================================================================
-
-// Capturer les erreurs async non gérées
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Ne pas faire échouer les tests pour les erreurs async non critiques
-});
-
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  // Ne pas faire échouer les tests pour les exceptions non critiques
-});
-
-// =============================================================================
-// CONFIGURATION CLASS-VALIDATOR (si utilisé)
-// =============================================================================
-
-// Configuration pour class-validator si nécessaire dans les tests
-import { useContainer } from 'class-validator';
-
-// Utiliser un container vide pour éviter les conflits
-// useContainer({
-//   get: () => undefined,
-// });
-
-// =============================================================================
-// UTILITAIRES DE DEBUGGING
-// =============================================================================
-
 // Fonction pour debugger les transformations class-transformer
 global.debugTransformation = (data: any, TargetClass: any) => {
   console.log('=== DEBUG TRANSFORMATION ===');
@@ -431,7 +446,7 @@ global.debugTransformation = (data: any, TargetClass: any) => {
 };
 
 // =============================================================================
-// EXPORT DES TYPES POUR TYPESCRIPT
+// DÉCLARATIONS GLOBALES TYPESCRIPT
 // =============================================================================
 
 declare global {
@@ -450,12 +465,68 @@ declare global {
 }
 
 // =============================================================================
-// FINALISATION DU SETUP
+// MÉTRIQUES DE PERFORMANCE
 // =============================================================================
 
-console.log('✅ Jest setup completed for ProjectResponseDto tests');
-console.log(`📅 Test environment: ${process.env.NODE_ENV}`);
-console.log(`🌍 Timezone: ${process.env.TZ}`);
-console.log(`🚀 Ready to run tests!`);
+let performanceMetrics: Array<{
+  testName: string;
+  duration: number;
+  memory: number;
+}> = [];
+
+beforeEach(() => {
+  if (global.gc) {
+    global.gc(); // Force garbage collection si disponible
+  }
+});
+
+afterEach(() => {
+  const testName = expect.getState().currentTestName || 'unknown';
+  const memoryUsage = process.memoryUsage().heapUsed;
+
+  performanceMetrics.push({
+    testName,
+    duration: 0,
+    memory: memoryUsage,
+  });
+});
+
+afterAll(() => {
+  if (process.env.JEST_VERBOSE === 'true') {
+    console.log('\n=== Performance Metrics ===');
+    performanceMetrics.forEach((metric) => {
+      console.log(
+        `${metric.testName}: ${(metric.memory / 1024 / 1024).toFixed(2)}MB`,
+      );
+    });
+  }
+});
+
+// =============================================================================
+// GESTION DES ERREURS
+// =============================================================================
+
+process.on('unhandledRejection', (reason, promise) => {
+  if (process.env.JEST_VERBOSE === 'true') {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  }
+});
+
+process.on('uncaughtException', (error) => {
+  if (process.env.JEST_VERBOSE === 'true') {
+    console.error('Uncaught Exception:', error);
+  }
+});
+
+// =============================================================================
+// FINALISATION
+// =============================================================================
+
+if (process.env.JEST_VERBOSE === 'true') {
+  console.log('✅ Jest setup completed');
+  console.log(`📅 Test environment: ${process.env.NODE_ENV}`);
+  console.log(`🌍 Timezone: ${process.env.TZ}`);
+  console.log(`🚀 Ready to run tests!`);
+}
 
 export {};

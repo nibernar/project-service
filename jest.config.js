@@ -24,7 +24,6 @@ module.exports = {
   },
   
   // Setup
-  setupFiles: ['<rootDir>/test/setup/env-setup.ts'],
   setupFilesAfterEnv: ['<rootDir>/test/setup/jest.setup.ts'],
   
   // Coverage

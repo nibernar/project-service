@@ -677,6 +677,97 @@ describe('AuthGuard - Unit Tests', () => {
     });
   });
 
+
+  // ============================================================================
+  // TESTS SECURITY
+  // ============================================================================
+
+  describe('Security', () => {
+    it('should have consistent response times for different token lengths', async () => {
+      // Arrange
+      const tokens = [
+        'short',
+        'medium-length-token', 
+        'very-long-token-that-could-reveal-information-through-timing',
+      ];
+
+      const responseTimes: number[] = [];
+      cacheService.get.mockResolvedValue(null);
+      httpService.post.mockReturnValue(
+        throwError(() => new AxiosError('Invalid token', '401')),
+      );
+
+      // Act - Mesurer les temps de réponse
+      for (const token of tokens) {
+        const request = { headers: { authorization: `Bearer ${token}` } };
+        const context = createMockExecutionContext(request);
+
+        const start = process.hrtime.bigint();
+        try {
+          await authGuard.canActivate(context);
+        } catch (error) {
+          // Expected to fail
+        }
+        const end = process.hrtime.bigint();
+        responseTimes.push(Number(end - start) / 1000000);
+      }
+
+      // Assert - Les temps ne doivent pas varier significativement
+      const avgTime = responseTimes.reduce((a, b) => a + b) / responseTimes.length;
+      const maxDeviation = Math.max(...responseTimes.map(time => Math.abs(time - avgTime)));
+      
+      expect(maxDeviation).toBeLessThan(avgTime * 2.0); // Max 200% de variation
+    });
+
+    it('should use secure hash for cache keys', async () => {
+      // Arrange
+      const token = 'sensitive-token-with-data';
+      const user = createValidUser();
+      const request = { headers: { authorization: `Bearer ${token}` } };
+      const context = createMockExecutionContext(request);
+
+      cacheService.get.mockResolvedValue(null);
+      httpService.post.mockReturnValue(of(createValidAuthResponse(user)));
+
+      // Act
+      await authGuard.canActivate(context);
+
+      // Assert - Vérifier que la clé de cache est hashée de manière sécurisée
+      expect(cacheService.set).toHaveBeenCalledWith(
+        expect.stringMatching(/^auth:token:[a-f0-9]{64}$/), // SHA-256 hash (64 hex chars)
+        user,
+        expect.any(Number),
+      );
+
+      // Vérifier que le token original n'apparaît pas dans la clé
+      const cacheKey = cacheService.set.mock.calls[0][0];
+      expect(cacheKey).not.toContain(token);
+    });
+
+    it('should not leak tokens in error messages', async () => {
+      // Arrange
+      const sensitiveToken = 'secret-token-with-sensitive-information-in-payload';
+      const request = { headers: { authorization: `Bearer ${sensitiveToken}` } };
+      const context = createMockExecutionContext(request);
+
+      cacheService.get.mockResolvedValue(null);
+      httpService.post.mockReturnValue(
+        throwError(() => new Error('Authentication failed')),
+      );
+
+      // Act & Assert
+      try {
+        await authGuard.canActivate(context);
+        fail('Should have thrown an error');
+      } catch (error) {
+        expect(error.message).not.toContain(sensitiveToken);
+        expect(error.message).not.toContain('secret-token');
+        expect(error.message).not.toContain('sensitive-information');
+        expect(error.stack || '').not.toContain(sensitiveToken);
+      }
+    });
+  });
+
   // ============================================================================
   // TESTS UNITAIRES - VALIDATION DES DONNÉES
   // ============================================================================

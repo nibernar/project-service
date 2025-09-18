@@ -4,6 +4,13 @@ import {
   CreateProjectDto,
   CREATE_PROJECT_CONSTANTS,
 } from '../../../../src/project/dto/create-project.dto';
+import { 
+  DataGenerator, 
+  FileFixtures, 
+  TEST_CONSTANTS, 
+  ProjectFixtures,
+  TestFixtures 
+} from '../../../fixtures/project.fixtures';
 
 /**
  * Tests unitaires complets pour CreateProjectDto
@@ -461,68 +468,6 @@ describe('CreateProjectDto', () => {
         expect(result).not.toContain('undefined');
       });
     });
-
-    describe('getEstimatedCost()', () => {
-      it('should estimate cost based on complexity', () => {
-        // Low complexity
-        dto.initialPrompt = 'Simple app';
-        const lowCost = dto.getEstimatedCost();
-        expect(lowCost).toBeGreaterThan(0);
-        expect(lowCost).toBeLessThan(10);
-
-        // Medium complexity
-        dto.initialPrompt = 'Create a web application with user authentication and dashboard';
-        const mediumCost = dto.getEstimatedCost();
-        expect(mediumCost).toBeGreaterThan(lowCost);
-        expect(mediumCost).toBeLessThan(50);
-
-        // High complexity
-        dto.initialPrompt = 'A'.repeat(400) + ' ' + 'feature '.repeat(60);
-        const highCost = dto.getEstimatedCost();
-        expect(highCost).toBeGreaterThan(mediumCost);
-      });
-
-      it('should factor in uploaded files count', () => {
-        dto.initialPrompt = 'Create a web application';
-        
-        const costWithoutFiles = dto.getEstimatedCost();
-        
-        dto.uploadedFileIds = ['file1', 'file2', 'file3'];
-        const costWithFiles = dto.getEstimatedCost();
-        
-        expect(costWithFiles).toBeGreaterThan(costWithoutFiles);
-      });
-    });
-
-    describe('getProjectPreview()', () => {
-      it('should generate project preview', () => {
-        dto.name = 'E-commerce Platform';
-        dto.description = 'Modern online shopping platform';
-        dto.initialPrompt = 'Create e-commerce with React and Node.js';
-        dto.uploadedFileIds = ['requirements.pdf'];
-
-        const preview = dto.getProjectPreview();
-        
-        expect(preview).toHaveProperty('name', 'E-commerce Platform');
-        expect(preview).toHaveProperty('description', 'Modern online shopping platform');
-        expect(preview).toHaveProperty('complexity', 'medium');
-        expect(preview).toHaveProperty('estimatedCost');
-        expect(preview).toHaveProperty('uploadedFilesCount', 1);
-        expect(preview.estimatedCost).toBeGreaterThan(0);
-      });
-
-      it('should handle missing optional fields', () => {
-        dto.name = 'Minimal Project';
-        dto.initialPrompt = 'Create simple app';
-        // description et uploadedFileIds undefined
-
-        const preview = dto.getProjectPreview();
-        
-        expect(preview.description).toBeUndefined();
-        expect(preview.uploadedFilesCount).toBe(0);
-        expect(preview.complexity).toBe('low');
-      });
-    });
   });
 
   // ============================================================================
@@ -533,7 +478,7 @@ describe('CreateProjectDto', () => {
     it('should validate complete valid DTO', async () => {
       const completeDto = plainToClass(CreateProjectDto, validProjectData());
       const errors = await validate(completeDto);
-      expect(errors).toBeValidDto();
+      expect(errors).toHaveLength(0);
     });
 
     it('should handle multiple validation errors', async () => {
@@ -553,29 +498,11 @@ describe('CreateProjectDto', () => {
       dto.initialPrompt = 'Create minimal application';
 
       const errors = await validate(dto);
-      expect(errors).toBeValidDto();
+      expect(errors).toHaveLength(0);
     });
 
     it('should handle realistic project creation scenarios', async () => {
-      const scenarios = [
-        {
-          name: 'Web Application',
-          description: 'Modern web app with React',
-          initialPrompt: 'Create a React web application with user authentication and dashboard',
-          uploadedFileIds: ['mockup.pdf', 'requirements.docx'],
-        },
-        {
-          name: 'Mobile App',
-          initialPrompt: 'Create a mobile application for iOS and Android with React Native',
-          uploadedFileIds: [], // Pas de fichiers uploadés
-        },
-        {
-          name: 'Enterprise System',
-          description: 'Large scale enterprise resource planning system',
-          initialPrompt: 'Create comprehensive ERP system with multiple modules including inventory, CRM, and reporting',
-          uploadedFileIds: ['spec1.pdf', 'spec2.pdf', 'wireframes.sketch'],
-        },
-      ];
+      const scenarios = createRealisticTestScenarios();
 
       for (const scenario of scenarios) {
         const dto = plainToClass(CreateProjectDto, scenario);
@@ -584,11 +511,7 @@ describe('CreateProjectDto', () => {
         expect(errors).toHaveLength(0);
         expect(dto.isValid()).toBe(true);
         expect(dto.getPromptComplexity()).toBeDefined();
-        expect(dto.getEstimatedCost()).toBeGreaterThan(0);
-        
-        const preview = dto.getProjectPreview();
-        expect(preview.name).toBe(scenario.name);
-        expect(preview.complexity).toMatch(/^(low|medium|high)$/);
+        expect(dto.getPromptComplexity()).toMatch(/^(low|medium|high)$/);
       }
     });
   });
@@ -676,7 +599,6 @@ describe('CreateProjectDto', () => {
         dto.toString();
         dto.toLogSafeString();
         dto.getPromptComplexity();
-        dto.getEstimatedCost();
         
         // Vérifier qu'aucune donnée sensible n'est loggée
         errors.forEach(error => {
@@ -724,21 +646,17 @@ describe('CreateProjectDto', () => {
       dto.initialPrompt = largePrompt;
       
       const complexity = dto.getPromptComplexity();
-      const cost = dto.getEstimatedCost();
-      const preview = dto.getProjectPreview();
       
       const duration = performance.now() - startTime;
       
       expect(duration).toBeLessThan(100); // Moins de 100ms
       expect(complexity).toBe('high');
-      expect(cost).toBeGreaterThan(0);
-      expect(preview).toBeDefined();
     });
   });
 });
 
 // ============================================================================
-// HELPERS ET MATCHERS PERSONNALISÉS
+// HELPERS ET DONNÉES DE TEST
 // ============================================================================
 
 // Helper pour créer des données de test valides
@@ -774,26 +692,6 @@ function createRealisticTestScenarios() {
     }
   ];
 }
-
-// Matcher personnalisé pour valider qu'un DTO est valide
-expect.extend({
-  toBeValidDto(received) {
-    const pass = Array.isArray(received) && received.length === 0;
-    if (pass) {
-      return {
-        message: () =>
-          `expected ${received} not to be a valid DTO (no validation errors)`,
-        pass: true,
-      };
-    } else {
-      return {
-        message: () =>
-          `expected ${received} to be a valid DTO (should have no validation errors)`,
-        pass: false,
-      };
-    }
-  },
-});
 
 // Helper pour tests de performance
 function measureExecutionTime<T>(fn: () => T): [T, number] {

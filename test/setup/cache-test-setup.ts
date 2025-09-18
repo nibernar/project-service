@@ -354,6 +354,3 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   }
 });
-
-// Export des classes utilitaires
-export { CacheMockHelper } from './cache-test-setup'; // Référence à l'ancien contenu si nécessaire

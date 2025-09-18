@@ -485,10 +485,11 @@ describe('Statistics Edge Cases and Regression Tests', () => {
         const projectId = 'cache-race-test';
         let cacheDelCalls = 0;
 
+        // Fix: cacheService.del should return a number (count of deleted keys)
         cacheService.del.mockImplementation(async () => {
           cacheDelCalls++;
           await new Promise(resolve => setTimeout(resolve, 5));
-          return undefined;
+          return 1; // Return number of deleted keys
         });
 
         repository.upsert.mockResolvedValue(new ProjectStatisticsEntity({

@@ -7,9 +7,6 @@ import {
 } from '@nestjs/platform-fastify';
 import { ConfigModule } from '@nestjs/config';
 import { randomUUID } from 'crypto';
-// ✅ Import supertest corrigé
-import * as request from 'supertest';
-
 import { AppModule } from '../../../../src/app.module';
 import { DatabaseService } from '../../../../src/database/database.service';
 import { CacheService } from '../../../../src/cache/cache.service';

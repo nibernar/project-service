@@ -1,32 +1,28 @@
 // ================================================================
-// jest.config.js - Configuration PRINCIPALE (Tests unitaires)
+// jest.config.js - Config unique (unit + integration + e2e)
 // ================================================================
 module.exports = {
-  displayName: 'Unit Tests',
+  displayName: 'Tests',
   preset: 'ts-jest',
   testEnvironment: 'node',
-  
-  // Pattern pour tests UNITAIRES uniquement
+
+  // Tous les patterns de test
   testMatch: [
-    '<rootDir>/test/unit/**/*.spec.ts'
+    '<rootDir>/test/unit/**/*.spec.ts',
+    '<rootDir>/test/integration/**/*.integration.spec.ts',
+    '<rootDir>/test/e2e/**/*.e2e-spec.ts',
+    '<rootDir>/test/security/**/*.spec.ts'
   ],
-  
-  // Extensions et transformation
+
   moduleFileExtensions: ['js', 'json', 'ts'],
-  transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
-  },
-  
-  // Résolution modules
+  transform: { '^.+\\.(t|j)s$': 'ts-jest' },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@test/(.*)$': '<rootDir>/test/$1',
   },
-  
-  // Setup
+
   setupFilesAfterEnv: ['<rootDir>/test/setup/jest.setup.ts'],
-  
-  // Coverage
+
   collectCoverageFrom: [
     'src/**/*.(t|j)s',
     '!src/**/*.spec.ts',
@@ -36,16 +32,9 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  
-  // Performance
+
   testTimeout: 30000,
-  maxWorkers: '50%',
-  
-  // Nettoyage
   clearMocks: true,
   restoreMocks: true,
-  
-  // Gestion fermeture
   detectOpenHandles: true,
-  forceExit: false,
 };

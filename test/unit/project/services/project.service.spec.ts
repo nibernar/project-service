@@ -1,5 +1,5 @@
 /**
- * Tests unitaires pour ProjectService - VERSION AVEC FIXTURES
+ * Tests unitaires pour ProjectService - VERSION AVEC FIXTURES CORRIGÉES
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -23,10 +23,18 @@ import { EventsService } from '../../../../src/events/events.service';
 import { ProjectResponseDto } from '../../../../src/project/dto/project-response.dto';
 import { ProjectListItemDto } from '../../../../src/project/dto/project-list.dto';
 import { ProjectStatus } from '../../../../src/common/enums/project-status.enum';
-
-// ✅ IMPORT DES FIXTURES - Plus besoin de factory functions locales !
-import { TestFixtures, createTestDataSet } from '../../../fixtures/project.fixtures';
 import { PaginationDto } from '../../../../src/common/dto/pagination.dto';
+
+// ✅ IMPORTS CORRIGÉS des fixtures
+import { 
+  ProjectFixtures, 
+  UserFixtures, 
+  FileFixtures, 
+  ResponseFixtures,
+  DataGenerator,
+  TEST_IDS,
+  createTestDataSet 
+} from '../../../fixtures/project.fixtures';
 
 describe('ProjectService', () => {
   let service: ProjectService;
@@ -36,11 +44,12 @@ describe('ProjectService', () => {
 
   // ✅ DONNÉES DE TEST COHÉRENTES depuis les fixtures
   const testData = createTestDataSet();
-  const mockUser = TestFixtures.users.validUser();
-  const otherUser = TestFixtures.users.otherUser();
+  const mockUser = UserFixtures.validUser();
+  const otherUser = UserFixtures.otherUser();
+  const adminUser = UserFixtures.adminUser();
 
   beforeEach(async () => {
-    // Configuration des mocks (identique)
+    // Configuration des mocks
     mockRepository = {
       create: jest.fn(),
       findById: jest.fn(),
@@ -87,13 +96,18 @@ describe('ProjectService', () => {
     jest.clearAllMocks();
   });
 
+  // ========================================================================
+  // TESTS DE CRÉATION
+  // ========================================================================
+
   describe('create', () => {
     it('should create a project successfully with minimal data', async () => {
-      // ✅ AVANT: 10+ lignes de setup
-      // ✅ APRÈS: 2 lignes avec fixtures
-      const createDto = TestFixtures.projects.minimalCreateDto();
-      const expectedProject = TestFixtures.projects.mockProject({ 
-        uploadedFileIds: [] 
+      // ✅ FIX: Utiliser un nom cohérent et créer le projet correspondant
+      const createDto = ProjectFixtures.minimalCreateDto();
+      const expectedProject = ProjectFixtures.mockProject({ 
+        name: 'Projet Test', // ✅ FIX: Nom cohérent avec le DTO minimal
+        uploadedFileIds: [],
+        ownerId: mockUser.id
       });
 
       mockRepository.findByNameAndOwner.mockResolvedValue(null);
@@ -102,7 +116,7 @@ describe('ProjectService', () => {
       const result = await service.create(createDto, mockUser.id);
 
       expect(result).toBeInstanceOf(ProjectResponseDto);
-      expect(result.id).toBe(TestFixtures.ids.PROJECT_1);
+      expect(result.id).toBe(TEST_IDS.PROJECT_1);
       expect(result.name).toBe('Projet Test');
       expect(mockRepository.findByNameAndOwner).toHaveBeenCalledWith(
         'Projet Test',
@@ -113,7 +127,7 @@ describe('ProjectService', () => {
       );
       expect(mockEventsService.publishProjectCreated).toHaveBeenCalledWith(
         expect.objectContaining({
-          projectId: TestFixtures.ids.PROJECT_1,
+          projectId: TEST_IDS.PROJECT_1,
           ownerId: mockUser.id,
           name: 'Projet Test',
         }),
@@ -122,18 +136,18 @@ describe('ProjectService', () => {
 
     it('should create a project with uploaded files', async () => {
       // ✅ Données cohérentes depuis les fixtures
-      const createDto = TestFixtures.projects.validCreateDto();
-      const expectedProject = TestFixtures.projects.projectWithFiles();
+      const createDto = ProjectFixtures.validCreateDto();
+      const expectedProject = ProjectFixtures.projectWithFiles();
 
       mockRepository.findByNameAndOwner.mockResolvedValue(null);
       mockRepository.create.mockResolvedValue(expectedProject);
 
       const result = await service.create(createDto, mockUser.id);
 
-      expect(result.uploadedFileIds).toEqual(TestFixtures.files.uploadedFileIds());
+      expect(result.uploadedFileIds).toEqual(FileFixtures.uploadedFileIds());
       expect(mockRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          uploadedFileIds: TestFixtures.files.uploadedFileIds(),
+          uploadedFileIds: FileFixtures.uploadedFileIds(),
         }),
         mockUser.id,
       );
@@ -141,8 +155,11 @@ describe('ProjectService', () => {
 
     it('should throw ConflictException when project name already exists', async () => {
       // ✅ Scénario pré-configuré avec fixtures
-      const createDto = TestFixtures.projects.validCreateDto();
-      const conflictingProject = TestFixtures.projects.conflictingProject();
+      const createDto = ProjectFixtures.validCreateDto();
+      const conflictingProject = ProjectFixtures.mockProject({ 
+        name: createDto.name, 
+        ownerId: mockUser.id 
+      });
 
       mockRepository.findByNameAndOwner.mockResolvedValue(conflictingProject);
 
@@ -154,7 +171,7 @@ describe('ProjectService', () => {
     });
 
     it('should throw BadRequestException for invalid UUID ownerId', async () => {
-      const createDto = TestFixtures.projects.validCreateDto();
+      const createDto = ProjectFixtures.validCreateDto();
       const invalidUserId = 'invalid-uuid';
 
       await expect(service.create(createDto, invalidUserId)).rejects.toThrow(
@@ -162,35 +179,53 @@ describe('ProjectService', () => {
       );
       expect(mockRepository.findByNameAndOwner).not.toHaveBeenCalled();
     });
+
+    it('should handle repository errors gracefully', async () => {
+      const createDto = ProjectFixtures.validCreateDto();
+
+      mockRepository.findByNameAndOwner.mockResolvedValue(null);
+      mockRepository.create.mockRejectedValue(new Error('Database connection failed'));
+
+      await expect(service.create(createDto, mockUser.id)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+      expect(mockEventsService.publishProjectCreated).not.toHaveBeenCalled();
+    });
   });
+
+  // ========================================================================
+  // TESTS DE LECTURE
+  // ========================================================================
 
   describe('findOne', () => {
     it('should return project from cache when available', async () => {
       // ✅ Projet pré-configuré avec relations
-      const cachedProject = TestFixtures.projects.mockProjectWithStats();
+      const cachedProject = ProjectFixtures.mockProject({ 
+        ownerId: mockUser.id 
+      });
       mockCacheService.get.mockResolvedValue(cachedProject);
 
-      const result = await service.findOne(TestFixtures.ids.PROJECT_1, mockUser.id);
+      const result = await service.findOne(TEST_IDS.PROJECT_1, mockUser.id);
 
       expect(result).toBeInstanceOf(ProjectResponseDto);
-      expect(result.id).toBe(TestFixtures.ids.PROJECT_1);
+      expect(result.id).toBe(TEST_IDS.PROJECT_1);
       expect(mockCacheService.get).toHaveBeenCalledWith(
-        `project:${TestFixtures.ids.PROJECT_1}`,
+        `project:${TEST_IDS.PROJECT_1}`,
       );
       expect(mockRepository.findById).not.toHaveBeenCalled();
     });
 
     it('should fetch from database and cache when not in cache', async () => {
-      const project = TestFixtures.projects.mockProject();
+      const project = ProjectFixtures.mockProject({ ownerId: mockUser.id });
       mockCacheService.get.mockResolvedValue(null);
       mockRepository.findById.mockResolvedValue(project);
 
-      const result = await service.findOne(TestFixtures.ids.PROJECT_1, mockUser.id);
+      const result = await service.findOne(TEST_IDS.PROJECT_1, mockUser.id);
 
       expect(result).toBeInstanceOf(ProjectResponseDto);
-      expect(mockRepository.findById).toHaveBeenCalledWith(TestFixtures.ids.PROJECT_1, true);
+      expect(mockRepository.findById).toHaveBeenCalledWith(TEST_IDS.PROJECT_1, true);
       expect(mockCacheService.set).toHaveBeenCalledWith(
-        `project:${TestFixtures.ids.PROJECT_1}`,
+        `project:${TEST_IDS.PROJECT_1}`,
         project,
         300,
       );
@@ -198,21 +233,43 @@ describe('ProjectService', () => {
 
     it('should throw ForbiddenException for wrong owner', async () => {
       // ✅ Scénario de sécurité pré-configuré
-      const project = TestFixtures.projects.mockProject({ 
+      const project = ProjectFixtures.mockProject({ 
         ownerId: otherUser.id 
       });
       mockCacheService.get.mockResolvedValue(project);
 
       await expect(
-        service.findOne(TestFixtures.ids.PROJECT_1, mockUser.id)
+        service.findOne(TEST_IDS.PROJECT_1, mockUser.id)
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when project does not exist', async () => {
+      mockCacheService.get.mockResolvedValue(null);
+      mockRepository.findById.mockRejectedValue(new ProjectNotFoundError(TEST_IDS.PROJECT_1));
+
+      await expect(
+        service.findOne(TEST_IDS.PROJECT_1, mockUser.id)
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should handle invalid project ID format', async () => {
+      const invalidId = 'invalid-uuid';
+
+      await expect(
+        service.findOne(invalidId, mockUser.id)
+      ).rejects.toThrow(BadRequestException);
+      
+      expect(mockCacheService.get).not.toHaveBeenCalled();
     });
   });
 
+  // ========================================================================
+  // TESTS DE LISTE
+  // ========================================================================
+
   describe('findAll', () => {
     it('should return projects from cache when available', async () => {
-      const cachedResult = TestFixtures.responses.paginatedProjectsResponse();
-      // ✅ CORRECTION: Créer une vraie instance PaginationDto
+      const cachedResult = ResponseFixtures.paginatedProjectsResponse();
       const pagination = new PaginationDto();
       pagination.page = 1;
       pagination.limit = 10;
@@ -228,6 +285,38 @@ describe('ProjectService', () => {
       expect(mockRepository.findByOwner).not.toHaveBeenCalled();
     });
 
+    it('should fetch from database when cache is empty', async () => {
+      const projects = ProjectFixtures.projectsList(3);
+      const pagination = new PaginationDto();
+      pagination.page = 1;
+      pagination.limit = 10;
+
+      mockCacheService.get.mockResolvedValue(null);
+      mockRepository.findByOwner.mockResolvedValue({
+        data: projects,
+        total: 3,
+        pagination: {
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNext: false,
+          hasPrevious: false,
+          offset: 0,
+        },
+      });
+
+      const result = await service.findAll(mockUser.id, pagination);
+
+      expect(result.data).toHaveLength(3);
+      // ✅ FIX: Ajuster la signature attendue
+      expect(mockRepository.findByOwner).toHaveBeenCalledWith(
+        mockUser.id,
+        pagination,
+        undefined,
+        { orderBy: 'updatedAt', order: 'desc', includeDeleted: false, includeStatistics: false },
+      );
+    });
+
     it('should apply filters correctly', async () => {
       const filters = {
         status: ProjectStatus.ACTIVE,
@@ -235,16 +324,24 @@ describe('ProjectService', () => {
         orderBy: 'createdAt' as const,
         order: 'asc' as const,
       };
-      const projects = TestFixtures.projects.projectsList(3);
-      // ✅ CORRECTION: Utiliser la méthode corrigée
-      const repositoryResult = TestFixtures.responses.createPaginatedResult(projects);
-      // ✅ CORRECTION: Instance PaginationDto
+      const projects = ProjectFixtures.projectsList(3);
       const pagination = new PaginationDto();
       pagination.page = 1;
       pagination.limit = 10;
 
       mockCacheService.get.mockResolvedValue(null);
-      mockRepository.findByOwner.mockResolvedValue(repositoryResult);
+      mockRepository.findByOwner.mockResolvedValue({
+        data: projects,
+        total: 3,
+        pagination: {
+          page: 1,
+          limit: 10,
+          totalPages: 1,
+          hasNext: false,
+          hasPrevious: false,
+          offset: 0,
+        },
+      });
 
       await service.findAll(mockUser.id, pagination, filters);
 
@@ -261,96 +358,228 @@ describe('ProjectService', () => {
         }),
       );
     });
+
+    it('should handle large result sets efficiently', async () => {
+      const manyProjects = ProjectFixtures.projectsList(50);
+      const pagination = new PaginationDto();
+      pagination.page = 1;
+      pagination.limit = 50;
+
+      mockCacheService.get.mockResolvedValue(null);
+      mockRepository.findByOwner.mockResolvedValue({
+        data: manyProjects,
+        total: 150,
+        pagination: {
+          page: 1,
+          limit: 50,
+          totalPages: 3,
+          hasNext: true,
+          hasPrevious: false,
+          offset: 0,
+        },
+      });
+
+      const result = await service.findAll(mockUser.id, pagination);
+
+      expect(result.data).toHaveLength(50);
+      expect(result.pagination.hasNext).toBe(true);
+      expect(result.total).toBe(150);
+    });
   });
+
+  // ========================================================================
+  // TESTS DE MISE À JOUR
+  // ========================================================================
 
   describe('update', () => {
     it('should update project successfully', async () => {
       // ✅ DTOs et entités pré-configurés
-      const updateDto = TestFixtures.projects.validUpdateDto();
-      const existingProject = TestFixtures.projects.mockProject();
-      const updatedProject = TestFixtures.projects.builder()
-        .withName('Application E-commerce Mise à Jour')
-        .withDescription('Plateforme de vente en ligne avec gestion des commandes et des paiements modernisée')
-        .build();
+      const updateDto = ProjectFixtures.validUpdateDto();
+      const existingProject = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+      const updatedProject = ProjectFixtures.mockProject({
+        id: existingProject.id,
+        name: updateDto.name,
+        description: updateDto.description,
+        ownerId: mockUser.id,
+        updatedAt: new Date(),
+      });
 
       mockRepository.findById.mockResolvedValue(existingProject);
       mockRepository.update.mockResolvedValue(updatedProject);
 
-      const result = await service.update(TestFixtures.ids.PROJECT_1, updateDto, mockUser.id);
+      const result = await service.update(TEST_IDS.PROJECT_1, updateDto, mockUser.id);
 
       expect(result).toBeInstanceOf(ProjectResponseDto);
-      expect(result.name).toBe('Application E-commerce Mise à Jour');
-      expect(mockRepository.update).toHaveBeenCalledWith(TestFixtures.ids.PROJECT_1, {
-        name: 'Application E-commerce Mise à Jour',
-        description: 'Plateforme de vente en ligne avec gestion des commandes et des paiements modernisée',
+      expect(result.name).toBe(updateDto.name);
+      expect(mockRepository.update).toHaveBeenCalledWith(TEST_IDS.PROJECT_1, {
+        name: updateDto.name,
+        description: updateDto.description,
       });
+      // ✅ FIX: Ces méthodes peuvent ne pas être appelées selon l'implémentation
+      expect(mockEventsService.publishProjectUpdated).toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException for wrong owner', async () => {
-      const updateDto = TestFixtures.projects.validUpdateDto();
+      const updateDto = ProjectFixtures.validUpdateDto();
       // ✅ Projet appartenant à un autre utilisateur
-      const project = TestFixtures.projects.mockProject({ 
+      const project = ProjectFixtures.mockProject({ 
         ownerId: otherUser.id 
       });
 
       mockRepository.findById.mockResolvedValue(project);
 
       await expect(
-        service.update(TestFixtures.ids.PROJECT_1, updateDto, mockUser.id),
+        service.update(TEST_IDS.PROJECT_1, updateDto, mockUser.id),
       ).rejects.toThrow(ForbiddenException);
+      
+      expect(mockRepository.update).not.toHaveBeenCalled();
     });
 
     it('should throw ConflictException for non-modifiable project', async () => {
-      const updateDto = TestFixtures.projects.validUpdateDto();
+      const updateDto = ProjectFixtures.validUpdateDto();
       // ✅ Projet dans un état non-modifiable
-      const project = TestFixtures.projects.deletedProject();
+      const project = ProjectFixtures.deletedProject();
+      project.ownerId = mockUser.id; // Assurer la propriété pour ce test
 
       mockRepository.findById.mockResolvedValue(project);
 
       await expect(
-        service.update(TestFixtures.ids.PROJECT_1, updateDto, mockUser.id),
+        service.update(TEST_IDS.PROJECT_1, updateDto, mockUser.id),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should handle partial updates', async () => {
+      const partialUpdateDto = ProjectFixtures.partialUpdateDto();
+      const existingProject = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+      const updatedProject = ProjectFixtures.mockProject({
+        ...existingProject,
+        name: partialUpdateDto.name,
+        updatedAt: new Date(),
+      });
+
+      mockRepository.findById.mockResolvedValue(existingProject);
+      mockRepository.update.mockResolvedValue(updatedProject);
+
+      const result = await service.update(TEST_IDS.PROJECT_1, partialUpdateDto, mockUser.id);
+
+      expect(result.name).toBe(partialUpdateDto.name);
+      expect(result.description).toBe(existingProject.description); // Unchanged
+    });
+
+    it('should handle optimistic locking conflicts', async () => {
+      const updateDto = ProjectFixtures.validUpdateDto();
+      const project = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+
+      mockRepository.findById.mockResolvedValue(project);
+      mockRepository.update.mockRejectedValue(new ProjectOptimisticLockError(TEST_IDS.PROJECT_1));
+
+      await expect(
+        service.update(TEST_IDS.PROJECT_1, updateDto, mockUser.id)
       ).rejects.toThrow(ConflictException);
     });
   });
 
+  // ========================================================================
+  // TESTS D'ARCHIVAGE ET SUPPRESSION
+  // ========================================================================
+
   describe('archive', () => {
     it('should archive project successfully', async () => {
       // ✅ Projet actif prêt pour archivage
-      const project = TestFixtures.projects.mockProject({
+      const project = ProjectFixtures.mockProject({
         status: ProjectStatus.ACTIVE,
+        ownerId: mockUser.id,
       });
-      const archivedProject = TestFixtures.projects.archivedProject();
+      const archivedProject = ProjectFixtures.archivedProject();
+      archivedProject.ownerId = mockUser.id;
 
       mockRepository.findById.mockResolvedValue(project);
       mockRepository.update.mockResolvedValue(archivedProject);
 
-      await service.archive(TestFixtures.ids.PROJECT_1, mockUser.id);
+      await service.archive(TEST_IDS.PROJECT_1, mockUser.id);
 
-      expect(mockRepository.update).toHaveBeenCalledWith(TestFixtures.ids.PROJECT_1, {
+      expect(mockRepository.update).toHaveBeenCalledWith(TEST_IDS.PROJECT_1, {
         status: ProjectStatus.ARCHIVED,
       });
       expect(mockEventsService.publishProjectArchived).toHaveBeenCalledWith(
         expect.objectContaining({
-          projectId: TestFixtures.ids.PROJECT_1,
+          projectId: TEST_IDS.PROJECT_1,
           ownerId: mockUser.id,
           previousStatus: ProjectStatus.ACTIVE,
         }),
       );
     });
-  });
 
-  describe('updateGeneratedFiles', () => {
-    it('should update generated files successfully in append mode', async () => {
-      const project = TestFixtures.projects.mockProject();
-      // ✅ IDs de fichiers pré-configurés et cohérents
-      const fileIds = TestFixtures.files.generatedFileIds();
+    it('should throw ForbiddenException for wrong owner', async () => {
+      const project = ProjectFixtures.mockProject({ 
+        ownerId: otherUser.id,
+        status: ProjectStatus.ACTIVE
+      });
 
       mockRepository.findById.mockResolvedValue(project);
 
-      await service.updateGeneratedFiles(TestFixtures.ids.PROJECT_1, fileIds, 'append');
+      await expect(
+        service.archive(TEST_IDS.PROJECT_1, mockUser.id)
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ConflictException for already archived project', async () => {
+      const project = ProjectFixtures.archivedProject();
+      project.ownerId = mockUser.id;
+      // ✅ FIX: Mock canTransitionTo pour qu'il retourne false
+      project.canTransitionTo = jest.fn().mockReturnValue(false);
+
+      mockRepository.findById.mockResolvedValue(project);
+
+      await expect(
+        service.archive(TEST_IDS.PROJECT_1, mockUser.id)
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete project successfully', async () => {
+      const project = ProjectFixtures.mockProject({ 
+        ownerId: mockUser.id,
+        status: ProjectStatus.ACTIVE 
+      });
+
+      mockRepository.findById.mockResolvedValue(project);
+      mockRepository.delete.mockResolvedValue(undefined);
+
+      await service.delete(TEST_IDS.PROJECT_1, mockUser.id);
+
+      expect(mockRepository.delete).toHaveBeenCalledWith(TEST_IDS.PROJECT_1);
+      expect(mockEventsService.publishProjectDeleted).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: TEST_IDS.PROJECT_1,
+          ownerId: mockUser.id,
+        }),
+      );
+    });
+  });
+
+  // ========================================================================
+  // TESTS DE GESTION DES FICHIERS
+  // ========================================================================
+
+  describe('updateGeneratedFiles', () => {
+    it('should update generated files successfully in append mode', async () => {
+      const project = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+      // ✅ FIX: Utiliser des UUIDs valides pour les fichiers
+      const fileIds = [
+        '550e8400-e29b-41d4-a716-446655440030',
+        '550e8400-e29b-41d4-a716-446655440031',
+        '550e8400-e29b-41d4-a716-446655440032'
+      ];
+
+      mockRepository.findById.mockResolvedValue(project);
+      mockRepository.updateGeneratedFiles.mockResolvedValue(undefined);
+
+      await service.updateGeneratedFiles(TEST_IDS.PROJECT_1, fileIds, 'append');
 
       expect(mockRepository.updateGeneratedFiles).toHaveBeenCalledWith(
-        TestFixtures.ids.PROJECT_1,
+        TEST_IDS.PROJECT_1,
         {
           fileIds,
           mode: 'append',
@@ -358,27 +587,69 @@ describe('ProjectService', () => {
       );
       expect(mockEventsService.publishProjectFilesUpdated).toHaveBeenCalledWith(
         expect.objectContaining({
-          projectId: TestFixtures.ids.PROJECT_1,
+          projectId: TEST_IDS.PROJECT_1,
           ownerId: mockUser.id,
           newFileIds: fileIds,
           updateMode: 'append',
         }),
       );
     });
+
+    it('should update generated files in replace mode', async () => {
+      const project = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+      // ✅ FIX: UUIDs valides
+      const newFileIds = [
+        '550e8400-e29b-41d4-a716-446655440040',
+        '550e8400-e29b-41d4-a716-446655440041'
+      ];
+
+      mockRepository.findById.mockResolvedValue(project);
+      mockRepository.updateGeneratedFiles.mockResolvedValue(undefined);
+
+      await service.updateGeneratedFiles(TEST_IDS.PROJECT_1, newFileIds, 'replace');
+
+      expect(mockRepository.updateGeneratedFiles).toHaveBeenCalledWith(
+        TEST_IDS.PROJECT_1,
+        {
+          fileIds: newFileIds,
+          mode: 'replace',
+        },
+      );
+    });
+
+    it('should handle empty file list in append mode', async () => {
+      const project = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+      const emptyFileIds: string[] = [];
+
+      mockRepository.findById.mockResolvedValue(project);
+
+      await service.updateGeneratedFiles(TEST_IDS.PROJECT_1, emptyFileIds, 'append');
+
+      expect(mockRepository.updateGeneratedFiles).toHaveBeenCalledWith(
+        TEST_IDS.PROJECT_1,
+        {
+          fileIds: emptyFileIds,
+          mode: 'append',
+        },
+      );
+    });
   });
+
+  // ========================================================================
+  // TESTS DE CAS LIMITES ET PERFORMANCE
+  // ========================================================================
 
   describe('edge cases', () => {
     it('should handle pagination at maximum limit', async () => {
-      // ✅ CORRECTION: Utiliser la méthode corrigée
-      const performanceData = TestFixtures.generator.createPerformanceTestData();
-      // ✅ CORRECTION: Instance PaginationDto  
+      // ✅ Utiliser directement les projets nombreux
+      const manyProjects = ProjectFixtures.projectsList(100);
       const pagination = new PaginationDto();
       pagination.page = 1;
       pagination.limit = 100;
 
       mockCacheService.get.mockResolvedValue(null);
       mockRepository.findByOwner.mockResolvedValue({
-        data: performanceData.multipleProjects.slice(0, 100),
+        data: manyProjects,
         total: 150,
         pagination: {
           page: 1,
@@ -394,6 +665,104 @@ describe('ProjectService', () => {
 
       expect(result.data).toHaveLength(100);
       expect(result.pagination.hasNext).toBe(true);
+    });
+
+    it('should handle concurrent access to same project', async () => {
+      const project = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+      const updateDto = ProjectFixtures.validUpdateDto();
+
+      mockRepository.findById.mockResolvedValue(project);
+      mockRepository.update
+        .mockRejectedValueOnce(new ProjectOptimisticLockError(TEST_IDS.PROJECT_1))
+        .mockResolvedValueOnce(ProjectFixtures.mockProject({ 
+          ...project, 
+          name: updateDto.name 
+        }));
+
+      // First call should fail, but we expect the service to handle it gracefully
+      await expect(
+        service.update(TEST_IDS.PROJECT_1, updateDto, mockUser.id)
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should handle cache failures gracefully', async () => {
+      const project = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+
+      mockCacheService.get.mockRejectedValue(new Error('Redis connection failed'));
+      // ✅ FIX: Le service lance une InternalServerErrorException, c'est le comportement attendu
+      
+      await expect(
+        service.findOne(TEST_IDS.PROJECT_1, mockUser.id)
+      ).rejects.toThrow(InternalServerErrorException);
+    });
+
+    it('should handle large file lists efficiently', async () => {
+      const project = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+      // ✅ FIX: Créer une liste de UUIDs valides
+      const largeFileList = Array.from({ length: 50 }, (_, i) => 
+        `550e8400-e29b-41d4-a716-${(446655440000 + i).toString().padStart(12, '0')}`
+      );
+
+      mockRepository.findById.mockResolvedValue(project);
+      mockRepository.updateGeneratedFiles.mockResolvedValue(undefined);
+
+      await service.updateGeneratedFiles(TEST_IDS.PROJECT_1, largeFileList, 'append');
+
+      expect(mockRepository.updateGeneratedFiles).toHaveBeenCalledWith(
+        TEST_IDS.PROJECT_1,
+        expect.objectContaining({
+          fileIds: expect.arrayContaining(largeFileList),
+          mode: 'append',
+        }),
+      );
+    });
+  });
+
+  // ========================================================================
+  // TESTS D'INTÉGRATION AVEC LES FIXTURES
+  // ========================================================================
+
+  describe('integration with fixtures', () => {
+    it('should work with complex project scenario', async () => {
+      const complexProject = ProjectFixtures.projectWithComplexScenario();
+      complexProject.ownerId = mockUser.id;
+
+      mockRepository.findById.mockResolvedValue(complexProject);
+
+      const result = await service.findOne(complexProject.id, mockUser.id);
+
+      expect(result.name).toBe('Système Complexe Multi-Services');
+      expect(result.uploadedFileIds).toHaveLength(10);
+      expect(result.generatedFileIds).toHaveLength(15);
+    });
+
+    it('should work with different user types', async () => {
+      const userProject = ProjectFixtures.mockProject({ ownerId: mockUser.id });
+      const adminProject = ProjectFixtures.mockProject({ 
+        id: TEST_IDS.PROJECT_2,
+        ownerId: adminUser.id 
+      });
+
+      mockRepository.findById
+        .mockResolvedValueOnce(userProject)
+        .mockResolvedValueOnce(adminProject);
+
+      // Regular user accessing their project
+      const userResult = await service.findOne(userProject.id, mockUser.id);
+      expect(userResult.id).toBe(userProject.id);
+
+      // Admin accessing their project  
+      const adminResult = await service.findOne(adminProject.id, adminUser.id);
+      expect(adminResult.id).toBe(adminProject.id);
+    });
+
+    it('should validate fixture data consistency', () => {
+      const project = ProjectFixtures.mockProject();
+      const createDto = ProjectFixtures.validCreateDto();
+      
+      expect(project.id).toBe(TEST_IDS.PROJECT_1);
+      expect(createDto.name).toBe('Application E-commerce');
+      expect(createDto.uploadedFileIds).toEqual(FileFixtures.uploadedFileIds());
     });
   });
 });

@@ -199,90 +199,78 @@ describe('ProjectController', () => {
 
   describe('GET /projects', () => {
     it('should return paginated projects list', async () => {
-      // ✅ Données de pagination pré-configurées
-      const mockPagination = TestFixtures.helpers.createPaginationDto(1, 10);
-      const mockFilters: ProjectFiltersDto = {};
+      // ✅ FIX: La méthode findAll n'attend qu'un ProjectStatus optionnel
+      const page = 1;
+      const limit = 10;
+      const status = undefined; // Pas de filtre de statut
       const expectedResult = TestFixtures.responses.paginatedProjectsResponse();
 
       mockProjectService.findAll.mockResolvedValue(expectedResult);
 
       const result = await controller.findAll(
         mockUser,
-        mockPagination,
-        mockFilters,
+        page,
+        limit,
+        status,
       );
 
       expect(result).toEqual(expectedResult);
       expect(mockProjectService.findAll).toHaveBeenCalledWith(
         mockUser.id,
-        mockPagination,
-        expect.objectContaining({}),
+        expect.objectContaining({ page, limit }),
+        expect.any(Object),
       );
     });
 
-    it('should apply filters correctly', async () => {
-      const mockPagination = TestFixtures.helpers.createPaginationDto(1, 10);
-      const filters: ProjectFiltersDto = {
-        status: ProjectStatus.ACTIVE,
-        search: 'test project',
-        hasGeneratedFiles: true,
-        hasStatistics: false,
-        orderBy: 'createdAt',
-        order: 'asc',
-      };
+    it('should apply status filter correctly', async () => {
+      const page = 1;
+      const limit = 10;
+      const status = ProjectStatus.ACTIVE;
       const expectedResult = TestFixtures.responses.createPaginatedResult([]);
 
       mockProjectService.findAll.mockResolvedValue(expectedResult);
 
-      await controller.findAll(mockUser, mockPagination, filters);
+      await controller.findAll(mockUser, page, limit, status);
 
       expect(mockProjectService.findAll).toHaveBeenCalledWith(
         mockUser.id,
-        mockPagination,
+        expect.objectContaining({ page, limit }),
         expect.objectContaining({
           status: ProjectStatus.ACTIVE,
-          search: 'test project',
-          hasGeneratedFiles: true,
-          hasStatistics: false,
-          orderBy: 'createdAt',
-          order: 'asc',
         }),
       );
     });
 
-    it('should convert date string filters to Date objects', async () => {
-      const mockPagination = TestFixtures.helpers.createPaginationDto(1, 10);
-      const filters: ProjectFiltersDto = {
-        createdAfter: '2024-01-01T00:00:00Z',
-        createdBefore: '2024-12-31T23:59:59Z',
-      };
+    it('should handle no status filter', async () => {
+      const page = 1;
+      const limit = 10;
+      const status = undefined;
       const expectedResult = TestFixtures.responses.createPaginatedResult([]);
 
       mockProjectService.findAll.mockResolvedValue(expectedResult);
 
-      await controller.findAll(mockUser, mockPagination, filters);
+      await controller.findAll(mockUser, page, limit, status);
 
       expect(mockProjectService.findAll).toHaveBeenCalledWith(
         mockUser.id,
-        mockPagination,
-        expect.objectContaining({
-          createdAfter: new Date('2024-01-01T00:00:00Z'),
-          createdBefore: new Date('2024-12-31T23:59:59Z'),
-        }),
+        expect.objectContaining({ page, limit }),
+        expect.any(Object),
       );
     });
 
     it('should handle empty results', async () => {
-      const mockPagination = TestFixtures.helpers.createPaginationDto(1, 10);
-      const mockFilters: ProjectFiltersDto = {};
+      const page = 1;
+      const limit = 10;
+      const status = undefined;
       const emptyResult = TestFixtures.responses.createPaginatedResult([], 0);
 
       mockProjectService.findAll.mockResolvedValue(emptyResult);
 
       const result = await controller.findAll(
         mockUser,
-        mockPagination,
-        mockFilters,
+        page,
+        limit,
+        status,
       );
 
       expect(result.data).toHaveLength(0);
@@ -290,14 +278,15 @@ describe('ProjectController', () => {
     });
 
     it('should log debug information', async () => {
-      const mockPagination = TestFixtures.helpers.createPaginationDto(1, 10);
-      const mockFilters: ProjectFiltersDto = {};
+      const page = 1;
+      const limit = 10;
+      const status = undefined;
       const loggerSpy = jest.spyOn(controller['logger'], 'debug');
       const expectedResult = TestFixtures.responses.createPaginatedResult([]);
 
       mockProjectService.findAll.mockResolvedValue(expectedResult);
 
-      await controller.findAll(mockUser, mockPagination, mockFilters);
+      await controller.findAll(mockUser, page, limit, status);
 
       expect(loggerSpy).toHaveBeenCalledWith(
         expect.stringContaining('Finding projects'),
@@ -309,14 +298,15 @@ describe('ProjectController', () => {
     });
 
     it('should handle service errors', async () => {
-      const mockPagination = TestFixtures.helpers.createPaginationDto(1, 10);
-      const mockFilters: ProjectFiltersDto = {};
+      const page = 1;
+      const limit = 10;
+      const status = undefined;
       const serviceError = new Error('Database error');
 
       mockProjectService.findAll.mockRejectedValue(serviceError);
 
       await expect(
-        controller.findAll(mockUser, mockPagination, mockFilters),
+        controller.findAll(mockUser, page, limit, status),
       ).rejects.toThrow();
     });
   });
@@ -785,18 +775,20 @@ describe('ProjectController', () => {
     });
 
     it('should handle pagination edge cases', async () => {
-      // ✅ Données de test pour cas limites pré-configurées
-      const edgePagination = TestFixtures.helpers.createPaginationDto(1000, 100);
+      // ✅ FIX: Passer des valeurs numériques séparées et un status optionnel
+      const page = 1000;
+      const limit = 100;
+      const status = undefined;
       const expectedResult = TestFixtures.responses.createPaginatedResult([], 0);
 
       mockProjectService.findAll.mockResolvedValue(expectedResult);
 
-      const result = await controller.findAll(mockUser, edgePagination, {});
+      const result = await controller.findAll(mockUser, page, limit, status);
 
       expect(result.data).toHaveLength(0);
       expect(mockProjectService.findAll).toHaveBeenCalledWith(
         mockUser.id,
-        edgePagination,
+        expect.objectContaining({ page, limit }),
         expect.any(Object),
       );
     });
@@ -858,8 +850,10 @@ describe('ProjectController', () => {
 
   describe('Edge cases', () => {
     it('should handle very long project lists', async () => {
-    const pagination = TestFixtures.helpers.createPaginationDto(1, 100);
-    // ✅ CORRECTION: Créer des ProjectListItemDto directement
+      const page = 1;
+      const limit = 100;
+      const status = undefined;
+      // Créer des ProjectListItemDto directement
       const manyItems = Array.from({ length: 100 }, (_, i) => {
         const item = TestFixtures.responses.projectListItemDto();
         item.id = `project-${i}-uuid`;
@@ -870,7 +864,7 @@ describe('ProjectController', () => {
 
       mockProjectService.findAll.mockResolvedValue(result);
 
-      const response = await controller.findAll(mockUser, pagination, {});
+      const response = await controller.findAll(mockUser, page, limit, status);
 
       expect(response.data).toHaveLength(100);
       expect(response.total).toBe(1000);
@@ -892,36 +886,22 @@ describe('ProjectController', () => {
       expect(result.generatedFileIds.length).toBeGreaterThanOrEqual(20);
     });
 
-    it('should handle complex filter combinations', async () => {
-      const complexFilters: ProjectFiltersDto = {
-        status: ProjectStatus.ACTIVE,
-        search: 'complex search term',
-        hasGeneratedFiles: true,
-        hasStatistics: false,
-        createdAfter: '2024-01-01T00:00:00Z',
-        createdBefore: '2024-12-31T23:59:59Z',
-        orderBy: 'name',
-        order: 'asc',
-      };
+    it('should handle different status filters', async () => {
+      // ✅ Test simplifié pour correspondre à la vraie signature de l'API
+      const page = 1;
+      const limit = 10;
+      const status = ProjectStatus.ACTIVE;
       const result = TestFixtures.responses.createPaginatedResult([]);
-      const pagination = TestFixtures.helpers.createPaginationDto(1, 10);
 
       mockProjectService.findAll.mockResolvedValue(result);
 
-      await controller.findAll(mockUser, pagination, complexFilters);
+      await controller.findAll(mockUser, page, limit, status);
 
       expect(mockProjectService.findAll).toHaveBeenCalledWith(
         mockUser.id,
-        pagination,
+        expect.objectContaining({ page, limit }),
         expect.objectContaining({
           status: ProjectStatus.ACTIVE,
-          search: 'complex search term',
-          hasGeneratedFiles: true,
-          hasStatistics: false,
-          createdAfter: new Date('2024-01-01T00:00:00Z'),
-          createdBefore: new Date('2024-12-31T23:59:59Z'),
-          orderBy: 'name',
-          order: 'asc',
         }),
       );
     });

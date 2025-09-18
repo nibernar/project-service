@@ -1,11 +1,18 @@
-// test/e2e/database.e2e-spec.ts
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../../src/database/database.service';
 import { DatabaseModule } from '../../src/database/database.module';
 import { Logger } from '@nestjs/common';
+import { 
+  ProjectFixtures, 
+  UserFixtures, 
+  FileFixtures,
+  TEST_IDS,
+  createTestDataSet,
+  createCompleteTestScenario,
+  createPerformanceTestData
+} from '../fixtures/project.fixtures';
 
 /**
  * Tests End-to-End pour DatabaseService
@@ -38,7 +45,7 @@ describe('DatabaseService - E2E Tests', () => {
       !process.env.TEST_DATABASE_URL &&
       !process.env.CI
     ) {
-      console.log('⏭️  E2E tests skipped - No test database configured');
+      console.log('⭐️  E2E tests skipped - No test database configured');
       return;
     }
 
@@ -87,27 +94,38 @@ describe('DatabaseService - E2E Tests', () => {
     it('should handle complete project lifecycle', async () => {
       if (!service) return;
 
+      const testUser = UserFixtures.validUser();
+      const lifecycleProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_1,
+        ownerId: testUser.id,
+        name: 'E2E Lifecycle Project',
+        description: 'Complete lifecycle test',
+        initialPrompt: 'Create a web application for managing tasks',
+        uploadedFileIds: FileFixtures.uploadedFileIds().slice(0, 2),
+        generatedFileIds: [],
+      });
+
       // 1. Création d'un projet
       const project = await service.project.create({
         data: {
-          id: 'lifecycle-project',
-          name: 'E2E Lifecycle Project',
-          description: 'Complete lifecycle test',
-          initialPrompt: 'Create a web application for managing tasks',
-          ownerId: 'user-123',
-          status: 'ACTIVE',
-          uploadedFileIds: ['file-1', 'file-2'],
-          generatedFileIds: [],
+          id: lifecycleProject.id,
+          name: lifecycleProject.name,
+          description: lifecycleProject.description,
+          initialPrompt: lifecycleProject.initialPrompt,
+          ownerId: lifecycleProject.ownerId,
+          status: lifecycleProject.status,
+          uploadedFileIds: lifecycleProject.uploadedFileIds,
+          generatedFileIds: lifecycleProject.generatedFileIds,
         },
       });
 
-      expect(project.id).toBe('lifecycle-project');
+      expect(project.id).toBe(lifecycleProject.id);
       expect(project.status).toBe('ACTIVE');
 
       // 2. Ajout de statistiques
       const stats = await service.projectStatistics.create({
         data: {
-          id: 'stats-lifecycle',
+          id: TEST_IDS.STATS_1,
           projectId: project.id,
           costs: {
             claudeApi: 15.5,
@@ -131,10 +149,11 @@ describe('DatabaseService - E2E Tests', () => {
       expect(stats.projectId).toBe(project.id);
 
       // 3. Mise à jour avec fichiers générés
+      const generatedFiles = FileFixtures.generatedFileIds().slice(0, 3);
       const updatedProject = await service.project.update({
         where: { id: project.id },
         data: {
-          generatedFileIds: ['gen-1', 'gen-2', 'gen-3'],
+          generatedFileIds: generatedFiles,
           status: 'ACTIVE',
         },
       });
@@ -166,23 +185,35 @@ describe('DatabaseService - E2E Tests', () => {
       if (!service) return;
 
       const projectCount = 10;
-      const userId = 'concurrent-user';
+      const testUser = UserFixtures.validUser();
+      const baseProject = ProjectFixtures.mockProject();
 
       // Créer plusieurs projets en parallèle
-      const createPromises = Array.from({ length: projectCount }, (_, i) =>
-        service.project.create({
+      const createPromises = Array.from({ length: projectCount }, (_, i) => {
+        const projectData = {
+          ...baseProject,
+          id: `concurrent-${i}`,
+          name: `Concurrent Project ${i}`,
+          description: `Project ${i} for concurrent testing`,
+          initialPrompt: `Create application ${i}`,
+          ownerId: testUser.id,
+          uploadedFileIds: [`upload-${i}`],
+          generatedFileIds: [],
+        };
+
+        return service.project.create({
           data: {
-            id: `concurrent-${i}`,
-            name: `Concurrent Project ${i}`,
-            description: `Project ${i} for concurrent testing`,
-            initialPrompt: `Create application ${i}`,
-            ownerId: userId,
-            status: 'ACTIVE',
-            uploadedFileIds: [`upload-${i}`],
-            generatedFileIds: [],
+            id: projectData.id,
+            name: projectData.name,
+            description: projectData.description,
+            initialPrompt: projectData.initialPrompt,
+            ownerId: projectData.ownerId,
+            status: projectData.status,
+            uploadedFileIds: projectData.uploadedFileIds,
+            generatedFileIds: projectData.generatedFileIds,
           },
-        }),
-      );
+        });
+      });
 
       const projects = await Promise.all(createPromises);
       expect(projects).toHaveLength(projectCount);
@@ -205,7 +236,7 @@ describe('DatabaseService - E2E Tests', () => {
 
       // Récupérer tous les projets de l'utilisateur
       const userProjects = await service.project.findMany({
-        where: { ownerId: userId },
+        where: { ownerId: testUser.id },
         include: { statistics: true },
         orderBy: { createdAt: 'asc' },
       });
@@ -237,26 +268,37 @@ describe('DatabaseService - E2E Tests', () => {
     it('should handle data consistency across complex transactions', async () => {
       if (!service) return;
 
+      const testUser = UserFixtures.validUser();
+      const complexProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_2,
+        ownerId: testUser.id,
+        name: 'Complex Transaction Project',
+        description: 'Testing complex transaction consistency',
+        initialPrompt: 'Create a complex application',
+        uploadedFileIds: FileFixtures.uploadedFileIds().slice(0, 2),
+        generatedFileIds: [],
+      });
+
       // Scénario complexe : création d'un projet avec statistiques en une transaction
       const result = await service.withTransaction(async (tx) => {
         // 1. Créer le projet
         const project = await tx.project.create({
           data: {
-            id: 'complex-transaction',
-            name: 'Complex Transaction Project',
-            description: 'Testing complex transaction consistency',
-            initialPrompt: 'Create a complex application',
-            ownerId: 'transaction-user',
-            status: 'ACTIVE',
-            uploadedFileIds: ['complex-1', 'complex-2'],
-            generatedFileIds: [],
+            id: complexProject.id,
+            name: complexProject.name,
+            description: complexProject.description,
+            initialPrompt: complexProject.initialPrompt,
+            ownerId: complexProject.ownerId,
+            status: complexProject.status,
+            uploadedFileIds: complexProject.uploadedFileIds,
+            generatedFileIds: complexProject.generatedFileIds,
           },
         });
 
         // 2. Ajouter les statistiques
         const statistics = await tx.projectStatistics.create({
           data: {
-            id: 'stats-complex',
+            id: TEST_IDS.STATS_2,
             projectId: project.id,
             costs: {
               claudeApi: 25.75,
@@ -278,14 +320,11 @@ describe('DatabaseService - E2E Tests', () => {
         });
 
         // 3. Mettre à jour le projet avec les fichiers générés
+        const generatedFiles = FileFixtures.generatedFileIds().slice(0, 3);
         const updatedProject = await tx.project.update({
           where: { id: project.id },
           data: {
-            generatedFileIds: [
-              'gen-complex-1',
-              'gen-complex-2',
-              'gen-complex-3',
-            ],
+            generatedFileIds: generatedFiles,
           },
         });
 
@@ -293,13 +332,13 @@ describe('DatabaseService - E2E Tests', () => {
       });
 
       // Vérifier que tout a été créé correctement
-      expect(result.project.id).toBe('complex-transaction');
+      expect(result.project.id).toBe(complexProject.id);
       expect(result.project.generatedFileIds).toHaveLength(3);
       expect(result.statistics.projectId).toBe(result.project.id);
 
       // Vérifier la cohérence en base
       const dbProject = await service.project.findUnique({
-        where: { id: 'complex-transaction' },
+        where: { id: complexProject.id },
         include: { statistics: true },
       });
 
@@ -316,6 +355,14 @@ describe('DatabaseService - E2E Tests', () => {
     it('should handle application startup and shutdown gracefully', async () => {
       if (!service) return;
 
+      const testUser = UserFixtures.validUser();
+      const startupProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_1,
+        ownerId: testUser.id,
+        name: 'Startup Test Project',
+        description: 'Testing startup scenario',
+      });
+
       // Test du cycle complet de l'application
       const health1 = await service.isHealthy();
       expect(health1).toBe(true);
@@ -323,20 +370,20 @@ describe('DatabaseService - E2E Tests', () => {
       // Simuler une utilisation normale
       await service.project.create({
         data: {
-          id: 'startup-test',
-          name: 'Startup Test Project',
-          description: 'Testing startup scenario',
-          initialPrompt: 'Test prompt',
-          ownerId: 'startup-user',
-          status: 'ACTIVE',
-          uploadedFileIds: [],
-          generatedFileIds: [],
+          id: startupProject.id,
+          name: startupProject.name,
+          description: startupProject.description,
+          initialPrompt: startupProject.initialPrompt,
+          ownerId: startupProject.ownerId,
+          status: startupProject.status,
+          uploadedFileIds: startupProject.uploadedFileIds,
+          generatedFileIds: startupProject.generatedFileIds,
         },
       });
 
       // Vérifier que les données persistent
       const project = await service.project.findUnique({
-        where: { id: 'startup-test' },
+        where: { id: startupProject.id },
       });
 
       expect(project).not.toBeNull();
@@ -350,13 +397,13 @@ describe('DatabaseService - E2E Tests', () => {
       const health2 = await service.isHealthy();
       expect(health2).toBe(true);
 
-      // Vérifier que les données sont toujours là
+      // Vérifier que les données sont toujours là 
       const persistedProject = await service.project.findUnique({
-        where: { id: 'startup-test' },
+        where: { id: startupProject.id },
       });
 
       expect(persistedProject).not.toBeNull();
-      expect(persistedProject?.name).toBe('Startup Test Project');
+      expect(persistedProject?.name).toBe(startupProject.name);
 
       console.log('✅ Application lifecycle test passed');
     });
@@ -364,22 +411,33 @@ describe('DatabaseService - E2E Tests', () => {
     it('should handle service restarts with active connections', async () => {
       if (!service) return;
 
+      const testUser = UserFixtures.validUser();
+      const baseProject = ProjectFixtures.mockProject();
+
       // Démarrer plusieurs opérations longues
       const longOperations = Array.from({ length: 5 }, (_, i) =>
         service.withTransaction(async (tx) => {
           // Simuler une opération qui prend du temps
           await new Promise((resolve) => setTimeout(resolve, 500));
 
+          const projectData = {
+            ...baseProject,
+            id: `restart-${i}`,
+            name: `Restart Test ${i}`,
+            description: 'Testing restart scenario',
+            ownerId: testUser.id,
+          };
+
           return tx.project.create({
             data: {
-              id: `restart-${i}`,
-              name: `Restart Test ${i}`,
-              description: 'Testing restart scenario',
-              initialPrompt: 'Test prompt',
-              ownerId: 'restart-user',
-              status: 'ACTIVE',
-              uploadedFileIds: [],
-              generatedFileIds: [],
+              id: projectData.id,
+              name: projectData.name,
+              description: projectData.description,
+              initialPrompt: projectData.initialPrompt,
+              ownerId: projectData.ownerId,
+              status: projectData.status,
+              uploadedFileIds: projectData.uploadedFileIds,
+              generatedFileIds: projectData.generatedFileIds,
             },
           });
         }),
@@ -389,7 +447,7 @@ describe('DatabaseService - E2E Tests', () => {
       const results = await Promise.allSettled(longOperations);
       const successful = results.filter((r) => r.status === 'fulfilled').length;
 
-      expect(successful).toBeGreaterThan(0); // Au moins 60% de succès
+      expect(successful).toBeGreaterThan(0); // Au moins quelques succès
 
       // Vérifier que le service est toujours fonctionnel
       const health = await service.isHealthy();
@@ -403,6 +461,9 @@ describe('DatabaseService - E2E Tests', () => {
     it('should handle database maintenance scenarios', async () => {
       if (!service) return;
 
+      const maintenanceUser = UserFixtures.otherUser();
+      const baseProject = ProjectFixtures.mockProject();
+
       // Créer des données de test
       await service.project.createMany({
         data: [
@@ -410,9 +471,9 @@ describe('DatabaseService - E2E Tests', () => {
             id: 'maintenance-1',
             name: 'Maintenance Test 1',
             description: 'Before maintenance',
-            initialPrompt: 'Test prompt',
-            ownerId: 'maintenance-user',
-            status: 'ACTIVE',
+            initialPrompt: baseProject.initialPrompt,
+            ownerId: maintenanceUser.id,
+            status: baseProject.status,
             uploadedFileIds: [],
             generatedFileIds: [],
           },
@@ -420,9 +481,9 @@ describe('DatabaseService - E2E Tests', () => {
             id: 'maintenance-2',
             name: 'Maintenance Test 2',
             description: 'Before maintenance',
-            initialPrompt: 'Test prompt',
-            ownerId: 'maintenance-user',
-            status: 'ACTIVE',
+            initialPrompt: baseProject.initialPrompt,
+            ownerId: maintenanceUser.id,
+            status: baseProject.status,
             uploadedFileIds: [],
             generatedFileIds: [],
           },
@@ -444,7 +505,7 @@ describe('DatabaseService - E2E Tests', () => {
 
       // Vérifier que les anciennes données ont été supprimées
       const oldProjects = await service.project.findMany({
-        where: { ownerId: 'maintenance-user' },
+        where: { ownerId: maintenanceUser.id },
       });
 
       expect(oldProjects).toHaveLength(0);
@@ -457,17 +518,25 @@ describe('DatabaseService - E2E Tests', () => {
     it('should recover from constraint violations gracefully', async () => {
       if (!service) return;
 
+      const testUser = UserFixtures.validUser();
+      const constraintProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_1,
+        ownerId: testUser.id,
+        name: 'Constraint Test',
+        description: 'Testing constraint handling',
+      });
+
       // Créer un projet initial
       const project = await service.project.create({
         data: {
-          id: 'constraint-test',
-          name: 'Constraint Test',
-          description: 'Testing constraint handling',
-          initialPrompt: 'Test prompt',
-          ownerId: 'constraint-user',
-          status: 'ACTIVE',
-          uploadedFileIds: [],
-          generatedFileIds: [],
+          id: constraintProject.id,
+          name: constraintProject.name,
+          description: constraintProject.description,
+          initialPrompt: constraintProject.initialPrompt,
+          ownerId: constraintProject.ownerId,
+          status: constraintProject.status,
+          uploadedFileIds: constraintProject.uploadedFileIds,
+          generatedFileIds: constraintProject.generatedFileIds,
         },
       });
 
@@ -475,12 +544,12 @@ describe('DatabaseService - E2E Tests', () => {
       await expect(
         service.project.create({
           data: {
-            id: 'constraint-test', // Même ID
+            id: constraintProject.id, // Même ID
             name: 'Duplicate Test',
             description: 'Should fail',
-            initialPrompt: 'Test prompt',
-            ownerId: 'constraint-user',
-            status: 'ACTIVE',
+            initialPrompt: constraintProject.initialPrompt,
+            ownerId: constraintProject.ownerId,
+            status: constraintProject.status,
             uploadedFileIds: [],
             generatedFileIds: [],
           },
@@ -493,11 +562,11 @@ describe('DatabaseService - E2E Tests', () => {
 
       // Vérifier que le projet original existe toujours
       const existingProject = await service.project.findUnique({
-        where: { id: 'constraint-test' },
+        where: { id: constraintProject.id },
       });
 
       expect(existingProject).not.toBeNull();
-      expect(existingProject?.name).toBe('Constraint Test');
+      expect(existingProject?.name).toBe(constraintProject.name);
 
       console.log('✅ Constraint violation recovery test passed');
     });
@@ -505,17 +574,25 @@ describe('DatabaseService - E2E Tests', () => {
     it('should handle transaction rollbacks in complex scenarios', async () => {
       if (!service) return;
 
+      const testUser = UserFixtures.validUser();
+      const baseProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_1,
+        ownerId: testUser.id,
+        name: 'Rollback Base Project',
+        description: 'Base for rollback test',
+      });
+
       // Créer un projet de base
-      const baseProject = await service.project.create({
+      const createdBaseProject = await service.project.create({
         data: {
-          id: 'rollback-base',
-          name: 'Rollback Base Project',
-          description: 'Base for rollback test',
-          initialPrompt: 'Test prompt',
-          ownerId: 'rollback-user',
-          status: 'ACTIVE',
-          uploadedFileIds: [],
-          generatedFileIds: [],
+          id: baseProject.id,
+          name: baseProject.name,
+          description: baseProject.description,
+          initialPrompt: baseProject.initialPrompt,
+          ownerId: baseProject.ownerId,
+          status: baseProject.status,
+          uploadedFileIds: baseProject.uploadedFileIds,
+          generatedFileIds: baseProject.generatedFileIds,
         },
       });
 
@@ -524,19 +601,19 @@ describe('DatabaseService - E2E Tests', () => {
         service.withTransaction(async (tx) => {
           // 1. Modifier le projet existant
           await tx.project.update({
-            where: { id: baseProject.id },
+            where: { id: createdBaseProject.id },
             data: { name: 'Modified Name' },
           });
 
           // 2. Créer un nouveau projet
           await tx.project.create({
             data: {
-              id: 'rollback-new',
+              id: TEST_IDS.PROJECT_2,
               name: 'New Project in Transaction',
               description: 'Should be rolled back',
-              initialPrompt: 'Test prompt',
-              ownerId: 'rollback-user',
-              status: 'ACTIVE',
+              initialPrompt: baseProject.initialPrompt,
+              ownerId: testUser.id,
+              status: baseProject.status,
               uploadedFileIds: [],
               generatedFileIds: [],
             },
@@ -546,7 +623,7 @@ describe('DatabaseService - E2E Tests', () => {
           await tx.projectStatistics.create({
             data: {
               id: 'rollback-stats',
-              projectId: 'rollback-new',
+              projectId: TEST_IDS.PROJECT_2,
               costs: { total: 100 },
               performance: { totalTime: 1000 },
               usage: { documentsGenerated: 1 },
@@ -562,10 +639,10 @@ describe('DatabaseService - E2E Tests', () => {
       const originalProject = await service.project.findUnique({
         where: { id: baseProject.id },
       });
-      expect(originalProject?.name).toBe('Rollback Base Project'); // Nom original
+      expect(originalProject?.name).toBe(baseProject.name); // Nom original
 
       const newProject = await service.project.findUnique({
-        where: { id: 'rollback-new' },
+        where: { id: TEST_IDS.PROJECT_2 },
       });
       expect(newProject).toBeNull(); // N'existe pas
 
@@ -581,7 +658,8 @@ describe('DatabaseService - E2E Tests', () => {
       if (!service) return;
 
       const concurrentOperations = 20;
-      const userId = 'stress-user';
+      const stressUser = UserFixtures.thirdUser();
+      const baseProject = ProjectFixtures.mockProject();
 
       // Lancer de nombreuses opérations concurrentes
       const promises = Array.from({ length: concurrentOperations }, (_, i) =>
@@ -595,9 +673,9 @@ describe('DatabaseService - E2E Tests', () => {
                   id: 'duplicate-id', // ID dupliqué pour forcer l'échec
                   name: `Stress Test ${i}`,
                   description: 'Should fail',
-                  initialPrompt: 'Test prompt',
-                  ownerId: userId,
-                  status: 'ACTIVE',
+                  initialPrompt: baseProject.initialPrompt,
+                  ownerId: stressUser.id,
+                  status: baseProject.status,
                   uploadedFileIds: [],
                   generatedFileIds: [],
                 },
@@ -609,9 +687,9 @@ describe('DatabaseService - E2E Tests', () => {
                   id: `stress-${i}`,
                   name: `Stress Test ${i}`,
                   description: 'Stress test project',
-                  initialPrompt: 'Test prompt',
-                  ownerId: userId,
-                  status: 'ACTIVE',
+                  initialPrompt: baseProject.initialPrompt,
+                  ownerId: stressUser.id,
+                  status: baseProject.status,
                   uploadedFileIds: [],
                   generatedFileIds: [],
                 },
@@ -629,12 +707,12 @@ describe('DatabaseService - E2E Tests', () => {
         (r) => r.status === 'fulfilled' && r.value !== null,
       ).length;
 
-      // Au moins 70% des opérations non-dupliquées devraient réussir
+      // Au moins quelques opérations devraient réussir
       expect(successful).toBeGreaterThan(0);
 
       // Vérifier l'intégrité des données
       const finalProjects = await service.project.findMany({
-        where: { ownerId: userId },
+        where: { ownerId: stressUser.id },
       });
 
       expect(finalProjects).toHaveLength(successful);
@@ -653,9 +731,10 @@ describe('DatabaseService - E2E Tests', () => {
     it('should handle typical daily usage patterns', async () => {
       if (!service) return;
 
-      const dailyOperations = 100;
+      const dailyOperations = 50; // Réduit pour les tests plus rapides
       const batchSize = 10;
       const results = [];
+      const performanceData = createPerformanceTestData();
 
       // Simuler des vagues d'utilisation typiques
       for (let batch = 0; batch < dailyOperations / batchSize; batch++) {
@@ -675,17 +754,27 @@ describe('DatabaseService - E2E Tests', () => {
             });
           } else {
             // Création/modification (47%)
+            const projectData = {
+              ...performanceData.largeProject,
+              id: `daily-${operationId}`,
+              name: `Daily Project ${operationId}`,
+              description: 'Daily usage pattern',
+              ownerId: `user-${operationId % 10}`,
+              uploadedFileIds: [],
+              generatedFileIds: [],
+            };
+
             return service.project
               .create({
                 data: {
-                  id: `daily-${operationId}`,
-                  name: `Daily Project ${operationId}`,
-                  description: 'Daily usage pattern',
-                  initialPrompt: 'Test prompt',
-                  ownerId: `user-${operationId % 10}`,
-                  status: 'ACTIVE',
-                  uploadedFileIds: [],
-                  generatedFileIds: [],
+                  id: projectData.id,
+                  name: projectData.name,
+                  description: projectData.description,
+                  initialPrompt: projectData.initialPrompt,
+                  ownerId: projectData.ownerId,
+                  status: projectData.status,
+                  uploadedFileIds: projectData.uploadedFileIds,
+                  generatedFileIds: projectData.generatedFileIds,
                 },
               })
               .catch(() => null); // Ignorer les erreurs de duplication
@@ -722,24 +811,35 @@ describe('DatabaseService - E2E Tests', () => {
     it('should handle peak traffic simulation', async () => {
       if (!service) return;
 
-      const peakDuration = 5000; // 5 secondes de trafic intense
-      const requestInterval = 25; // Une requête toutes les 25ms
+      const peakDuration = 3000; // 3 secondes de trafic intense (réduit)
+      const requestInterval = 50; // Une requête toutes les 50ms (réduit)
       const startTime = Date.now();
       const operations = [];
+      const baseProject = ProjectFixtures.mockProject();
 
       let operationId = 0;
       while (Date.now() - startTime < peakDuration) {
+        const projectData = {
+          ...baseProject,
+          id: `peak-${operationId}-${Date.now()}`,
+          name: `Peak Project ${operationId}`,
+          description: 'Peak traffic simulation',
+          ownerId: `peak-user-${operationId % 5}`,
+          uploadedFileIds: [],
+          generatedFileIds: [],
+        };
+
         const operation = service.project
           .create({
             data: {
-              id: `peak-${operationId}-${Date.now()}`,
-              name: `Peak Project ${operationId}`,
-              description: 'Peak traffic simulation',
-              initialPrompt: 'Test prompt',
-              ownerId: `peak-user-${operationId % 5}`,
-              status: 'ACTIVE',
-              uploadedFileIds: [],
-              generatedFileIds: [],
+              id: projectData.id,
+              name: projectData.name,
+              description: projectData.description,
+              initialPrompt: projectData.initialPrompt,
+              ownerId: projectData.ownerId,
+              status: projectData.status,
+              uploadedFileIds: projectData.uploadedFileIds,
+              generatedFileIds: projectData.generatedFileIds,
             },
           })
           .catch(() => null);

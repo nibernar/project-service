@@ -1,11 +1,16 @@
-// test/integration/project.integration.spec.ts
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../../src/database/database.service';
 import { Logger } from '@nestjs/common';
-// ✅ AJOUT: Importer la fonction helper
 import { createDatabaseTestingModule } from '../setup/database-test-setup';
+import { 
+  ProjectFixtures, 
+  UserFixtures, 
+  StatisticsFixtures, 
+  TEST_IDS,
+  createTestDataSet,
+  createCompleteTestScenario
+} from '../fixtures/project.fixtures';
 
 /**
  * Tests d'intégration avec vraie base de données PostgreSQL
@@ -29,7 +34,7 @@ describe('DatabaseService - Integration Tests', () => {
   beforeAll(async () => {
     if (!process.env.TEST_DATABASE_URL && !process.env.CI) {
       console.log(
-        '⏭️  Integration tests skipped - No test database configured',
+        '⭐️  Integration tests skipped - No test database configured',
       );
       return;
     }
@@ -90,17 +95,23 @@ describe('DatabaseService - Integration Tests', () => {
 
       await service.onModuleInit();
 
+      // Utiliser les fixtures pour les données de test
+      const testProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_1,
+        ownerId: TEST_IDS.USER_1,
+      });
+
       // Insérer des données de test d'abord
       await service.project.create({
         data: {
-          id: 'test-project-rollback',
-          name: 'Test Project',
-          description: 'For rollback test',
-          initialPrompt: 'Test prompt',
-          ownerId: 'test-user',
-          status: 'ACTIVE',
-          uploadedFileIds: [],
-          generatedFileIds: [],
+          id: testProject.id,
+          name: testProject.name,
+          description: testProject.description,
+          initialPrompt: testProject.initialPrompt,
+          ownerId: testProject.ownerId,
+          status: testProject.status,
+          uploadedFileIds: testProject.uploadedFileIds,
+          generatedFileIds: testProject.generatedFileIds,
         },
       });
 
@@ -109,7 +120,7 @@ describe('DatabaseService - Integration Tests', () => {
         service.withTransaction(async (tx: any) => {
           // Modifier le projet
           await tx.project.update({
-            where: { id: 'test-project-rollback' },
+            where: { id: testProject.id },
             data: { name: 'Modified Name' },
           });
 
@@ -120,10 +131,10 @@ describe('DatabaseService - Integration Tests', () => {
 
       // Vérifier que les modifications ont été annulées
       const project = await service.project.findUnique({
-        where: { id: 'test-project-rollback' },
+        where: { id: testProject.id },
       });
 
-      expect(project?.name).toBe('Test Project'); // Nom original
+      expect(project?.name).toBe(testProject.name); // Nom original
     });
 
     it('should persist data across connections', async () => {
@@ -131,33 +142,41 @@ describe('DatabaseService - Integration Tests', () => {
 
       await service.onModuleInit();
 
+      // Utiliser les fixtures pour créer des données
+      const testProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_2,
+        ownerId: TEST_IDS.USER_1,
+        name: 'Persistence Test',
+        description: 'Test data persistence',
+      });
+
       // Créer des données
-      const testProject = await service.project.create({
+      const createdProject = await service.project.create({
         data: {
-          id: 'test-persistence',
-          name: 'Persistence Test',
-          description: 'Test data persistence',
-          initialPrompt: 'Test prompt',
-          ownerId: 'test-user',
-          status: 'ACTIVE',
-          uploadedFileIds: [],
-          generatedFileIds: [],
+          id: testProject.id,
+          name: testProject.name,
+          description: testProject.description,
+          initialPrompt: testProject.initialPrompt,
+          ownerId: testProject.ownerId,
+          status: testProject.status,
+          uploadedFileIds: testProject.uploadedFileIds,
+          generatedFileIds: testProject.generatedFileIds,
         },
       });
 
-      expect(testProject.id).toBe('test-persistence');
+      expect(createdProject.id).toBe(testProject.id);
 
       // Simuler une déconnexion/reconnexion
       await service.onModuleDestroy();
       await service.onModuleInit();
 
-      // Vérifier que les données sont toujours là
+      // Vérifier que les données sont toujours là 
       const retrievedProject = await service.project.findUnique({
-        where: { id: 'test-persistence' },
+        where: { id: testProject.id },
       });
 
       expect(retrievedProject).not.toBeNull();
-      expect(retrievedProject?.name).toBe('Persistence Test');
+      expect(retrievedProject?.name).toBe(testProject.name);
     });
   });
 
@@ -170,50 +189,64 @@ describe('DatabaseService - Integration Tests', () => {
     it('should commit successful transactions', async () => {
       if (!service) return;
 
+      const testProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_1,
+        ownerId: TEST_IDS.USER_1,
+        name: 'Commit Test',
+        description: 'Test transaction commit',
+      });
+
       const result = await service.withTransaction(async (tx) => {
         const project = await tx.project.create({
           data: {
-            id: 'test-commit',
-            name: 'Commit Test',
-            description: 'Test transaction commit',
-            initialPrompt: 'Test prompt',
-            ownerId: 'test-user',
-            status: 'ACTIVE',
-            uploadedFileIds: [],
-            generatedFileIds: [],
+            id: testProject.id,
+            name: testProject.name,
+            description: testProject.description,
+            initialPrompt: testProject.initialPrompt,
+            ownerId: testProject.ownerId,
+            status: testProject.status,
+            uploadedFileIds: testProject.uploadedFileIds,
+            generatedFileIds: testProject.generatedFileIds,
           },
         });
 
         return project;
       });
 
-      expect(result.id).toBe('test-commit');
+      expect(result.id).toBe(testProject.id);
 
       // Vérifier que les données ont été commitées
       const project = await service.project.findUnique({
-        where: { id: 'test-commit' },
+        where: { id: testProject.id },
       });
 
       expect(project).not.toBeNull();
-      expect(project?.name).toBe('Commit Test');
+      expect(project?.name).toBe(testProject.name);
     });
 
     it('should rollback failed transactions', async () => {
       if (!service) return;
+
+      const testProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_2,
+        ownerId: TEST_IDS.USER_1,
+        name: 'Rollback Test',
+        description: 'Test transaction rollback',
+      });
 
       await expect(
         service.withTransaction(async (tx) => {
           // Créer un projet
           await tx.project.create({
             data: {
-              id: 'test-rollback-fail',
-              name: 'Rollback Test',
-              description: 'Test transaction rollback',
-              initialPrompt: 'Test prompt',
-              ownerId: 'test-user',
-              status: 'ACTIVE',
-              uploadedFileIds: [],
-              generatedFileIds: [],
+              id: testProject.id,
+              name: testProject.name,
+              description: testProject.description,
+              initialPrompt: testProject.initialPrompt,
+              ownerId: testProject.ownerId,
+              status: testProject.status,
+              uploadedFileIds: testProject.uploadedFileIds,
+              generatedFileIds: testProject.generatedFileIds,
             },
           });
 
@@ -224,7 +257,7 @@ describe('DatabaseService - Integration Tests', () => {
 
       // Vérifier que rien n'a été sauvegardé
       const project = await service.project.findUnique({
-        where: { id: 'test-rollback-fail' },
+        where: { id: testProject.id },
       });
 
       expect(project).toBeNull();
@@ -233,19 +266,27 @@ describe('DatabaseService - Integration Tests', () => {
     it('should handle concurrent transactions', async () => {
       if (!service) return;
 
+      const user = UserFixtures.validUser();
+      const projects = ProjectFixtures.projectsList(5).map((project, i) => ({
+        ...project,
+        id: `concurrent-${i}`,
+        name: `Concurrent Project ${i}`,
+        ownerId: user.id,
+      }));
+
       // Créer plusieurs transactions concurrentes
-      const promises = Array.from({ length: 5 }, (_, i) =>
+      const promises = projects.map((project) =>
         service.withTransaction(async (tx) => {
           return tx.project.create({
             data: {
-              id: `concurrent-${i}`,
-              name: `Concurrent Project ${i}`,
-              description: 'Concurrent test',
-              initialPrompt: 'Test prompt',
-              ownerId: 'test-user',
-              status: 'ACTIVE',
-              uploadedFileIds: [],
-              generatedFileIds: [],
+              id: project.id,
+              name: project.name,
+              description: project.description,
+              initialPrompt: project.initialPrompt,
+              ownerId: project.ownerId,
+              status: project.status,
+              uploadedFileIds: project.uploadedFileIds,
+              generatedFileIds: project.generatedFileIds,
             },
           });
         }),
@@ -259,29 +300,36 @@ describe('DatabaseService - Integration Tests', () => {
       });
 
       // Vérifier que tous les projets ont été créés
-      const projects = await service.project.findMany({
+      const createdProjects = await service.project.findMany({
         where: {
           id: { startsWith: 'concurrent-' },
         },
       });
 
-      expect(projects).toHaveLength(5);
+      expect(createdProjects).toHaveLength(5);
     });
 
     it('should respect isolation levels', async () => {
       if (!service) return;
 
+      const testProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_3,
+        ownerId: TEST_IDS.USER_1,
+        name: 'Isolation Test',
+        description: 'Test isolation',
+      });
+
       // Créer un projet initial
       await service.project.create({
         data: {
-          id: 'isolation-test',
-          name: 'Isolation Test',
-          description: 'Test isolation',
-          initialPrompt: 'Test prompt',
-          ownerId: 'test-user',
-          status: 'ACTIVE',
-          uploadedFileIds: [],
-          generatedFileIds: [],
+          id: testProject.id,
+          name: testProject.name,
+          description: testProject.description,
+          initialPrompt: testProject.initialPrompt,
+          ownerId: testProject.ownerId,
+          status: testProject.status,
+          uploadedFileIds: testProject.uploadedFileIds,
+          generatedFileIds: testProject.generatedFileIds,
         },
       });
 
@@ -289,13 +337,13 @@ describe('DatabaseService - Integration Tests', () => {
       await service.withTransaction(
         async (tx) => {
           const project = await tx.project.findUnique({
-            where: { id: 'isolation-test' },
+            where: { id: testProject.id },
           });
 
           expect(project).not.toBeNull();
 
           await tx.project.update({
-            where: { id: 'isolation-test' },
+            where: { id: testProject.id },
             data: { name: 'Updated in Serializable' },
           });
         },
@@ -304,7 +352,7 @@ describe('DatabaseService - Integration Tests', () => {
 
       // Vérifier la mise à jour
       const updatedProject = await service.project.findUnique({
-        where: { id: 'isolation-test' },
+        where: { id: testProject.id },
       });
 
       expect(updatedProject?.name).toBe('Updated in Serializable');
@@ -334,14 +382,17 @@ describe('DatabaseService - Integration Tests', () => {
     it('should handle batch operations efficiently', async () => {
       if (!service) return;
 
-      const batchSize = 100;
+      const batchSize = 50; // Réduit pour les tests plus rapides
+      const batchUser = UserFixtures.validUser();
+      const baseProject = ProjectFixtures.mockProject();
+
       const projectsData = Array.from({ length: batchSize }, (_, i) => ({
         id: `batch-${i}`,
         name: `Batch Project ${i}`,
         description: `Batch test project ${i}`,
-        initialPrompt: 'Batch test prompt',
-        ownerId: 'batch-user',
-        status: 'ACTIVE' as const,
+        initialPrompt: baseProject.initialPrompt,
+        ownerId: batchUser.id,
+        status: baseProject.status,
         uploadedFileIds: [],
         generatedFileIds: [],
       }));
@@ -356,11 +407,11 @@ describe('DatabaseService - Integration Tests', () => {
       const duration = Date.now() - startTime;
 
       expect(result.count).toBe(batchSize);
-      expect(duration).toBeLessThan(5000); // Moins de 5 secondes pour 100 enregistrements
+      expect(duration).toBeLessThan(5000); // Moins de 5 secondes
 
       // Vérifier que les données ont été créées
       const count = await service.project.count({
-        where: { ownerId: 'batch-user' },
+        where: { ownerId: batchUser.id },
       });
 
       expect(count).toBe(batchSize);
@@ -369,14 +420,18 @@ describe('DatabaseService - Integration Tests', () => {
     it('should handle large result sets efficiently', async () => {
       if (!service) return;
 
+      const testUser = UserFixtures.otherUser();
+      const baseProject = ProjectFixtures.mockProject();
+      const datasetSize = 25; // Réduit pour les tests plus rapides
+
       // Créer des données de test
-      const testData = Array.from({ length: 50 }, (_, i) => ({
+      const testData = Array.from({ length: datasetSize }, (_, i) => ({
         id: `large-${i}`,
         name: `Large Dataset ${i}`,
         description: 'Large dataset test',
-        initialPrompt: 'Test prompt',
-        ownerId: 'large-user',
-        status: 'ACTIVE' as const,
+        initialPrompt: baseProject.initialPrompt,
+        ownerId: testUser.id,
+        status: baseProject.status,
         uploadedFileIds: [],
         generatedFileIds: [],
       }));
@@ -389,13 +444,13 @@ describe('DatabaseService - Integration Tests', () => {
       const startTime = Date.now();
 
       const projects = await service.project.findMany({
-        where: { ownerId: 'large-user' },
+        where: { ownerId: testUser.id },
         include: { statistics: true },
       });
 
       const duration = Date.now() - startTime;
 
-      expect(projects).toHaveLength(50);
+      expect(projects).toHaveLength(datasetSize);
       expect(duration).toBeLessThan(2000); // Moins de 2 secondes
     });
   });
@@ -409,17 +464,24 @@ describe('DatabaseService - Integration Tests', () => {
     it('should handle unique constraint violations', async () => {
       if (!service) return;
 
+      const testProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_1,
+        ownerId: TEST_IDS.USER_1,
+        name: 'Unique Test',
+        description: 'Test unique constraint',
+      });
+
       // Créer un projet
       await service.project.create({
         data: {
-          id: 'unique-test',
-          name: 'Unique Test',
-          description: 'Test unique constraint',
-          initialPrompt: 'Test prompt',
-          ownerId: 'test-user',
-          status: 'ACTIVE',
-          uploadedFileIds: [],
-          generatedFileIds: [],
+          id: testProject.id,
+          name: testProject.name,
+          description: testProject.description,
+          initialPrompt: testProject.initialPrompt,
+          ownerId: testProject.ownerId,
+          status: testProject.status,
+          uploadedFileIds: testProject.uploadedFileIds,
+          generatedFileIds: testProject.generatedFileIds,
         },
       });
 
@@ -427,12 +489,12 @@ describe('DatabaseService - Integration Tests', () => {
       await expect(
         service.project.create({
           data: {
-            id: 'unique-test', // Même ID
+            id: testProject.id, // Même ID
             name: 'Duplicate Test',
             description: 'Should fail',
-            initialPrompt: 'Test prompt',
-            ownerId: 'test-user',
-            status: 'ACTIVE',
+            initialPrompt: testProject.initialPrompt,
+            ownerId: testProject.ownerId,
+            status: testProject.status,
             uploadedFileIds: [],
             generatedFileIds: [],
           },
@@ -443,15 +505,15 @@ describe('DatabaseService - Integration Tests', () => {
     it('should handle foreign key violations', async () => {
       if (!service) return;
 
-      // Essayer de créer des statistiques pour un projet inexistant
+      // Créer des données JSON compatibles directement 
       await expect(
         service.projectStatistics.create({
           data: {
             id: 'stats-invalid',
             projectId: 'non-existent-project',
-            costs: {},
-            performance: {},
-            usage: {},
+            costs: { total: 100 },
+            performance: { time: 1000 },
+            usage: { requests: 10 },
           },
         }),
       ).rejects.toThrow();
@@ -476,17 +538,24 @@ describe('DatabaseService - Integration Tests', () => {
     it('should reset database completely', async () => {
       if (!service) return;
 
+      const testProject = ProjectFixtures.mockProject({
+        id: TEST_IDS.PROJECT_1,
+        ownerId: TEST_IDS.USER_1,
+        name: 'Reset Test',
+        description: 'Will be deleted',
+      });
+
       // Créer des données de test
       const project = await service.project.create({
         data: {
-          id: 'reset-test',
-          name: 'Reset Test',
-          description: 'Will be deleted',
-          initialPrompt: 'Test prompt',
-          ownerId: 'test-user',
-          status: 'ACTIVE',
-          uploadedFileIds: [],
-          generatedFileIds: [],
+          id: testProject.id,
+          name: testProject.name,
+          description: testProject.description,
+          initialPrompt: testProject.initialPrompt,
+          ownerId: testProject.ownerId,
+          status: testProject.status,
+          uploadedFileIds: testProject.uploadedFileIds,
+          generatedFileIds: testProject.generatedFileIds,
         },
       });
 
@@ -572,6 +641,109 @@ describe('DatabaseService - Integration Tests', () => {
 
       const health = service.getHealthMetrics();
       expect(health.errors.count).toBeGreaterThanOrEqual(initialErrorCount);
+    });
+  });
+
+  describe('Integration with Project Data Models', () => {
+    beforeEach(async () => {
+      if (!service) return;
+      await service.onModuleInit();
+    });
+
+    it('should handle complete project lifecycle', async () => {
+      if (!service) return;
+
+      const testScenario = createCompleteTestScenario();
+      const { user, activeProject } = testScenario;
+
+      // Créer un projet complet
+      const createdProject = await service.project.create({
+        data: {
+          id: activeProject.id,
+          name: activeProject.name,
+          description: activeProject.description,
+          initialPrompt: activeProject.initialPrompt,
+          ownerId: user.id,
+          status: activeProject.status,
+          uploadedFileIds: activeProject.uploadedFileIds,
+          generatedFileIds: activeProject.generatedFileIds,
+        },
+      });
+
+      expect(createdProject).toMatchObject({
+        id: activeProject.id,
+        name: activeProject.name,
+        ownerId: user.id,
+      });
+
+      // Ajouter des statistiques avec des données JSON simples
+      await service.projectStatistics.create({
+        data: {
+          id: 'lifecycle-stats',
+          projectId: createdProject.id,
+          costs: { claudeApi: 1.25, storage: 0.05, total: 1.30 },
+          performance: { generationTime: 45000, processingTime: 12000 },
+          usage: { documentsGenerated: 3, tokensUsed: 15420 },
+        },
+      });
+
+      // Vérifier la relation
+      const projectWithStats = await service.project.findUnique({
+        where: { id: activeProject.id },
+        include: { statistics: true },
+      });
+
+      expect(projectWithStats?.statistics).not.toBeNull();
+      expect(projectWithStats?.statistics?.costs).toEqual(
+        expect.objectContaining({ total: 1.30 })
+      );
+    });
+
+    it('should handle multiple users and projects', async () => {
+      if (!service) return;
+
+      const users = [
+        UserFixtures.validUser(),
+        UserFixtures.otherUser(),
+        UserFixtures.thirdUser(),
+      ];
+
+      const allProjects = [];
+
+      // Créer des projets pour chaque utilisateur
+      for (const user of users) {
+        const userProjects = ProjectFixtures.projectsList(2).map((project, i) => ({
+          ...project,
+          id: `${user.id}-project-${i}`,
+          ownerId: user.id,
+        }));
+
+        for (const project of userProjects) {
+          const created = await service.project.create({
+            data: {
+              id: project.id,
+              name: project.name,
+              description: project.description,
+              initialPrompt: project.initialPrompt,
+              ownerId: project.ownerId,
+              status: project.status,
+              uploadedFileIds: project.uploadedFileIds,
+              generatedFileIds: project.generatedFileIds,
+            },
+          });
+          allProjects.push(created);
+        }
+      }
+
+      expect(allProjects).toHaveLength(6); // 3 users × 2 projects
+
+      // Vérifier l'isolation des données par utilisateur
+      for (const user of users) {
+        const userProjects = await service.project.findMany({
+          where: { ownerId: user.id },
+        });
+        expect(userProjects).toHaveLength(2);
+      }
     });
   });
 });

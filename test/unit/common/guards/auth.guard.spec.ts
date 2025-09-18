@@ -451,7 +451,7 @@ describe('AuthGuard - Unit Tests', () => {
 
       cacheService.get.mockResolvedValue(null);
       httpService.post.mockReturnValue(of(createValidAuthResponse(user)));
-      cacheService.set.mockResolvedValue();
+      cacheService.set.mockResolvedValue(true);
 
       // Act
       await authGuard.canActivate(context);

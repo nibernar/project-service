@@ -11,6 +11,9 @@ import { PdfExportService, PdfConversionResult, PandocOptions } from '../../../.
 import { CacheService } from '../../../../src/cache/cache.service';
 import { User } from '../../../../src/common/interfaces/user.interface';
 
+// Import des fixtures du projet
+import { UserFixtures, DataGenerator, FileFixtures } from '../../../fixtures/project.fixtures';
+
 /**
  * Tests de Performance - Module Export
  * 
@@ -48,12 +51,8 @@ describe('Export Module - Performance Tests', () => {
     MEMORY_USAGE_MAX_MB: 500, // 500MB max par export
   };
 
-  // Test fixtures
-  const performanceUser: User = {
-    id: 'perf-test-user-123',
-    email: 'performance@test.com',
-    roles: ['user'],
-  };
+  // Test fixtures - utiliser les fixtures du projet
+  const performanceUser: User = UserFixtures.validUser();
 
   // Fonction utilitaire pour créer des FileRetrievalResult corrects
   function createMockFileRetrievalResult(id: string, name: string, content: string): FileRetrievalResult {
@@ -192,9 +191,9 @@ describe('Export Module - Performance Tests', () => {
       return perfConfig[key] || defaultValue;
     });
 
-    // Default fast mocks
+    // Default fast mocks - FIX: Corriger le mock du cache
     cacheService.get.mockResolvedValue(null);
-    cacheService.set.mockResolvedValue(undefined);
+    cacheService.set.mockResolvedValue(true); // FIX: Retourner true au lieu de undefined
   });
 
   afterEach(() => {
@@ -205,14 +204,10 @@ describe('Export Module - Performance Tests', () => {
     it('should handle 200 files export within performance SLA', async () => {
       const startTime = Date.now();
       
-      // Générer 200 fichiers de test
-      const manyFiles: FileRetrievalResult[] = Array.from({ length: 200 }, (_, i) => {
+      // Générer 200 fichiers de test - utiliser la fixture pour plus de réalisme
+      const manyFiles: FileRetrievalResult[] = FileFixtures.largeFileIdsList(200).map((id, i) => {
         const content = `# Document ${i + 1}\n\n${'Content line.\n'.repeat(10)}`;
-        return createMockFileRetrievalResult(
-          `perf-file-${i + 1}`,
-          `document-${i + 1}.md`,
-          content
-        );
+        return createMockFileRetrievalResult(id, `document-${i + 1}.md`, content);
       });
 
       const options = new ExportOptionsDto();
@@ -303,14 +298,10 @@ describe('Export Module - Performance Tests', () => {
     it('should maintain performance with 500 small files', async () => {
       const startTime = Date.now();
       
-      // 500 très petits fichiers
-      const smallFiles: FileRetrievalResult[] = Array.from({ length: 500 }, (_, i) => {
+      // 500 très petits fichiers - utiliser la fixture
+      const smallFiles: FileRetrievalResult[] = FileFixtures.largeFileIdsList(500).map((id, i) => {
         const content = `# ${i + 1}\nShort content.`;
-        return createMockFileRetrievalResult(
-          `small-${i + 1}`,
-          `tiny-${i + 1}.md`,
-          content
-        );
+        return createMockFileRetrievalResult(id, `tiny-${i + 1}.md`, content);
       });
 
       const options = new ExportOptionsDto();
@@ -378,14 +369,10 @@ describe('Export Module - Performance Tests', () => {
     it('should optimize memory usage with large file counts', async () => {
       const memoryStart = process.memoryUsage().heapUsed;
       
-      // Test de mémoire avec 1000 fichiers moyens
-      const mediumFiles: FileRetrievalResult[] = Array.from({ length: 1000 }, (_, i) => {
+      // Test de mémoire avec 1000 fichiers moyens - utiliser la fixture
+      const mediumFiles: FileRetrievalResult[] = FileFixtures.largeFileIdsList(1000).map((id, i) => {
         const content = 'x'.repeat(1000); // 1KB par fichier = 1MB total
-        return createMockFileRetrievalResult(
-          `mem-test-${i + 1}`,
-          `memory-test-${i + 1}.md`,
-          content
-        );
+        return createMockFileRetrievalResult(id, `memory-test-${i + 1}.md`, content);
       });
 
       const options = new ExportOptionsDto();
@@ -847,7 +834,7 @@ describe('Export Module - Performance Tests', () => {
 
       // Cas 1: Cache miss (premier appel)
       cacheService.get.mockResolvedValueOnce(null);
-      cacheService.set.mockResolvedValueOnce(undefined);
+      cacheService.set.mockResolvedValueOnce(true); // FIX: Retourner true au lieu de undefined
       
       const missStart = Date.now();
       const firstResult = await exportService.exportProject('cache-perf-test', options, performanceUser.id);

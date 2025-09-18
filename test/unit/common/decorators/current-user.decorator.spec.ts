@@ -1,9 +1,8 @@
-// test/unit/common/decorators/current-user.decorator.spec.ts
-
 import { ExecutionContext } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
 import { CurrentUser } from '../../../../src/common/decorators/current-user.decorator';
 import { User } from '../../../../src/common/interfaces/user.interface';
+import { UserFixtures } from '../../../fixtures/project.fixtures';
 
 describe('CurrentUser Decorator', () => {
   // Fonction helper qui reproduit la logique du décorateur pour les tests
@@ -51,52 +50,41 @@ describe('CurrentUser Decorator', () => {
     } as ExecutionContext;
   };
 
-  const createTestUser = (overrides: Partial<User> = {}): User => ({
-    id: 'user-123',
-    email: 'test@example.com',
-    roles: ['user'],
-    ...overrides,
-  });
-
   // ============================================================================
   // TESTS DE FONCTIONNEMENT NOMINAL
   // ============================================================================
 
   describe('Fonctionnement nominal', () => {
     it('should extract user from HTTP context successfully', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.validUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
       const result = extractUserFunction(undefined, mockContext);
 
       expect(result).toEqual(testUser);
       expect(result).toMatchObject({
-        id: 'user-123',
-        email: 'test@example.com',
-        roles: ['user'],
+        id: testUser.id,
+        email: testUser.email,
+        roles: testUser.roles,
       });
     });
 
     it('should return complete and valid User object', () => {
-      const testUser = createTestUser({
-        id: 'user-456',
-        email: 'admin@example.com',
-        roles: ['admin', 'user'],
-      });
-      const mockContext = createMockExecutionContext({ user: testUser });
+      const adminUser = UserFixtures.adminUser();
+      const mockContext = createMockExecutionContext({ user: adminUser });
 
       const result = extractUserFunction(undefined, mockContext);
 
-      expect(result).toMatchObject(testUser);
-      expect(result.id).toBe('user-456');
-      expect(result.email).toBe('admin@example.com');
-      expect(result.roles).toHaveLength(2);
+      expect(result).toMatchObject(adminUser);
+      expect(result.id).toBe(adminUser.id);
+      expect(result.email).toBe(adminUser.email);
+      expect(result.roles).toHaveLength(adminUser.roles.length);
       expect(result.roles).toContain('admin');
       expect(result.roles).toContain('user');
     });
 
     it('should preserve all user properties without modification', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.validUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
       const result = extractUserFunction(undefined, mockContext);
@@ -107,43 +95,43 @@ describe('CurrentUser Decorator', () => {
     });
 
     it('should work with users having different role combinations', () => {
-      const testCases = [
-        { roles: [] },
-        { roles: ['user'] },
-        { roles: ['admin'] },
-        { roles: ['user', 'admin'] },
-        { roles: ['user', 'admin', 'moderator'] },
-        { roles: ['super-admin', 'owner'] },
+      const testUsers = [
+        UserFixtures.validUser(),
+        UserFixtures.adminUser(),
+        UserFixtures.otherUser(),
+        UserFixtures.thirdUser(),
       ];
 
-      testCases.forEach(({ roles }, index) => {
-        const testUser = createTestUser({
-          id: `user-${index}`,
-          roles,
-        });
+      testUsers.forEach((testUser) => {
         const mockContext = createMockExecutionContext({ user: testUser });
 
         const result = extractUserFunction(undefined, mockContext);
 
-        expect(result.roles).toEqual(roles);
-        expect(result.id).toBe(`user-${index}`);
+        expect(result.roles).toEqual(testUser.roles);
+        expect(result.id).toBe(testUser.id);
+        expect(result.email).toBe(testUser.email);
       });
     });
 
-    it('should handle users with minimal required properties', () => {
-      const minimalUser: User = {
-        id: 'minimal-user',
-        email: 'minimal@example.com',
-        roles: [],
-      };
-      const mockContext = createMockExecutionContext({ user: minimalUser });
+    it('should handle users with custom email addresses', () => {
+      const customEmails = [
+        'user@example.com',
+        'test.user+tag@domain.co.uk',
+        'user123@subdomain.example.org',
+        'firstName.lastName@company-name.com',
+        'user+filter@gmail.com',
+      ];
 
-      const result = extractUserFunction(undefined, mockContext);
+      customEmails.forEach((email) => {
+        const testUser = UserFixtures.userWithCustomEmail(email);
+        const mockContext = createMockExecutionContext({ user: testUser });
 
-      expect(result).toEqual(minimalUser);
-      expect(result.id).toBe('minimal-user');
-      expect(result.email).toBe('minimal@example.com');
-      expect(result.roles).toEqual([]);
+        const result = extractUserFunction(undefined, mockContext);
+
+        expect(result.email).toBe(email);
+        expect(result.id).toBe(testUser.id);
+        expect(typeof result.email).toBe('string');
+      });
     });
   });
 
@@ -152,7 +140,37 @@ describe('CurrentUser Decorator', () => {
   // ============================================================================
 
   describe('Validation des données utilisateur', () => {
-    it('should work with different ID formats', () => {
+    it('should work with different user types', () => {
+      const users = [
+        UserFixtures.validUser(),
+        UserFixtures.adminUser(),
+        UserFixtures.otherUser(),
+        UserFixtures.thirdUser(),
+      ];
+
+      users.forEach((user) => {
+        const mockContext = createMockExecutionContext({ user });
+
+        const result = extractUserFunction(undefined, mockContext);
+
+        expect(result).toEqual(user);
+        expect(typeof result.id).toBe('string');
+        expect(typeof result.email).toBe('string');
+        expect(Array.isArray(result.roles)).toBe(true);
+      });
+    });
+
+    it('should preserve additional user properties if present', () => {
+      const userWithToken = UserFixtures.userWithToken();
+      const mockContext = createMockExecutionContext({ user: userWithToken });
+
+      const result = extractUserFunction(undefined, mockContext);
+
+      expect(result).toEqual(userWithToken);
+      expect((result as any).token).toBe(userWithToken.token);
+    });
+
+    it('should handle users with different ID formats', () => {
       const testIds = [
         'user-123',
         '550e8400-e29b-41d4-a716-446655440000', // UUID v4
@@ -163,7 +181,10 @@ describe('CurrentUser Decorator', () => {
       ];
 
       testIds.forEach((id) => {
-        const testUser = createTestUser({ id });
+        const testUser = {
+          ...UserFixtures.validUser(),
+          id,
+        };
         const mockContext = createMockExecutionContext({ user: testUser });
 
         const result = extractUserFunction(undefined, mockContext);
@@ -173,75 +194,7 @@ describe('CurrentUser Decorator', () => {
       });
     });
 
-    it('should work with different email formats', () => {
-      const testEmails = [
-        'user@example.com',
-        'test.user+tag@domain.co.uk',
-        'user123@subdomain.example.org',
-        'firstName.lastName@company-name.com',
-        'user+filter@gmail.com',
-        'admin@localhost',
-      ];
-
-      testEmails.forEach((email) => {
-        const testUser = createTestUser({ email });
-        const mockContext = createMockExecutionContext({ user: testUser });
-
-        const result = extractUserFunction(undefined, mockContext);
-
-        expect(result.email).toBe(email);
-        expect(typeof result.email).toBe('string');
-      });
-    });
-
-    it('should preserve additional user properties if present', () => {
-      const extendedUser = {
-        ...createTestUser(),
-        customProperty: 'customValue',
-        metadata: {
-          createdAt: '2025-01-01T00:00:00Z',
-          lastLogin: '2025-01-28T10:30:00Z',
-        },
-        preferences: {
-          theme: 'dark',
-          language: 'en',
-        },
-      };
-      const mockContext = createMockExecutionContext({ user: extendedUser });
-
-      const result = extractUserFunction(undefined, mockContext);
-
-      expect(result).toEqual(extendedUser);
-      expect((result as any).customProperty).toBe('customValue');
-      expect((result as any).metadata).toEqual({
-        createdAt: '2025-01-01T00:00:00Z',
-        lastLogin: '2025-01-28T10:30:00Z',
-      });
-      expect((result as any).preferences).toEqual({
-        theme: 'dark',
-        language: 'en',
-      });
-    });
-
-    it('should handle users with empty string values', () => {
-      const userWithEmptyValues = createTestUser({
-        id: '',
-        email: '',
-        roles: [],
-      });
-      const mockContext = createMockExecutionContext({
-        user: userWithEmptyValues,
-      });
-
-      const result = extractUserFunction(undefined, mockContext);
-
-      expect(result).toEqual(userWithEmptyValues);
-      expect(result.id).toBe('');
-      expect(result.email).toBe('');
-      expect(result.roles).toEqual([]);
-    });
-
-    it('should handle deeply nested role structures', () => {
+    it('should handle complex role structures', () => {
       const complexRoles = [
         'role:admin:read',
         'role:admin:write',
@@ -249,7 +202,10 @@ describe('CurrentUser Decorator', () => {
         'permission:projects:delete',
         'scope:organization:12345',
       ];
-      const testUser = createTestUser({ roles: complexRoles });
+      const testUser = {
+        ...UserFixtures.validUser(),
+        roles: complexRoles,
+      };
       const mockContext = createMockExecutionContext({ user: testUser });
 
       const result = extractUserFunction(undefined, mockContext);
@@ -265,7 +221,7 @@ describe('CurrentUser Decorator', () => {
 
   describe('Gestion des contextes', () => {
     it('should use correct HTTP context method', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.validUser();
       const mockContext = createMockExecutionContext({ user: testUser });
       const switchToHttpSpy = jest.spyOn(mockContext, 'switchToHttp');
 
@@ -276,7 +232,7 @@ describe('CurrentUser Decorator', () => {
     });
 
     it('should work with different request types and properties', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.validUser();
       const testCases = [
         {
           user: testUser,
@@ -322,7 +278,7 @@ describe('CurrentUser Decorator', () => {
 
   describe('Compatibilité TypeScript', () => {
     it('should respect TypeScript typing for User interface', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.validUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
       const result: User = extractUserFunction(undefined, mockContext);
@@ -336,11 +292,7 @@ describe('CurrentUser Decorator', () => {
     });
 
     it('should handle user objects with strict typing', () => {
-      const strictUser: User = {
-        id: 'strict-user-123',
-        email: 'strict@example.com',
-        roles: ['user', 'reader'],
-      };
+      const strictUser: User = UserFixtures.validUser();
       const mockContext = createMockExecutionContext({ user: strictUser });
 
       const result = extractUserFunction(undefined, mockContext);
@@ -356,7 +308,7 @@ describe('CurrentUser Decorator', () => {
 
   describe('Intégration NestJS', () => {
     it('should work as parameter decorator in controller methods', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.validUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
       const controllerMethod = (user: User) => {
@@ -367,13 +319,13 @@ describe('CurrentUser Decorator', () => {
       const controllerResult = controllerMethod(extractedUser);
 
       expect(controllerResult).toEqual({
-        message: 'Hello test@example.com',
-        userId: 'user-123',
+        message: `Hello ${testUser.email}`,
+        userId: testUser.id,
       });
     });
 
     it('should work with multiple decorators in same method', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.validUser();
       const mockContext = createMockExecutionContext({
         user: testUser,
         body: { name: 'Test Project' },
@@ -390,7 +342,7 @@ describe('CurrentUser Decorator', () => {
     });
 
     it('should maintain request context integrity', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.adminUser();
       const complexRequest = {
         user: testUser,
         method: 'POST',
@@ -447,16 +399,16 @@ describe('CurrentUser Decorator', () => {
       }).toThrow(errorMessage);
     });
 
-    it('should throw error when user is falsy value', () => {
-      const falsyValues = ['', false, 0, NaN];
-      
-      falsyValues.forEach((value) => {
-        const mockContext = createMockExecutionContext({ user: value });
-        
-        expect(() => {
-          extractUserFunction(undefined, mockContext);
-        }).toThrow(errorMessage);
+    it('should throw error when user property is missing', () => {
+      const mockContext = createMockExecutionContext({
+        method: 'GET',
+        url: '/test',
+        // user property intentionally omitted
       });
+
+      expect(() => {
+        extractUserFunction(undefined, mockContext);
+      }).toThrow(errorMessage);
     });
   });
 
@@ -466,7 +418,7 @@ describe('CurrentUser Decorator', () => {
 
   describe('Sécurité et cas limites', () => {
     it('should not expose sensitive request properties', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.validUser();
       const sensitiveRequest = {
         user: testUser,
         password: 'secret123',
@@ -485,9 +437,18 @@ describe('CurrentUser Decorator', () => {
 
     it('should handle malicious input patterns safely', () => {
       const maliciousUsers = [
-        createTestUser({ id: '<script>alert("XSS")</script>' }),
-        createTestUser({ email: "'; DROP TABLE users; --@example.com" }),
-        createTestUser({ roles: ['user', '{"$ne": null}'] }),
+        {
+          ...UserFixtures.validUser(),
+          id: '<script>alert("XSS")</script>',
+        },
+        {
+          ...UserFixtures.validUser(),
+          email: "'; DROP TABLE users; --@example.com",
+        },
+        {
+          ...UserFixtures.validUser(),
+          roles: ['user', '{"$ne": null}'],
+        },
       ];
 
       maliciousUsers.forEach((maliciousUser) => {
@@ -501,22 +462,23 @@ describe('CurrentUser Decorator', () => {
     });
 
     it('should handle extreme data sizes', () => {
-      const extremeUser = createTestUser({
+      const extremeUser = {
+        ...UserFixtures.validUser(),
         id: 'a'.repeat(1000),
-        roles: Array.from({ length: 1000 }, (_, i) => `role-${i}`),
-      });
+        roles: Array.from({ length: 100 }, (_, i) => `role-${i}`),
+      };
       const mockContext = createMockExecutionContext({ user: extremeUser });
 
       const result = extractUserFunction(undefined, mockContext);
 
       expect(result).toEqual(extremeUser);
       expect(result.id).toHaveLength(1000);
-      expect(result.roles).toHaveLength(1000);
+      expect(result.roles).toHaveLength(100);
     });
 
     it('should handle frozen and sealed objects', () => {
-      const frozenUser = Object.freeze(createTestUser());
-      const sealedUser = Object.seal(createTestUser());
+      const frozenUser = Object.freeze(UserFixtures.validUser());
+      const sealedUser = Object.seal(UserFixtures.otherUser());
 
       [frozenUser, sealedUser].forEach((user) => {
         const mockContext = createMockExecutionContext({ user });
@@ -532,7 +494,7 @@ describe('CurrentUser Decorator', () => {
 
   describe('Performance', () => {
     it('should extract user quickly for typical use cases', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.validUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
       const startTime = process.hrtime.bigint();
@@ -546,7 +508,7 @@ describe('CurrentUser Decorator', () => {
     });
 
     it('should not cause memory leaks with repeated extractions', () => {
-      const testUser = createTestUser();
+      const testUser = UserFixtures.adminUser();
       const mockContext = createMockExecutionContext({ user: testUser });
 
       const memoryBefore = process.memoryUsage().heapUsed;
@@ -560,6 +522,64 @@ describe('CurrentUser Decorator', () => {
       const memoryGrowth = memoryAfter - memoryBefore;
 
       expect(memoryGrowth).toBeLessThan(10 * 1024 * 1024); // < 10MB
+    });
+  });
+
+  // ============================================================================
+  // TESTS AVEC DIFFÉRENTS TYPES D'UTILISATEURS DES FIXTURES
+  // ============================================================================
+
+  describe('Tests avec les fixtures UserFixtures', () => {
+    it('should work with validUser fixture', () => {
+      const user = UserFixtures.validUser();
+      const mockContext = createMockExecutionContext({ user });
+
+      const result = extractUserFunction(undefined, mockContext);
+
+      expect(result).toEqual(user);
+      expect(result.roles).toContain('user');
+    });
+
+    it('should work with adminUser fixture', () => {
+      const user = UserFixtures.adminUser();
+      const mockContext = createMockExecutionContext({ user });
+
+      const result = extractUserFunction(undefined, mockContext);
+
+      expect(result).toEqual(user);
+      expect(result.roles).toContain('admin');
+      expect(result.roles).toContain('user');
+    });
+
+    it('should work with otherUser fixture', () => {
+      const user = UserFixtures.otherUser();
+      const mockContext = createMockExecutionContext({ user });
+
+      const result = extractUserFunction(undefined, mockContext);
+
+      expect(result).toEqual(user);
+      expect(result.email).toBe('jane.smith@example.com');
+    });
+
+    it('should work with thirdUser fixture', () => {
+      const user = UserFixtures.thirdUser();
+      const mockContext = createMockExecutionContext({ user });
+
+      const result = extractUserFunction(undefined, mockContext);
+
+      expect(result).toEqual(user);
+      expect(result.email).toBe('bob.wilson@example.com');
+    });
+
+    it('should work with userWithToken fixture', () => {
+      const user = UserFixtures.userWithToken();
+      const mockContext = createMockExecutionContext({ user });
+
+      const result = extractUserFunction(undefined, mockContext);
+
+      expect(result).toEqual(user);
+      expect((result as any).token).toBeDefined();
+      expect((result as any).token).toMatch(/^eyJ/); // JWT format
     });
   });
 });

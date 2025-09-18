@@ -10,9 +10,7 @@ import { ProjectOwnerGuard } from '../../../../src/common/guards/project-owner.g
 import { DatabaseService } from '../../../../src/database/database.service';
 import { CacheService } from '../../../../src/cache/cache.service';
 import { DatabaseModule } from '../../../../src/database/database.module';
-import { CacheModule } from '../../../../src/cache/cache.module';
 import { databaseConfig } from '../../../../src/config/database.config';
-import { cacheConfig } from '../../../../src/config/cache.config';
 import {
   ProjectNotFoundException,
   UnauthorizedAccessException,
@@ -24,9 +22,9 @@ import { ProjectStatus } from '../../../../src/common/enums/project-status.enum'
 describe('ProjectOwnerGuard - Integration Tests', () => {
   let guard: ProjectOwnerGuard;
   let databaseService: DatabaseService;
-  let cacheService: CacheService;
+  let cacheService: jest.Mocked<CacheService>;
   let reflector: jest.Mocked<Reflector>;
-  let module: TestingModule;
+  let module: TestingModule | undefined;
 
   // Données de test
   const testUser: User = {
@@ -58,48 +56,76 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
   };
 
   beforeAll(async () => {
-    module = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          load: [databaseConfig, cacheConfig],
-        }),
-        DatabaseModule,
-        CacheModule,
-      ],
-      providers: [
-        ProjectOwnerGuard,
-        {
-          provide: Reflector,
-          useValue: createMock<Reflector>({
-            get: jest.fn().mockReturnValue({}),
+    try {
+      module = await Test.createTestingModule({
+        imports: [
+          ConfigModule.forRoot({
+            isGlobal: true,
+            load: [databaseConfig],
           }),
-        },
-      ],
-    }).compile();
+          DatabaseModule,
+        ],
+        providers: [
+          ProjectOwnerGuard,
+          {
+            provide: Reflector,
+            useValue: createMock<Reflector>({
+              get: jest.fn().mockReturnValue({}),
+            }),
+          },
+          {
+            provide: CacheService,
+            useValue: {
+              get: jest.fn().mockResolvedValue(null),
+              set: jest.fn().mockResolvedValue(undefined),
+              del: jest.fn().mockResolvedValue(undefined),
+              invalidatePattern: jest.fn().mockResolvedValue(undefined),
+            },
+          },
+        ],
+      }).compile();
 
-    guard = module.get<ProjectOwnerGuard>(ProjectOwnerGuard);
-    databaseService = module.get<DatabaseService>(DatabaseService);
-    cacheService = module.get<CacheService>(CacheService);
-    reflector = module.get<Reflector>(Reflector) as jest.Mocked<Reflector>;
+      guard = module.get<ProjectOwnerGuard>(ProjectOwnerGuard);
+      databaseService = module.get<DatabaseService>(DatabaseService);
+      cacheService = module.get<CacheService>(CacheService) as jest.Mocked<CacheService>;
+      reflector = module.get<Reflector>(Reflector) as jest.Mocked<Reflector>;
 
-    // Attendre que les services soient prêts
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Attendre que les services soient prêts
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error('Failed to setup test module:', error);
+      throw error;
+    }
   });
 
   afterAll(async () => {
-    await module.close();
+    if (module) {
+      try {
+        await module.close();
+      } catch (error) {
+        console.error('Failed to close test module:', error);
+      }
+    }
   });
 
   beforeEach(async () => {
+    // Vérifier que les services sont disponibles
+    if (!databaseService || !cacheService) {
+      throw new Error('Services not available - test module setup failed');
+    }
+
     // Nettoyer la base de données et le cache avant chaque test
-    await databaseService.project.deleteMany({
-      where: {
-        ownerId: {
-          in: [testUser.id, testUser2.id],
+    try {
+      await databaseService.project.deleteMany({
+        where: {
+          ownerId: {
+            in: [testUser.id, testUser2.id],
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      console.warn('Database cleanup failed:', error);
+    }
 
     // Nettoyer le cache avec pattern matching
     try {
@@ -118,6 +144,7 @@ describe('ProjectOwnerGuard - Integration Tests', () => {
       }
     } catch (error) {
       // Ignorer les erreurs de cache pour les tests
+      console.warn('Cache cleanup failed:', error);
     }
 
     // Réinitialiser les mocks
